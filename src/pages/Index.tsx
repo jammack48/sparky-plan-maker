@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 // Set worker path for PDF.js
 import * as pdfjsLib from "pdfjs-dist";
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const Index = () => {
   const [pdfPages, setPdfPages] = useState<string[]>([]);
