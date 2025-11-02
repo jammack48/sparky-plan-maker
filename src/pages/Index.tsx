@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { getDocument } from "pdfjs-dist";
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import { PdfUpload } from "@/components/PdfUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOLS } from "@/components/SymbolToolbar";
 import { toast } from "sonner";
 
-// Set worker path for PDF.js
-import * as pdfjsLib from "pdfjs-dist";
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Set worker for PDF.js (Vite)
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
+GlobalWorkerOptions.workerPort = new pdfjsWorker();
 
 const Index = () => {
   const [pdfPages, setPdfPages] = useState<string[]>([]);
