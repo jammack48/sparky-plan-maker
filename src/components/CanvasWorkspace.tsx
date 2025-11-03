@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Crop, Ruler, Grid3x3, Download, X } from "lucide-react";
+import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -31,8 +31,9 @@ interface Position {
 
 export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [mode, setMode] = useState<"select" | "crop" | "measure">("select");
+  const [mode, setMode] = useState<"select" | "crop" | "measure" | "erase">("select");
   const [scale, setScale] = useState<number | null>(null);
   const [gridSize, setGridSize] = useState<string>("400");
   const [showGrid, setShowGrid] = useState(false);
@@ -49,11 +50,16 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
   const [measureDistance, setMeasureDistance] = useState<number | null>(null);
   const [showMeasureDialog, setShowMeasureDialog] = useState(false);
   
-  // Grid state
-  const [gridLines, setGridLines] = useState<Line[]>([]);
+  // Eraser state
+  const [eraseStart, setEraseStart] = useState<Position | null>(null);
+  const [eraseRect, setEraseRect] = useState<Rect | null>(null);
+  
+  // Undo/Redo state
+  const [undoStack, setUndoStack] = useState<string[]>([]);
+  const [redoStack, setRedoStack] = useState<string[]>([]);
+  
   // Right-click panning
   const isPanningRef = useRef(false);
-  const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -68,6 +74,9 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       img.scale(scale);
       canvas.backgroundImage = img;
       canvas.renderAll();
+      
+      // Save initial state after background loads
+      saveCanvasState(canvas);
     });
 
     // Mouse wheel zoom
@@ -101,6 +110,62 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     return () => el.removeEventListener("contextmenu", handler as any);
   }, []);
 
+  // Save canvas state for undo/redo
+  const saveCanvasState = (canvas?: FabricCanvas) => {
+    const targetCanvas = canvas || fabricCanvas;
+    if (!targetCanvas) return;
+    
+    const json = JSON.stringify(targetCanvas.toJSON());
+    setUndoStack(prev => [...prev, json]);
+    setRedoStack([]); // Clear redo stack on new action
+  };
+
+  // Undo functionality
+  const handleUndo = () => {
+    if (!fabricCanvas || undoStack.length === 0) return;
+    
+    const currentState = JSON.stringify(fabricCanvas.toJSON());
+    const previousState = undoStack[undoStack.length - 1];
+    
+    setRedoStack(prev => [...prev, currentState]);
+    setUndoStack(prev => prev.slice(0, -1));
+    
+    fabricCanvas.loadFromJSON(previousState).then(() => {
+      fabricCanvas.renderAll();
+    });
+  };
+
+  // Redo functionality
+  const handleRedo = () => {
+    if (!fabricCanvas || redoStack.length === 0) return;
+    
+    const currentState = JSON.stringify(fabricCanvas.toJSON());
+    const nextState = redoStack[redoStack.length - 1];
+    
+    setUndoStack(prev => [...prev, currentState]);
+    setRedoStack(prev => prev.slice(0, -1));
+    
+    fabricCanvas.loadFromJSON(nextState).then(() => {
+      fabricCanvas.renderAll();
+    });
+  };
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+      } else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fabricCanvas, undoStack, redoStack]);
+
   // Right mouse button panning
   useEffect(() => {
     if (!fabricCanvas) return;
@@ -116,10 +181,10 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     const handleMouseMove = (opt: any) => {
       if (!isPanningRef.current) return;
       const e = opt.e as MouseEvent;
-      const vpt = fabricCanvas.viewportTransform;
-      if (!vpt) return;
-      vpt[4] += e.movementX;
-      vpt[5] += e.movementY;
+      
+      // Use relativePan for smoother panning
+      const delta = new Point(e.movementX, e.movementY);
+      fabricCanvas.relativePan(delta);
       fabricCanvas.requestRenderAll();
     };
 
@@ -130,14 +195,24 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       }
     };
 
+    // Document-level mouseup for reliability
+    const handleDocMouseUp = () => {
+      if (isPanningRef.current) {
+        isPanningRef.current = false;
+        fabricCanvas.setCursor("default");
+      }
+    };
+
     fabricCanvas.on("mouse:down", handleMouseDown);
     fabricCanvas.on("mouse:move", handleMouseMove);
     fabricCanvas.on("mouse:up", handleMouseUp);
+    document.addEventListener("mouseup", handleDocMouseUp);
 
     return () => {
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:up", handleMouseUp);
+      document.removeEventListener("mouseup", handleDocMouseUp);
     };
   }, [fabricCanvas]);
 
@@ -265,60 +340,99 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     };
   }, [fabricCanvas, mode, measureStart, measureLine]);
 
+  // Handle erase mode
+  useEffect(() => {
+    if (!fabricCanvas || mode !== "erase") return;
+
+    fabricCanvas.selection = false;
+    fabricCanvas.defaultCursor = "crosshair";
+
+    const handleMouseDown = (opt: any) => {
+      // Only respond to left-clicks for erase
+      if (opt.e.button !== 0) return;
+
+      const pointer = fabricCanvas.getPointer(opt.e);
+      setEraseStart({ x: pointer.x, y: pointer.y });
+      
+      const rect = new Rect({
+        left: pointer.x,
+        top: pointer.y,
+        width: 0,
+        height: 0,
+        fill: "#ffffff",
+        opacity: 0.7,
+        selectable: false,
+        evented: false,
+      });
+      
+      fabricCanvas.add(rect);
+      setEraseRect(rect);
+    };
+
+    const handleMouseMove = (opt: any) => {
+      if (!eraseStart || !eraseRect) return;
+      
+      const pointer = fabricCanvas.getPointer(opt.e);
+      const width = pointer.x - eraseStart.x;
+      const height = pointer.y - eraseStart.y;
+      
+      eraseRect.set({
+        width: Math.abs(width),
+        height: Math.abs(height),
+        left: width < 0 ? pointer.x : eraseStart.x,
+        top: height < 0 ? pointer.y : eraseStart.y,
+      });
+      
+      fabricCanvas.renderAll();
+    };
+
+    const handleMouseUp = () => {
+      if (!eraseStart || !eraseRect) return;
+      
+      // Finalize the erase rectangle
+      eraseRect.set({
+        opacity: 1,
+        selectable: true,
+        evented: true,
+      });
+      
+      fabricCanvas.renderAll();
+      saveCanvasState(fabricCanvas);
+      
+      setEraseStart(null);
+      setEraseRect(null);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && eraseRect) {
+        fabricCanvas.remove(eraseRect);
+        setEraseStart(null);
+        setEraseRect(null);
+        fabricCanvas.renderAll();
+      }
+    };
+
+    fabricCanvas.on("mouse:down", handleMouseDown);
+    fabricCanvas.on("mouse:move", handleMouseMove);
+    fabricCanvas.on("mouse:up", handleMouseUp);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      fabricCanvas.off("mouse:down", handleMouseDown);
+      fabricCanvas.off("mouse:move", handleMouseMove);
+      fabricCanvas.off("mouse:up", handleMouseUp);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [fabricCanvas, mode, eraseStart, eraseRect]);
+
   // Reset mode to select
   useEffect(() => {
-    if (!fabricCanvas || mode === "crop" || mode === "measure") return;
+    if (!fabricCanvas || mode === "crop" || mode === "measure" || mode === "erase") return;
     
     fabricCanvas.selection = true;
     fabricCanvas.defaultCursor = "default";
   }, [fabricCanvas, mode]);
 
-  // Handle grid rendering
-  useEffect(() => {
-    if (!fabricCanvas || !showGrid || !scale) return;
-
-    // Remove old grid lines
-    gridLines.forEach(line => fabricCanvas.remove(line));
-    setGridLines([]);
-
-    const gridSizePx = parseFloat(gridSize) * scale;
-    const newGridLines: Line[] = [];
-
-    // Vertical lines
-    for (let x = 0; x < fabricCanvas.width!; x += gridSizePx) {
-      const line = new Line([x, 0, x, fabricCanvas.height!], {
-        stroke: "#888888",
-        strokeWidth: 1,
-        opacity: 0.3,
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-      });
-      fabricCanvas.add(line);
-      newGridLines.push(line);
-    }
-
-    // Horizontal lines
-    for (let y = 0; y < fabricCanvas.height!; y += gridSizePx) {
-      const line = new Line([0, y, fabricCanvas.width!, y], {
-        stroke: "#888888",
-        strokeWidth: 1,
-        opacity: 0.3,
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-      });
-      fabricCanvas.add(line);
-      newGridLines.push(line);
-    }
-
-    setGridLines(newGridLines);
-    fabricCanvas.renderAll();
-
-    return () => {
-      newGridLines.forEach(line => fabricCanvas.remove(line));
-    };
-  }, [fabricCanvas, showGrid, scale, gridSize]);
 
   const handleCrop = () => {
     if (mode === "crop") {
@@ -361,7 +475,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       width,
       height,
       format: "png",
-      multiplier: 3, // Higher quality for readability
+      multiplier: 4, // Higher quality for readability
     });
 
     // Send to parent to open as new sheet
@@ -398,8 +512,9 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     if (!measureDistance) return;
     
     const pixelsPerMm = measureDistance / realWorldMm;
+    const ratio = (1 / pixelsPerMm).toFixed(1);
     setScale(pixelsPerMm);
-    toast.success(`Scale set: ${pixelsPerMm.toFixed(1)}:1`);
+    toast.success(`Scale set: 1:${ratio}`);
     
     // Remove the red measurement line
     if (measureLine && fabricCanvas) {
@@ -421,6 +536,18 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     setShowGrid(!showGrid);
   };
 
+  const handleErase = () => {
+    if (mode === "erase") {
+      setMode("select");
+    } else {
+      setMode("erase");
+      toast.info("Click and drag to white-out areas. Press Escape to cancel.");
+    }
+  };
+
+  // Calculate grid spacing for CSS overlay
+  const gridSpacing = scale && showGrid ? parseFloat(gridSize) * scale * zoomLevel : 0;
+
   return (
     <div className="flex gap-4 h-full">
       <div className="flex-1 flex flex-col">
@@ -441,6 +568,14 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
             >
               {mode === "measure" ? <X className="w-4 h-4 mr-2" /> : <Ruler className="w-4 h-4 mr-2" />}
               {mode === "measure" ? "Cancel" : "Measure"}
+            </Button>
+            <Button
+              variant={mode === "erase" ? "default" : "outline"}
+              size="sm"
+              onClick={handleErase}
+            >
+              {mode === "erase" ? <X className="w-4 h-4 mr-2" /> : <Eraser className="w-4 h-4 mr-2" />}
+              {mode === "erase" ? "Cancel" : "Erase"}
             </Button>
             <Button
               variant={showGrid ? "default" : "outline"}
@@ -465,10 +600,26 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
                 />
               </div>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
+            >
+              <Undo2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRedo}
+              disabled={redoStack.length === 0}
+            >
+              <Redo2 className="w-4 h-4" />
+            </Button>
             <div className="flex items-center gap-4 ml-4">
               {scale && (
                 <span className="text-sm text-muted-foreground">
-                  Scale: {scale.toFixed(1)}:1
+                  Scale: 1:{(1 / scale).toFixed(1)}
                 </span>
               )}
               <span className="text-sm text-muted-foreground">
@@ -487,8 +638,24 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
           </div>
         </Card>
 
-        <div className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center">
+        <div 
+          ref={containerRef}
+          className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center relative"
+        >
           <canvas ref={canvasRef} />
+          {/* Fixed grid overlay */}
+          {showGrid && gridSpacing > 0 && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage: `
+                  repeating-linear-gradient(to right, rgba(136,136,136,0.3) 0, rgba(136,136,136,0.3) 1px, transparent 1px, transparent ${gridSpacing}px),
+                  repeating-linear-gradient(to bottom, rgba(136,136,136,0.3) 0, rgba(136,136,136,0.3) 1px, transparent 1px, transparent ${gridSpacing}px)
+                `,
+                backgroundSize: `${gridSpacing}px ${gridSpacing}px`,
+              }}
+            />
+          )}
         </div>
       </div>
 
