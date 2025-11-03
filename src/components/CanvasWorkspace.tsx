@@ -1005,9 +1005,17 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     return baseSpacing * vpt[0];
   })();
 
-  // Grid stays fixed on screen when panning (offset is always 0)
-  // This allows images to be aligned to the grid
-  const gridOffset = { x: 0, y: 0 };
+  // Anchor grid to canvas coordinate system origin
+  // vpt[4] and vpt[5] represent where canvas (0,0) is in screen space
+  const gridOffset = (() => {
+    if (!fabricCanvas) return { x: 0, y: 0 };
+    const vpt = fabricCanvas.viewportTransform;
+    if (!vpt) return { x: 0, y: 0 };
+    return { 
+      x: vpt[4], 
+      y: vpt[5] 
+    };
+  })();
 
   return (
     <div className="flex gap-4 h-full">
