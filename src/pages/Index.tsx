@@ -113,6 +113,19 @@ const Index = () => {
             <p className="text-muted-foreground">Floor Plan Markup Tool for Electricians</p>
           </div>
           <FileUpload onFileLoad={handleFileLoad} isLoading={isLoading} />
+          <div className="mt-4 flex items-center justify-center">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setPdfPages(["/images/sample-floorplan.png"]);
+                setSelectedPages([0]);
+                setCurrentPageIndex(0);
+                toast.success("Loaded sample plan");
+              }}
+            >
+              Load sample plan
+            </Button>
+          </div>
         </div>
       </div>
     );

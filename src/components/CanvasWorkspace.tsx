@@ -486,9 +486,9 @@ export const CanvasWorkspace = ({
     if (!scale || !showGrid || !fabricCanvas) return 0;
     const baseSpacing = parseFloat(gridSize) * scale;
     const vpt = fabricCanvas.viewportTransform;
-    if (!vpt || !bgScale) return 0;
-    // Scale with zoom but not with image scale (grid is screen-fixed)
-    return baseSpacing * bgScale * vpt[0];
+    if (!vpt) return 0;
+    // Scale with zoom only (screen-fixed)
+    return baseSpacing * vpt[0];
   })();
 
   const gridOffset = { x: 0, y: 0 };
