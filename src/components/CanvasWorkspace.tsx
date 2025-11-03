@@ -487,24 +487,13 @@ export const CanvasWorkspace = ({
     const baseSpacing = parseFloat(gridSize) * scale;
     const vpt = fabricCanvas.viewportTransform;
     if (!vpt || !bgScale) return 0;
+    // Scale with zoom but not with image scale (grid is screen-fixed)
     return baseSpacing * bgScale * vpt[0];
   })();
 
   const gridOffset = (() => {
-    if (!scale || !showGrid || !fabricCanvas) return { x: 0, y: 0 };
-    const vpt = fabricCanvas.viewportTransform;
-    if (!vpt || !bgScale) return { x: 0, y: 0 };
-    
-    const baseSpacing = parseFloat(gridSize) * scale;
-    const spacingPx = baseSpacing * bgScale * vpt[0];
-    if (spacingPx <= 0) return { x: 0, y: 0 };
-    
-    // Background is at world coords (0, 0), screen position is vpt[4], vpt[5]
-    // Grid offset should track viewport translation to move with the image
-    const x = vpt[4] % spacingPx;
-    const y = vpt[5] % spacingPx;
-    
-    return { x, y };
+    // Grid stays fixed on screen (doesn't pan with image)
+    return { x: 0, y: 0 };
   })();
 
   const hexToRgba = (hex: string, alpha: number) => {
