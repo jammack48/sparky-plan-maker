@@ -314,6 +314,89 @@ export const CanvasWorkspace = ({
     };
   }, [fabricCanvas]);
 
+  // Touch pinch zoom support
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const upperCanvas = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
+    if (!upperCanvas) return;
+
+    let lastDistance = 0;
+    let lastCenter: { x: number; y: number } | null = null;
+
+    const getTouchDistance = (touches: TouchList) => {
+      if (touches.length < 2) return 0;
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const getTouchCenter = (touches: TouchList) => {
+      if (touches.length < 2) return null;
+      return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2,
+      };
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        lastDistance = getTouchDistance(e.touches);
+        lastCenter = getTouchCenter(e.touches);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && lastDistance && lastCenter) {
+        e.preventDefault();
+        
+        const newDistance = getTouchDistance(e.touches);
+        const newCenter = getTouchCenter(e.touches);
+        
+        if (!newCenter) return;
+
+        // Calculate zoom
+        const scale = newDistance / lastDistance;
+        let zoom = fabricCanvas.getZoom();
+        zoom = zoom * scale;
+        if (zoom > 5) zoom = 5;
+        if (zoom < 0.1) zoom = 0.1;
+
+        // Get canvas offset
+        const rect = upperCanvas.getBoundingClientRect();
+        const offsetX = newCenter.x - rect.left;
+        const offsetY = newCenter.y - rect.top;
+
+        fabricCanvas.zoomToPoint(new Point(offsetX, offsetY), zoom);
+        setZoomLevel(zoom);
+        setGridUpdateTrigger((prev) => prev + 1);
+
+        lastDistance = newDistance;
+        lastCenter = newCenter;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        lastDistance = 0;
+        lastCenter = null;
+      }
+    };
+
+    upperCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    upperCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    upperCanvas.addEventListener('touchend', handleTouchEnd);
+    upperCanvas.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      upperCanvas.removeEventListener('touchstart', handleTouchStart);
+      upperCanvas.removeEventListener('touchmove', handleTouchMove);
+      upperCanvas.removeEventListener('touchend', handleTouchEnd);
+      upperCanvas.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [fabricCanvas]);
+
   // Reset mode to select
   useEffect(() => {
     if (!fabricCanvas || mode === "crop" || mode === "measure" || mode === "erase" || mode === "place-symbol") return;

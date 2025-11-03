@@ -21,7 +21,9 @@ export const useCropMode = (
     fabricCanvas.defaultCursor = "crosshair";
 
     const handleMouseDown = (opt: any) => {
-      if (opt.e.button !== 0) return;
+      const e = opt.e;
+      // Allow touch and left-click; ignore right/middle clicks
+      if (typeof e?.button === "number" && e.button !== 0) return;
 
       const pointer = fabricCanvas.getPointer(opt.e);
       
