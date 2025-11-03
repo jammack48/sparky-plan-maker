@@ -1034,10 +1034,11 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     if (!scale || !showGrid || !fabricCanvas) return { x: 0, y: 0 };
     const vpt = fabricCanvas.viewportTransform;
     if (!vpt) return { x: 0, y: 0 };
-    // Anchor grid origin to canvas coordinate (0,0)
-    // When you zoom, vpt[4] and vpt[5] scale naturally with the transform
-    const x = vpt[4]; // Where canvas x=0 is in screen space
-    const y = vpt[5]; // Where canvas y=0 is in screen space
+    const baseSpacing = parseFloat(gridSize) * scale; // world units
+    const spacingPx = baseSpacing * vpt[0];
+    if (spacingPx <= 0) return { x: 0, y: 0 };
+    const x = ((-vpt[4]) % spacingPx + spacingPx) % spacingPx;
+    const y = ((-vpt[5]) % spacingPx + spacingPx) % spacingPx;
     return { x, y };
   })();
 
