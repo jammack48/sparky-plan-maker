@@ -178,18 +178,20 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [fabricCanvas, undoStack, redoStack]);
 
-  // Right mouse button panning
+  // Right and middle mouse button panning
   useEffect(() => {
     if (!fabricCanvas) return;
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
-      if (e.button === 2) {
+      // Button 1 = middle, Button 2 = right
+      if (e.button === 1 || e.button === 2) {
         isPanningRef.current = true;
         lastPanPos.current = { x: e.clientX, y: e.clientY };
         fabricCanvas.setCursor("grabbing");
         fabricCanvas.selection = false;
         fabricCanvas.skipTargetFind = true;
+        e.preventDefault();
       }
     };
 
