@@ -175,6 +175,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       if (e.button === 2) {
         isPanningRef.current = true;
         fabricCanvas.setCursor("grabbing");
+        e.preventDefault();
       }
     };
 
@@ -182,22 +183,27 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       if (!isPanningRef.current) return;
       const e = opt.e as MouseEvent;
       
-      // Use relativePan for smoother panning
-      const delta = new Point(e.movementX, e.movementY);
-      fabricCanvas.relativePan(delta);
-      fabricCanvas.requestRenderAll();
+      // Direct viewport transform manipulation for reliable panning
+      const vpt = fabricCanvas.viewportTransform;
+      if (vpt) {
+        vpt[4] += e.movementX;
+        vpt[5] += e.movementY;
+        fabricCanvas.setViewportTransform(vpt);
+        fabricCanvas.requestRenderAll();
+      }
     };
 
-    const handleMouseUp = () => {
-      if (isPanningRef.current) {
+    const handleMouseUp = (opt: any) => {
+      const e = opt.e as MouseEvent;
+      if (e.button === 2 && isPanningRef.current) {
         isPanningRef.current = false;
         fabricCanvas.setCursor("default");
       }
     };
 
     // Document-level mouseup for reliability
-    const handleDocMouseUp = () => {
-      if (isPanningRef.current) {
+    const handleDocMouseUp = (e: MouseEvent) => {
+      if (e.button === 2 && isPanningRef.current) {
         isPanningRef.current = false;
         fabricCanvas.setCursor("default");
       }
@@ -537,11 +543,9 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
   };
 
   const handleErase = () => {
-    if (mode === "erase") {
-      setMode("select");
-    } else {
-      setMode("erase");
-      toast.info("Click and drag to white-out areas. Press Escape to cancel.");
+    setMode(mode === "erase" ? "select" : "erase");
+    if (mode !== "erase") {
+      toast.info("Click and drag to white-out areas");
     }
   };
 
@@ -574,8 +578,8 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
               size="sm"
               onClick={handleErase}
             >
-              {mode === "erase" ? <X className="w-4 h-4 mr-2" /> : <Eraser className="w-4 h-4 mr-2" />}
-              {mode === "erase" ? "Cancel" : "Erase"}
+              <Eraser className="w-4 h-4 mr-2" />
+              Erase
             </Button>
             <Button
               variant={showGrid ? "default" : "outline"}
@@ -616,7 +620,15 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
             >
               <Redo2 className="w-4 h-4" />
             </Button>
-            <div className="flex items-center gap-4 ml-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fabricCanvas && onExport(fabricCanvas)}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export PDF
+            </Button>
+            <div className="flex items-center gap-4 ml-auto">
               {scale && (
                 <span className="text-sm text-muted-foreground">
                   Scale: 1:{(1 / scale).toFixed(1)}
@@ -626,15 +638,6 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
                 Zoom: {(zoomLevel * 100).toFixed(0)}%
               </span>
             </div>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => fabricCanvas && onExport(fabricCanvas)}
-              className="ml-auto"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
-            </Button>
           </div>
         </Card>
 
