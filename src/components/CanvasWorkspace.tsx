@@ -250,31 +250,60 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     (canvas as any).stopContextMenu = true;
 
     FabricImage.fromURL(imageUrl).then((img) => {
-      const scaleBg = Math.min(800 / (img.width ?? 1), 600 / (img.height ?? 1));
-      img.scale(scaleBg);
-      canvas.backgroundImage = img;
-      canvas.renderAll();
-      
-      // Save background image scale for snapping/grid calculations
-      setBgScale(scaleBg);
-      
-      // Save initial state after background loads
-      saveCanvasState(canvas);
-    });
+  // Compute scale based on current Fabric canvas pixel size so bgScale matches actual canvas
+  const canvasWidth = canvas.getWidth();
+  const canvasHeight = canvas.getHeight();
+  const scaleBg = Math.min(canvasWidth / (img.width ?? 1), canvasHeight / (img.height ?? 1));
+
+  // Anchor image at top-left in object coords and make non-interactive
+  img.set({
+    scaleX: scaleBg,
+    scaleY: scaleBg,
+    left: 0,
+    top: 0,
+    originX: "left",
+    originY: "top",
+    selectable: false,
+    evented: false,
+  });
+
+  // Use Fabric API to set background and render
+  canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+
+  // Debug: report computed values
+  console.debug("Canvas background loaded", {
+    canvasWidth,
+    canvasHeight,
+    imgWidth: img.width,
+    imgHeight: img.height,
+    scaleBg,
+  });
+
+  // Save background image scale for snapping/grid calculations
+  setBgScale(scaleBg);
+
+  // Save initial state after background loads
+  saveCanvasState(canvas);
+});
 
     // Mouse wheel zoom
-    const handleWheel = (opt: any) => {
-      const delta = opt.e.deltaY;
-      let zoom = canvas.getZoom();
-      zoom *= 0.999 ** delta;
-      if (zoom > 5) zoom = 5;
-      if (zoom < 0.1) zoom = 0.1;
-      canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
-      setZoomLevel(zoom);
-      setGridUpdateTrigger((prev) => prev + 1);
-      opt.e.preventDefault();
-      opt.e.stopPropagation();
-    };
+   const handleWheel = (opt: any) => {
+  const delta = opt.e.deltaY;
+  let zoom = canvas.getZoom();
+  zoom *= 0.999 ** delta;
+  if (zoom > 5) zoom = 5;
+  if (zoom < 0.1) zoom = 0.1;
+  canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
+  setZoomLevel(zoom);
+  setGridUpdateTrigger((prev) => prev + 1);
+
+  // Debug log
+  const vpt = canvas.viewportTransform;
+  console.debug("wheel zoom", { zoom, offsetX: opt.e.offsetX, offsetY: opt.e.offsetY, vpt });
+
+  opt.e.preventDefault();
+  opt.e.stopPropagation();
+};
 
     canvas.on("mouse:wheel", handleWheel);
 
@@ -748,29 +777,12 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       let x = pointer.x;
       let y = pointer.y;
       
-      let baseSpacing = null as number | null;
+      // Snap to grid unless Control is held
       if (showGrid && scale && bgScale) {
-        baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
-        console.debug("[PREVIEW] Grid snap values:", {
-          gridSize: parseFloat(gridSize),
-          scale,
-          bgScale,
-          baseSpacing,
-          pointerX: pointer.x,
-          pointerY: pointer.y,
-          ctrlHeld: opt.e.ctrlKey || opt.e.metaKey,
-        });
-        
+        const baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
         if (baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-          const beforeX = x;
-          const beforeY = y;
           x = Math.round(pointer.x / baseSpacing) * baseSpacing;
           y = Math.round(pointer.y / baseSpacing) * baseSpacing;
-          console.debug("[PREVIEW] Snapped:", {
-            before: { x: beforeX, y: beforeY },
-            after: { x, y },
-            delta: { x: x - beforeX, y: y - beforeY },
-          });
         }
       }
       
@@ -798,31 +810,12 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       let left = pointer.x;
       let top = pointer.y;
       
-      const baseSpacing = showGrid && scale && bgScale 
-        ? parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1) 
-        : null;
-
-      console.debug("[PLACE] Symbol placement:", {
-        gridSize: parseFloat(gridSize),
-        scale,
-        bgScale,
-        baseSpacing,
-        pointerX: pointer.x,
-        pointerY: pointer.y,
-        ctrlHeld: opt.e.ctrlKey || opt.e.metaKey,
-        showGrid,
-      });
-
-      if (baseSpacing && baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-        const beforeLeft = left;
-        const beforeTop = top;
-        left = Math.round(pointer.x / baseSpacing) * baseSpacing;
-        top = Math.round(pointer.y / baseSpacing) * baseSpacing;
-        console.debug("[PLACE] Snapped:", {
-          before: { left: beforeLeft, top: beforeTop },
-          after: { left, top },
-          delta: { left: left - beforeLeft, top: top - beforeTop },
-        });
+      if (showGrid && scale && bgScale) {
+        const baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
+        if (baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+          left = Math.round(pointer.x / baseSpacing) * baseSpacing;
+          top = Math.round(pointer.y / baseSpacing) * baseSpacing;
+        }
       }
       
       // Remove preview
@@ -883,28 +876,10 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       
       const left = obj.left ?? 0;
       const top = obj.top ?? 0;
-
-      console.debug("[DRAG] Object moving:", {
-        gridSize: parseFloat(gridSize),
-        scale,
-        bgScale,
-        baseSpacing,
-        objLeft: left,
-        objTop: top,
-      });
-
-      const snappedLeft = Math.round(left / baseSpacing) * baseSpacing;
-      const snappedTop = Math.round(top / baseSpacing) * baseSpacing;
-
-      console.debug("[DRAG] Snapped:", {
-        before: { left, top },
-        after: { left: snappedLeft, top: snappedTop },
-        delta: { left: snappedLeft - left, top: snappedTop - top },
-      });
-
+      
       obj.set({
-        left: snappedLeft,
-        top: snappedTop,
+        left: Math.round(left / baseSpacing) * baseSpacing,
+        top: Math.round(top / baseSpacing) * baseSpacing,
       });
     };
 
@@ -1119,30 +1094,6 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     const y = ((-vpt[5]) % spacingPx + spacingPx) % spacingPx;
     return { x, y };
   })();
-
-  // Debug: Track grid overlay values
-  useEffect(() => {
-    if (!fabricCanvas) return;
-    
-    const vpt = fabricCanvas.viewportTransform;
-    console.debug("[GRID OVERLAY] Current values:", {
-      gridSpacing,
-      gridOffset,
-      bgScale,
-      scale,
-      gridSize: parseFloat(gridSize),
-      showGrid,
-      zoomLevel,
-      viewportTransform: vpt ? {
-        scaleX: vpt[0],
-        scaleY: vpt[3],
-        translateX: vpt[4],
-        translateY: vpt[5],
-      } : null,
-      calculatedBaseSpacing: scale && bgScale ? parseFloat(gridSize) * scale * bgScale : null,
-      calculatedScreenSpacing: vpt ? (parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1) * vpt[0]) : null,
-    });
-  }, [gridUpdateTrigger, gridSpacing, gridOffset, bgScale, scale, fabricCanvas, gridSize, showGrid, zoomLevel]);
 
   // Grid color helpers
   const hexToRgba = (hex: string, alpha: number) => {
