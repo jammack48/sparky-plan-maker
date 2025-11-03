@@ -33,7 +33,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [mode, setMode] = useState<"select" | "crop" | "measure">("select");
   const [scale, setScale] = useState<number | null>(null);
-  const [gridSize, setGridSize] = useState<string>("100");
+  const [gridSize, setGridSize] = useState<string>("400");
   const [showGrid, setShowGrid] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   
@@ -424,23 +424,23 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
             <AlertDialogTitle>Set Scale</AlertDialogTitle>
             <AlertDialogDescription>
               Enter the real-world distance in millimeters for the measured line.
-              <div className="mt-4">
-                <Label htmlFor="realDistance">Distance (mm):</Label>
-                <Input
-                  id="realDistance"
-                  type="number"
-                  placeholder="e.g., 1000"
-                  className="mt-2"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const value = parseFloat((e.target as HTMLInputElement).value);
-                      if (value > 0) handleMeasureSubmit(value);
-                    }
-                  }}
-                />
-              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mt-4">
+            <Label htmlFor="realDistance">Distance (mm):</Label>
+            <Input
+              id="realDistance"
+              type="number"
+              placeholder="e.g., 1000"
+              className="mt-2"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const value = parseFloat((e.target as HTMLInputElement).value);
+                  if (value > 0) handleMeasureSubmit(value);
+                }
+              }}
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={cancelMeasure}>Cancel</AlertDialogCancel>
             <AlertDialogAction
