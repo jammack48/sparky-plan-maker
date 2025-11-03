@@ -102,13 +102,20 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     };
   }, [imageUrl]);
 
-  // Prevent context menu on right-click over canvas
+  // Prevent context menu on right-click over canvas AND container
   useEffect(() => {
-    const el = canvasRef.current;
-    if (!el) return;
+    const canvasEl = canvasRef.current;
+    const containerEl = containerRef.current;
+    if (!canvasEl || !containerEl) return;
+    
     const handler = (e: MouseEvent) => e.preventDefault();
-    el.addEventListener("contextmenu", handler as any);
-    return () => el.removeEventListener("contextmenu", handler as any);
+    canvasEl.addEventListener("contextmenu", handler);
+    containerEl.addEventListener("contextmenu", handler);
+    
+    return () => {
+      canvasEl.removeEventListener("contextmenu", handler);
+      containerEl.removeEventListener("contextmenu", handler);
+    };
   }, []);
 
   // Save canvas state for undo/redo
@@ -380,14 +387,15 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       setEraseStart({ x: pointer.x, y: pointer.y });
       
       const rect = new Rect({
-        left: pointer.x,
-        top: pointer.y,
+        left: Math.round(pointer.x),
+        top: Math.round(pointer.y),
         width: 0,
         height: 0,
         fill: "#ffffff",
         opacity: 0.7,
         selectable: false,
         evented: false,
+        objectCaching: false, // Prevent rendering artifacts from start
       });
       
       fabricCanvas.add(rect);
@@ -402,10 +410,10 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       const height = pointer.y - eraseStart.y;
       
       eraseRect.set({
-        width: Math.abs(width),
-        height: Math.abs(height),
-        left: width < 0 ? pointer.x : eraseStart.x,
-        top: height < 0 ? pointer.y : eraseStart.y,
+        width: Math.round(Math.abs(width)),
+        height: Math.round(Math.abs(height)),
+        left: Math.round(width < 0 ? pointer.x : eraseStart.x),
+        top: Math.round(height < 0 ? pointer.y : eraseStart.y),
       });
       
       fabricCanvas.renderAll();
