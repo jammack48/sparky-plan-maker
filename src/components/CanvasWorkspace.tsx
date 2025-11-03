@@ -39,7 +39,6 @@ export const CanvasWorkspace = ({
   const [bgScale, setBgScale] = useState<number>(1);
   const [gridSize, setGridSize] = useState<string>("400");
   const [showGrid, setShowGrid] = useState(false);
-  const [gridMode, setGridMode] = useState<"screen" | "image">("screen");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
   
@@ -55,7 +54,6 @@ export const CanvasWorkspace = ({
   // Panning refs
   const isPanningRef = useRef(false);
   const lastPanPos = useRef<{ x: number; y: number } | null>(null);
-  const gridOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Hooks
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
@@ -493,17 +491,7 @@ export const CanvasWorkspace = ({
     return baseSpacing * bgScale * vpt[0];
   })();
 
-  const gridOffset = (() => {
-    if (!showGrid || !fabricCanvas) return { x: 0, y: 0 };
-    if (gridMode === "screen") return { x: 0, y: 0 };
-    const vpt = fabricCanvas.viewportTransform;
-    if (!vpt || !bgScale || !scale) return { x: 0, y: 0 };
-    const baseSpacing = parseFloat(gridSize) * scale;
-    const spacingPx = baseSpacing * bgScale * vpt[0];
-    if (spacingPx <= 0) return { x: 0, y: 0 };
-    const mod = (n: number, m: number) => ((n % m) + m) % m;
-    return { x: mod(vpt[4], spacingPx), y: mod(vpt[5], spacingPx) };
-  })();
+  const gridOffset = { x: 0, y: 0 };
 
   const hexToRgba = (hex: string, alpha: number) => {
     try {
@@ -538,8 +526,6 @@ export const CanvasWorkspace = ({
           gridColor={gridColor}
           gridThickness={gridThickness}
           gridOpacity={gridOpacity}
-          gridMode={gridMode}
-          onGridModeChange={setGridMode}
           zoomLevel={zoomLevel}
           undoStackLength={undoStack.length}
           redoStackLength={redoStack.length}

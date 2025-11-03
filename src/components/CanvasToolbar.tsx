@@ -13,8 +13,6 @@ interface CanvasToolbarProps {
   gridColor: string;
   gridThickness: number;
   gridOpacity: number;
-  gridMode: "screen" | "image";
-  onGridModeChange: (value: "screen" | "image") => void;
   zoomLevel: number;
   undoStackLength: number;
   redoStackLength: number;
@@ -39,8 +37,6 @@ export const CanvasToolbar = ({
   gridColor,
   gridThickness,
   gridOpacity,
-  gridMode,
-  onGridModeChange,
   zoomLevel,
   undoStackLength,
   redoStackLength,
@@ -132,27 +128,6 @@ export const CanvasToolbar = ({
                   className="w-32"
                 />
                 <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(gridOpacity * 100)}%</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <Label className="text-sm">Mode</Label>
-                <div className="flex border rounded">
-                  <Button
-                    variant={gridMode === "screen" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => onGridModeChange("screen")}
-                    className="h-8 px-2 text-xs rounded-l border-r"
-                  >
-                    Screen
-                  </Button>
-                  <Button
-                    variant={gridMode === "image" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => onGridModeChange("image")}
-                    className="h-8 px-2 text-xs rounded-r"
-                  >
-                    Image
-                  </Button>
-                </div>
               </div>
             </div>
           </DropdownMenuContent>
