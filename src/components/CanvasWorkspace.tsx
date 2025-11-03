@@ -500,12 +500,9 @@ export const CanvasWorkspace = ({
     if (spacingPx <= 0) return { x: 0, y: 0 };
     
     // Background is at world coords (0, 0), screen position is vpt[4], vpt[5]
-    const bgScreenX = vpt[4];
-    const bgScreenY = vpt[5];
-    
-    // Align grid origin with background's screen position
-    const x = (bgScreenX % spacingPx + spacingPx) % spacingPx;
-    const y = (bgScreenY % spacingPx + spacingPx) % spacingPx;
+    // Grid offset should track viewport translation to move with the image
+    const x = vpt[4] % spacingPx;
+    const y = vpt[5] % spacingPx;
     
     return { x, y };
   })();
