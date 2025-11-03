@@ -39,6 +39,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [mode, setMode] = useState<"select" | "crop" | "measure" | "erase" | "place-symbol">("select");
   const [scale, setScale] = useState<number | null>(null);
+  const [bgScale, setBgScale] = useState<number>(1);
   const [gridSize, setGridSize] = useState<string>("400");
   const [showGrid, setShowGrid] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -243,10 +244,13 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     (canvas as any).stopContextMenu = true;
 
     FabricImage.fromURL(imageUrl).then((img) => {
-      const scale = Math.min(800 / img.width!, 600 / img.height!);
-      img.scale(scale);
+      const scaleBg = Math.min(800 / (img.width ?? 1), 600 / (img.height ?? 1));
+      img.scale(scaleBg);
       canvas.backgroundImage = img;
       canvas.renderAll();
+      
+      // Save background image scale for snapping/grid calculations
+      setBgScale(scaleBg);
       
       // Save initial state after background loads
       saveCanvasState(canvas);
@@ -733,40 +737,18 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     let previewSymbol: FabricObject | null = null;
 
     const handleMouseMove = (opt: any) => {
-      if (!canvasRef.current) return;
+      // Use getPointer - already returns object coordinates
+      const pointer = fabricCanvas.getPointer(opt.e);
+      let x = pointer.x;
+      let y = pointer.y;
       
-      // Get screen coordinates relative to canvas element
-      const rect = canvasRef.current.getBoundingClientRect();
-      const clientX = opt.e.clientX;
-      const clientY = opt.e.clientY;
-      const screenPoint = { x: clientX - rect.left, y: clientY - rect.top };
-      
-      let x: number;
-      let y: number;
-      
-      // Snap to grid intersection unless Control is held down
-      if (showGrid && scale) {
-        const baseSpacing = parseFloat(gridSize) * (scale ?? 1);
+      // Snap to grid unless Control is held
+      if (showGrid && scale && bgScale) {
+        const baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
         if (baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-          // Convert screen → object coords, snap in object coords
-          const worldPoint = canvasToWorld(screenPoint);
-          const snappedWorld = {
-            x: Math.round(worldPoint.x / baseSpacing) * baseSpacing,
-            y: Math.round(worldPoint.y / baseSpacing) * baseSpacing,
-          };
-          x = snappedWorld.x;
-          y = snappedWorld.y;
-        } else {
-          // Convert to object coords without snapping
-          const worldPoint = canvasToWorld(screenPoint);
-          x = worldPoint.x;
-          y = worldPoint.y;
+          x = Math.round(pointer.x / baseSpacing) * baseSpacing;
+          y = Math.round(pointer.y / baseSpacing) * baseSpacing;
         }
-      } else {
-        // No grid: just convert to object coords
-        const worldPoint = canvasToWorld(screenPoint);
-        x = worldPoint.x;
-        y = worldPoint.y;
       }
       
       // Remove old preview
@@ -787,42 +769,18 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     };
 
     const handleMouseDown = (opt: any) => {
-      // Only respond to left-clicks
       if (opt.e.button !== 0) return;
-      if (!canvasRef.current) return;
-
-      // Get screen coordinates relative to canvas element
-      const rect = canvasRef.current.getBoundingClientRect();
-      const clientX = opt.e.clientX;
-      const clientY = opt.e.clientY;
-      const screenPoint = { x: clientX - rect.left, y: clientY - rect.top };
       
-      let left: number;
-      let top: number;
+      const pointer = fabricCanvas.getPointer(opt.e);
+      let left = pointer.x;
+      let top = pointer.y;
       
-      // Snap to grid intersection unless Control is held down
-      if (showGrid && scale) {
-        const baseSpacing = parseFloat(gridSize) * (scale ?? 1);
+      if (showGrid && scale && bgScale) {
+        const baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
         if (baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-          // Convert screen → object coords, snap in object coords
-          const worldPoint = canvasToWorld(screenPoint);
-          const snappedWorld = {
-            x: Math.round(worldPoint.x / baseSpacing) * baseSpacing,
-            y: Math.round(worldPoint.y / baseSpacing) * baseSpacing,
-          };
-          left = snappedWorld.x;
-          top = snappedWorld.y;
-        } else {
-          // Convert to object coords without snapping
-          const worldPoint = canvasToWorld(screenPoint);
-          left = worldPoint.x;
-          top = worldPoint.y;
+          left = Math.round(pointer.x / baseSpacing) * baseSpacing;
+          top = Math.round(pointer.y / baseSpacing) * baseSpacing;
         }
-      } else {
-        // No grid: just convert to object coords
-        const worldPoint = canvasToWorld(screenPoint);
-        left = worldPoint.x;
-        top = worldPoint.y;
       }
       
       // Remove preview
@@ -838,7 +796,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
         fabricCanvas.renderAll();
         saveCanvasState();
         onSymbolPlaced?.(selectedSymbol);
-        const snapStatus = (showGrid && scale && !opt.e.ctrlKey && !opt.e.metaKey) ? " (snapped)" : "";
+        const snapStatus = (showGrid && scale && bgScale && !opt.e.ctrlKey && !opt.e.metaKey) ? " (snapped)" : "";
         toast.success(`${selectedSymbol} placed${snapStatus}`);
       }
     };
@@ -867,19 +825,18 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       fabricCanvas.off("mouse:down", handleMouseDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [fabricCanvas, mode, selectedSymbol, scale, showGrid, gridSize]);
+  }, [fabricCanvas, mode, selectedSymbol, scale, showGrid, gridSize, bgScale, onSymbolPlaced, onSymbolDeselect]);
 
   // Snap symbols to grid while dragging
   useEffect(() => {
     if (!fabricCanvas) return;
 
     const handleMoving = (e: any) => {
-      if (!scale || !showGrid || !fabricCanvas) return;
+      if (!scale || !showGrid || !bgScale || !fabricCanvas) return;
       const obj = e.target as FabricObject | undefined;
       if (!obj || !(obj as any).symbolType) return;
       
-      // Snap object's position directly in object coords
-      const baseSpacing = parseFloat(gridSize) * (scale ?? 1);
+      const baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
       if (!baseSpacing) return;
       
       const left = obj.left ?? 0;
@@ -895,7 +852,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     return () => {
       fabricCanvas.off("object:moving", handleMoving);
     };
-  }, [fabricCanvas, scale, showGrid, gridSize]);
+  }, [fabricCanvas, scale, showGrid, gridSize, bgScale]);
 
   // Handle delete key for symbols
   useEffect(() => {
