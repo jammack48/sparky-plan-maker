@@ -76,6 +76,21 @@ const Index = () => {
     toast.info("Export functionality coming soon!");
   };
 
+  const handleExtractCrop = (dataUrl: string) => {
+    setPdfPages((prevPages) => {
+      const newIndex = prevPages.length;
+      const updatedPages = [...prevPages, dataUrl];
+      // Include new page in the current selection and jump to it
+      setSelectedPages((prevSel) => {
+        const updatedSelected = [...prevSel, newIndex];
+        setCurrentPageIndex(updatedSelected.length - 1);
+        return updatedSelected;
+      });
+      return updatedPages;
+    });
+    toast.success("Opened cropped area as a new sheet");
+  };
+
   if (pdfPages.length === 0) {
     return (
       <div className="min-h-screen bg-background p-8">
@@ -123,6 +138,7 @@ const Index = () => {
             imageUrl={pdfPages[selectedPages[currentPageIndex]]}
             pageNumber={selectedPages[currentPageIndex] + 1}
             onExport={handleExport}
+            onExtract={handleExtractCrop}
           />
         </main>
 

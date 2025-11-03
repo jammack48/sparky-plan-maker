@@ -28,7 +28,7 @@ interface Position {
   y: number;
 }
 
-export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorkspaceProps) => {
+export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [mode, setMode] = useState<"select" | "crop" | "measure">("select");
@@ -50,7 +50,9 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
   
   // Grid state
   const [gridLines, setGridLines] = useState<Line[]>([]);
-
+  // Right-click panning
+  const isPanningRef = useRef(false);
+  const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -89,6 +91,55 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
     };
   }, [imageUrl]);
 
+  // Prevent context menu on right-click over canvas
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const handler = (e: MouseEvent) => e.preventDefault();
+    el.addEventListener("contextmenu", handler as any);
+    return () => el.removeEventListener("contextmenu", handler as any);
+  }, []);
+
+  // Right mouse button panning
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const handleMouseDown = (opt: any) => {
+      const e = opt.e as MouseEvent;
+      if (e.button === 2) {
+        isPanningRef.current = true;
+        fabricCanvas.setCursor("grabbing");
+      }
+    };
+
+    const handleMouseMove = (opt: any) => {
+      if (!isPanningRef.current) return;
+      const e = opt.e as MouseEvent;
+      const vpt = fabricCanvas.viewportTransform;
+      if (!vpt) return;
+      vpt[4] += e.movementX;
+      vpt[5] += e.movementY;
+      fabricCanvas.requestRenderAll();
+    };
+
+    const handleMouseUp = () => {
+      if (isPanningRef.current) {
+        isPanningRef.current = false;
+        fabricCanvas.setCursor("default");
+      }
+    };
+
+    fabricCanvas.on("mouse:down", handleMouseDown);
+    fabricCanvas.on("mouse:move", handleMouseMove);
+    fabricCanvas.on("mouse:up", handleMouseUp);
+
+    return () => {
+      fabricCanvas.off("mouse:down", handleMouseDown);
+      fabricCanvas.off("mouse:move", handleMouseMove);
+      fabricCanvas.off("mouse:up", handleMouseUp);
+    };
+  }, [fabricCanvas]);
+
   // Handle crop mode
   useEffect(() => {
     if (!fabricCanvas || mode !== "crop") return;
@@ -96,33 +147,37 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
     fabricCanvas.selection = false;
     fabricCanvas.defaultCursor = "crosshair";
 
-    const handleMouseDown = (opt: any) => {
-      const pointer = fabricCanvas.getPointer(opt.e);
-      
-      if (!cropStart) {
-        // First click
-        setCropStart({ x: pointer.x, y: pointer.y });
+      const handleMouseDown = (opt: any) => {
+        // Only respond to left-clicks for crop
+        if (opt.e.button !== 0) return;
+
+        const pointer = fabricCanvas.getPointer(opt.e);
         
-        const rect = new Rect({
-          left: pointer.x,
-          top: pointer.y,
-          width: 0,
-          height: 0,
-          fill: "rgba(0, 123, 255, 0.1)",
-          stroke: "blue",
-          strokeWidth: 2,
-          strokeDashArray: [5, 5],
-          selectable: false,
-          evented: false,
-        });
-        
-        fabricCanvas.add(rect);
-        setCropRect(rect);
-      } else {
-        // Second click - finalize crop
-        setShowCropDialog(true);
-      }
-    };
+        if (!cropStart) {
+          // First click
+          setCropStart({ x: pointer.x, y: pointer.y });
+          
+          const rect = new Rect({
+            left: pointer.x,
+            top: pointer.y,
+            width: 0,
+            height: 0,
+            fill: "rgba(0, 123, 255, 0.1)",
+            stroke: "blue",
+            strokeWidth: 2,
+            strokeDashArray: [5, 5],
+            selectable: false,
+            evented: false,
+            excludeFromExport: true,
+          });
+          
+          fabricCanvas.add(rect);
+          setCropRect(rect);
+        } else {
+          // Second click - finalize crop
+          setShowCropDialog(true);
+        }
+      };
 
     const handleMouseMove = (opt: any) => {
       if (!cropStart || !cropRect) return;
@@ -158,6 +213,9 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
     fabricCanvas.defaultCursor = "crosshair";
 
     const handleMouseDown = (opt: any) => {
+      // Only respond to left-clicks for measure
+      if (opt.e.button !== 0) return;
+
       const pointer = fabricCanvas.getPointer(opt.e);
       
       if (!measureStart) {
@@ -169,6 +227,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
           strokeWidth: 2,
           selectable: false,
           evented: false,
+          excludeFromExport: true,
         });
         
         fabricCanvas.add(line);
@@ -232,6 +291,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
         opacity: 0.3,
         selectable: false,
         evented: false,
+        excludeFromExport: true,
       });
       fabricCanvas.add(line);
       newGridLines.push(line);
@@ -245,6 +305,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
         opacity: 0.3,
         selectable: false,
         evented: false,
+        excludeFromExport: true,
       });
       fabricCanvas.add(line);
       newGridLines.push(line);
@@ -279,7 +340,29 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
   const handleCropExtract = () => {
     if (!fabricCanvas || !cropRect) return;
     
-    toast.success("Crop extracted! (Feature will create new sheet in full implementation)");
+    // Compute crop bounds
+    const left = cropRect.left ?? 0;
+    const top = cropRect.top ?? 0;
+    const width = (cropRect.width ?? 0) * (cropRect.scaleX ?? 1);
+    const height = (cropRect.height ?? 0) * (cropRect.scaleY ?? 1);
+    if (width <= 0 || height <= 0) {
+      toast.error("Invalid crop area");
+      return;
+    }
+
+    // Export cropped region as image (grid/crop handles are excluded from export)
+    const dataUrl = fabricCanvas.toDataURL({
+      left,
+      top,
+      width,
+      height,
+      format: "png",
+      multiplier: 1,
+    });
+
+    // Send to parent to open as new sheet
+    onExtract?.(dataUrl);
+    toast.success("Extracted to new sheet");
     
     // Clean up
     fabricCanvas.remove(cropRect);
@@ -314,6 +397,11 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport }: CanvasWorksp
     const pixelsPerMm = measureDistance / realWorldMm;
     setScale(pixelsPerMm);
     toast.success(`Scale set: ${pixelsPerMm.toFixed(2)} pixels per mm`);
+    
+    // Remove the red measurement line
+    if (measureLine && fabricCanvas) {
+      fabricCanvas.remove(measureLine);
+    }
     
     setShowMeasureDialog(false);
     setMeasureStart(null);
