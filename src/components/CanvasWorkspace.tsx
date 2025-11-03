@@ -106,19 +106,30 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     };
   }, [imageUrl]);
 
-  // Prevent context menu on right-click over canvas AND container
+  // Prevent context menu and middle mouse button default behavior
   useEffect(() => {
     const canvasEl = canvasRef.current;
     const containerEl = containerRef.current;
     if (!canvasEl || !containerEl) return;
     
-    const handler = (e: MouseEvent) => e.preventDefault();
-    canvasEl.addEventListener("contextmenu", handler);
-    containerEl.addEventListener("contextmenu", handler);
+    const contextHandler = (e: MouseEvent) => e.preventDefault();
+    const mouseDownHandler = (e: MouseEvent) => {
+      // Prevent middle mouse button default scroll behavior
+      if (e.button === 1) {
+        e.preventDefault();
+      }
+    };
+    
+    canvasEl.addEventListener("contextmenu", contextHandler);
+    containerEl.addEventListener("contextmenu", contextHandler);
+    canvasEl.addEventListener("mousedown", mouseDownHandler);
+    containerEl.addEventListener("mousedown", mouseDownHandler);
     
     return () => {
-      canvasEl.removeEventListener("contextmenu", handler);
-      containerEl.removeEventListener("contextmenu", handler);
+      canvasEl.removeEventListener("contextmenu", contextHandler);
+      containerEl.removeEventListener("contextmenu", contextHandler);
+      canvasEl.removeEventListener("mousedown", mouseDownHandler);
+      containerEl.removeEventListener("mousedown", mouseDownHandler);
     };
   }, []);
 
