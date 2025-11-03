@@ -78,6 +78,13 @@ const Index = () => {
     setCurrentPageIndex(0);
   };
 
+  const handleSymbolPlaced = (symbolId: string) => {
+    setSymbols((prev) =>
+      prev.map((s) => (s.id === symbolId ? { ...s, count: s.count + 1 } : s))
+    );
+    // Keep symbol selected for multiple placements
+  };
+
   const handleExport = () => {
     toast.info("Export functionality coming soon!");
   };
@@ -175,6 +182,9 @@ const Index = () => {
             pageNumber={selectedPages[currentPageIndex] + 1}
             onExport={handleExport}
             onExtract={handleExtractCrop}
+            selectedSymbol={selectedSymbol}
+            onSymbolPlaced={handleSymbolPlaced}
+            onSymbolDeselect={() => setSelectedSymbol(null)}
           />
         </main>
 

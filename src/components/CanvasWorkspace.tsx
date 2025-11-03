@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Rect, Line, Image as FabricImage, FabricObject, Point } from "fabric";
+import { Canvas as FabricCanvas, Rect, Line, Image as FabricImage, FabricObject, Point, Circle, Path, Group } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,9 @@ interface CanvasWorkspaceProps {
   pageNumber: number;
   onExport: (canvas: FabricCanvas) => void;
   onExtract?: (dataUrl: string) => void;
+  selectedSymbol?: string | null;
+  onSymbolPlaced?: (symbolId: string) => void;
+  onSymbolDeselect?: () => void;
 }
 
 interface Position {
@@ -29,11 +32,11 @@ interface Position {
   y: number;
 }
 
-export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: CanvasWorkspaceProps) => {
+export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, selectedSymbol, onSymbolPlaced, onSymbolDeselect }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [mode, setMode] = useState<"select" | "crop" | "measure" | "erase">("select");
+  const [mode, setMode] = useState<"select" | "crop" | "measure" | "erase" | "place-symbol">("select");
   const [scale, setScale] = useState<number | null>(null);
   const [gridSize, setGridSize] = useState<string>("400");
   const [showGrid, setShowGrid] = useState(false);
@@ -61,6 +64,160 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
   // Right-click panning
   const isPanningRef = useRef(false);
   const lastPanPos = useRef<{ x: number; y: number } | null>(null);
+
+  // Helper function to snap to grid
+  const snapToGrid = (value: number, gridSpacing: number): number => {
+    if (!scale || !showGrid || gridSpacing <= 0) return value;
+    return Math.round(value / gridSpacing) * gridSpacing;
+  };
+
+  // Create symbol shape based on type
+  const createSymbol = (type: string, x: number, y: number): FabricObject | null => {
+    const size = 30;
+    const halfSize = size / 2;
+    
+    switch (type) {
+      case "light":
+        // Circle with cross
+        const lightCircle = new Circle({
+          radius: halfSize,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 2,
+        });
+        const lightLine1 = new Line([0, -halfSize, 0, halfSize], {
+          stroke: "#000",
+          strokeWidth: 2,
+        });
+        const lightLine2 = new Line([-halfSize, 0, halfSize, 0], {
+          stroke: "#000",
+          strokeWidth: 2,
+        });
+        const group = new Group([lightCircle, lightLine1, lightLine2], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (group as any).symbolType = type;
+        return group;
+        
+      case "power":
+        // Rectangle with parallel lines
+        const powerRect = new Rect({
+          width: size,
+          height: size,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 2,
+          originX: "center",
+          originY: "center",
+        });
+        const powerLine1 = new Line([-10, -10, -10, 10], {
+          stroke: "#000",
+          strokeWidth: 2,
+        });
+        const powerLine2 = new Line([10, -10, 10, 10], {
+          stroke: "#000",
+          strokeWidth: 2,
+        });
+        const powerGroup = new Group([powerRect, powerLine1, powerLine2], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (powerGroup as any).symbolType = type;
+        return powerGroup;
+        
+      case "switch":
+        // Line with angle
+        const switchLine = new Line([-halfSize, 0, 0, -halfSize], {
+          stroke: "#000",
+          strokeWidth: 3,
+        });
+        const switchBase = new Circle({
+          radius: 3,
+          fill: "#000",
+          left: -halfSize,
+          top: 0,
+          originX: "center",
+          originY: "center",
+        });
+        const switchGroup = new Group([switchLine, switchBase], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (switchGroup as any).symbolType = type;
+        return switchGroup;
+        
+      case "data":
+        // Diamond shape
+        const dataPath = new Path(
+          `M 0,${-halfSize} L ${halfSize},0 L 0,${halfSize} L ${-halfSize},0 Z`,
+          {
+            fill: "transparent",
+            stroke: "#000",
+            strokeWidth: 2,
+          }
+        );
+        const dataGroup = new Group([dataPath], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (dataGroup as any).symbolType = type;
+        return dataGroup;
+        
+      case "smoke":
+        // Triangle with exclamation
+        const smokePath = new Path(
+          `M 0,${-halfSize} L ${halfSize},${halfSize} L ${-halfSize},${halfSize} Z`,
+          {
+            fill: "transparent",
+            stroke: "#000",
+            strokeWidth: 2,
+          }
+        );
+        const smokeExclaim = new Path(`M 0,-5 L 0,5 M 0,10 L 0,12`, {
+          stroke: "#000",
+          strokeWidth: 2,
+        });
+        const smokeGroup = new Group([smokePath, smokeExclaim], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (smokeGroup as any).symbolType = type;
+        return smokeGroup;
+        
+      case "cable":
+        // Wavy line
+        const cablePath = new Path(
+          `M ${-halfSize},0 Q ${-halfSize / 2},-10 0,0 T ${halfSize},0`,
+          {
+            fill: "transparent",
+            stroke: "#000",
+            strokeWidth: 2,
+          }
+        );
+        const cableGroup = new Group([cablePath], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (cableGroup as any).symbolType = type;
+        return cableGroup;
+        
+      default:
+        return null;
+    }
+  };
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -536,11 +693,87 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
 
   // Reset mode to select
   useEffect(() => {
-    if (!fabricCanvas || mode === "crop" || mode === "measure" || mode === "erase") return;
+    if (!fabricCanvas || mode === "crop" || mode === "measure" || mode === "erase" || mode === "place-symbol") return;
     
     fabricCanvas.selection = true;
     fabricCanvas.defaultCursor = "default";
   }, [fabricCanvas, mode]);
+
+  // Switch to place-symbol mode when symbol selected
+  useEffect(() => {
+    if (selectedSymbol) {
+      setMode("place-symbol");
+      toast.info(`Click to place ${selectedSymbol}. Press ESC to cancel.`);
+    } else if (mode === "place-symbol") {
+      setMode("select");
+    }
+  }, [selectedSymbol]);
+
+  // Handle symbol placement
+  useEffect(() => {
+    if (!fabricCanvas || mode !== "place-symbol" || !selectedSymbol) return;
+
+    fabricCanvas.selection = false;
+    fabricCanvas.defaultCursor = "crosshair";
+
+    const handleMouseDown = (opt: any) => {
+      // Only respond to left-clicks
+      if (opt.e.button !== 0) return;
+
+      const pointer = fabricCanvas.getPointer(opt.e);
+      const gridSpacingPx = scale && showGrid ? parseFloat(gridSize) * scale : 0;
+      
+      // Snap to grid if enabled
+      const x = gridSpacingPx > 0 ? snapToGrid(pointer.x, gridSpacingPx) : pointer.x;
+      const y = gridSpacingPx > 0 ? snapToGrid(pointer.y, gridSpacingPx) : pointer.y;
+      
+      const symbol = createSymbol(selectedSymbol, x, y);
+      if (symbol) {
+        fabricCanvas.add(symbol);
+        fabricCanvas.setActiveObject(symbol);
+        fabricCanvas.renderAll();
+        saveCanvasState();
+        onSymbolPlaced?.(selectedSymbol);
+        toast.success(`${selectedSymbol} placed`);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onSymbolDeselect?.();
+        setMode("select");
+        toast.info("Symbol placement cancelled");
+      }
+    };
+
+    fabricCanvas.on("mouse:down", handleMouseDown);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      fabricCanvas.off("mouse:down", handleMouseDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [fabricCanvas, mode, selectedSymbol, scale, showGrid, gridSize]);
+
+  // Handle delete key for symbols
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === "Delete" || e.key === "Backspace") && fabricCanvas.getActiveObject()) {
+        const activeObj = fabricCanvas.getActiveObject();
+        if ((activeObj as any).symbolType) {
+          fabricCanvas.remove(activeObj);
+          fabricCanvas.renderAll();
+          saveCanvasState();
+          toast.success("Symbol deleted");
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [fabricCanvas]);
 
 
   const handleCrop = () => {
