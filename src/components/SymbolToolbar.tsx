@@ -17,9 +17,9 @@ interface SymbolToolbarProps {
 
 export const SymbolToolbar = ({ symbols, onSymbolSelect, selectedSymbol }: SymbolToolbarProps) => {
   return (
-    <Card className="p-3 sm:p-4 space-y-2">
-      <h3 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Symbols</h3>
-      <div className="flex flex-row md:flex-col gap-2 flex-wrap md:flex-nowrap">
+    <Card className="p-2 sm:p-3 space-y-2">
+      <h3 className="font-semibold mb-2 text-xs sm:text-sm text-foreground">Symbols</h3>
+      <div className="flex flex-row md:flex-col gap-1 sm:gap-2 flex-wrap md:flex-nowrap">
         {symbols.map((symbol) => (
           <Button
             key={symbol.id}

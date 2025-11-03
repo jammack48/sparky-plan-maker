@@ -181,40 +181,38 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b border-border bg-card px-3 sm:px-6 py-3 sm:py-4 shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <h1 className="text-lg sm:text-2xl font-bold text-foreground">SparkyMate</h1>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousPage}
-                disabled={currentPageIndex === 0}
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                ← Previous
-              </Button>
-              <span className="text-xs sm:text-sm text-muted-foreground px-1 sm:px-2 whitespace-nowrap">
-                Page {currentPageIndex + 1} of {selectedPages.length}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextPage}
-                disabled={currentPageIndex === selectedPages.length - 1}
-                className="text-xs sm:text-sm px-2 sm:px-3"
-              >
-                Next →
-              </Button>
-            </div>
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <header className="border-b border-border bg-card px-2 sm:px-4 py-2 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-base sm:text-xl font-bold text-foreground whitespace-nowrap">SparkyMate</h1>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousPage}
+              disabled={currentPageIndex === 0}
+              className="text-xs px-2 py-1 h-7"
+            >
+              ← Prev
+            </Button>
+            <span className="text-xs text-muted-foreground px-1 whitespace-nowrap">
+              {currentPageIndex + 1}/{selectedPages.length}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={currentPageIndex === selectedPages.length - 1}
+              className="text-xs px-2 py-1 h-7"
+            >
+              Next →
+            </Button>
           </div>
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row flex-1 min-h-0">
-        <main className="flex-1 p-2 sm:p-4 md:p-6 min-h-0">
+      <div className="flex flex-col-reverse md:flex-row flex-1 min-h-0 overflow-hidden">
+        <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
           <CanvasWorkspace
             imageUrl={pdfPages[selectedPages[currentPageIndex]]}
             pageNumber={selectedPages[currentPageIndex] + 1}
@@ -226,12 +224,14 @@ const Index = () => {
           />
         </main>
 
-        <aside className="w-full md:w-48 lg:w-64 border-t md:border-t-0 md:border-l border-border bg-card p-3 md:p-4 shrink-0 max-h-48 md:max-h-none overflow-y-auto md:overflow-y-visible">
-          <SymbolToolbar
-            symbols={symbols}
-            onSymbolSelect={setSelectedSymbol}
-            selectedSymbol={selectedSymbol}
-          />
+        <aside className="w-full md:w-48 lg:w-56 border-t md:border-t-0 md:border-l border-border bg-card shrink-0 overflow-hidden">
+          <div className="h-full overflow-y-auto p-2 sm:p-3">
+            <SymbolToolbar
+              symbols={symbols}
+              onSymbolSelect={setSelectedSymbol}
+              selectedSymbol={selectedSymbol}
+            />
+          </div>
         </aside>
       </div>
     </div>

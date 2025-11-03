@@ -662,8 +662,8 @@ export const CanvasWorkspace = ({
   }, [gridUpdateTrigger, gridSpacing, gridOffset, bgScale, scale, fabricCanvas, gridSize]);
 
   return (
-    <div className="flex gap-2 sm:gap-4 h-full">
-      <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="shrink-0">
         <CanvasToolbar
           mode={mode}
           scale={scale}
@@ -687,21 +687,21 @@ export const CanvasWorkspace = ({
           onRedo={handleRedo}
           onExport={() => fabricCanvas && onExport(fabricCanvas)}
         />
+      </div>
 
-          <div 
-            ref={containerRef}
-            className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center relative touch-none"
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            <canvas ref={canvasRef} className="touch-none select-none block" onContextMenu={(e) => e.preventDefault()} />
-            <GridOverlay
-              showGrid={showGrid}
-              gridSpacing={gridSpacing}
-              gridOffset={gridOffset}
-              gridLineColor={gridLineColor}
-              gridLineThickness={gridLineThickness}
-            />
-        </div>
+      <div 
+        ref={containerRef}
+        className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center relative touch-none min-h-0"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <canvas ref={canvasRef} className="touch-none select-none block" onContextMenu={(e) => e.preventDefault()} />
+        <GridOverlay
+          showGrid={showGrid}
+          gridSpacing={gridSpacing}
+          gridOffset={gridOffset}
+          gridLineColor={gridLineColor}
+          gridLineThickness={gridLineThickness}
+        />
       </div>
 
       <CanvasDialogs
