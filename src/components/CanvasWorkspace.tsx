@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import * as fabric from "fabric";
 import { Canvas as FabricCanvas, Rect, Line, Image as FabricImage, FabricObject, Point, Circle, Path, Group } from "fabric";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2 } from "lucide-react";
+import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -44,6 +45,11 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   const [showGrid, setShowGrid] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
+  
+  // Grid appearance
+  const [gridColor, setGridColor] = useState<string>("#505050");
+  const [gridThickness, setGridThickness] = useState<number>(1);
+  const [gridOpacity, setGridOpacity] = useState<number>(0.5);
   
   // Crop state
   const [cropStart, setCropStart] = useState<Position | null>(null);
@@ -1040,7 +1046,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   // Recalculates on every render (triggered by gridUpdateTrigger changes during pan/zoom)
   const gridSpacing = (() => {
     if (!scale || !showGrid || !fabricCanvas) return 0;
-    const baseSpacing = parseFloat(gridSize) * scale; // world units
+    const baseSpacing = parseFloat(gridSize) * scale * bgScale; // world units incl. background scale
     const vpt = fabricCanvas.viewportTransform;
     if (!vpt) return 0;
     // Apply zoom from viewport transform (world spacing -> screen px)
@@ -1052,13 +1058,31 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     if (!scale || !showGrid || !fabricCanvas) return { x: 0, y: 0 };
     const vpt = fabricCanvas.viewportTransform;
     if (!vpt) return { x: 0, y: 0 };
-    const baseSpacing = parseFloat(gridSize) * scale; // world units
+    const baseSpacing = parseFloat(gridSize) * scale * bgScale; // world units incl. background scale
     const spacingPx = baseSpacing * vpt[0];
     if (spacingPx <= 0) return { x: 0, y: 0 };
     const x = ((-vpt[4]) % spacingPx + spacingPx) % spacingPx;
     const y = ((-vpt[5]) % spacingPx + spacingPx) % spacingPx;
     return { x, y };
   })();
+
+  // Grid color helpers
+  const hexToRgba = (hex: string, alpha: number) => {
+    try {
+      let h = hex.replace('#', '');
+      if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+      const num = parseInt(h, 16);
+      const r = (num >> 16) & 255;
+      const g = (num >> 8) & 255;
+      const b = num & 255;
+      const a = Math.max(0, Math.min(1, alpha));
+      return `rgba(${r}, ${g}, ${b}, ${a})`;
+    } catch {
+      return `rgba(80,80,80,${Math.max(0, Math.min(1, alpha))})`;
+    }
+  };
+  const gridLineColor = hexToRgba(gridColor, gridOpacity);
+  const gridLineThickness = `${Math.max(1, Math.round(gridThickness))}px`;
 
   return (
     <div className="flex gap-4 h-full">
@@ -1098,6 +1122,50 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
               <Grid3x3 className="w-4 h-4 mr-2" />
               Grid
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={!scale} aria-label="Grid settings">
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="z-50 w-64">
+                <div className="p-2 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-sm">Color</Label>
+                    <input
+                      type="color"
+                      value={gridColor}
+                      onChange={(e) => setGridColor(e.target.value)}
+                      className="h-8 w-12 border rounded bg-background"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-sm">Thickness (px)</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={8}
+                      value={gridThickness}
+                      onChange={(e) => setGridThickness(Number(e.target.value))}
+                      className="w-24"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-sm">Opacity</Label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={gridOpacity}
+                      onChange={(e) => setGridOpacity(Number(e.target.value))}
+                      className="w-32"
+                    />
+                    <span className="text-xs text-muted-foreground w-8 text-right">{Math.round(gridOpacity * 100)}%</span>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {showGrid && (
               <div className="flex items-center gap-2 ml-4">
                 <Label htmlFor="gridSize" className="text-sm whitespace-nowrap">
@@ -1161,8 +1229,8 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
               className="absolute inset-0 pointer-events-none"
               style={{
                 backgroundImage: `
-                  repeating-linear-gradient(to right, rgba(80,80,80,0.5) 0, rgba(80,80,80,0.5) 1px, transparent 1px, transparent ${gridSpacing}px),
-                  repeating-linear-gradient(to bottom, rgba(80,80,80,0.5) 0, rgba(80,80,80,0.5) 1px, transparent 1px, transparent ${gridSpacing}px)
+                  repeating-linear-gradient(to right, ${gridLineColor} 0, ${gridLineColor} ${gridLineThickness}, transparent ${gridLineThickness}, transparent ${gridSpacing}px),
+                  repeating-linear-gradient(to bottom, ${gridLineColor} 0, ${gridLineColor} ${gridLineThickness}, transparent ${gridLineThickness}, transparent ${gridSpacing}px)
                 `,
                 backgroundSize: `${gridSpacing}px ${gridSpacing}px`,
                 backgroundPosition: `${gridOffset.x}px ${gridOffset.y}px`,
