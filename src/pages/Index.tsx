@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
-import { PdfUpload } from "@/components/PdfUpload";
+import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOLS } from "@/components/SymbolToolbar";
@@ -17,37 +17,52 @@ const Index = () => {
   const [symbols, setSymbols] = useState(DEFAULT_SYMBOLS);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
 
-  const handlePdfLoad = async (file: File) => {
+  const handleFileLoad = async (file: File) => {
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await getDocument({ data: arrayBuffer }).promise;
-      const pagePromises = [];
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        pagePromises.push(
-          pdf.getPage(i).then(async (page) => {
-            const viewport = page.getViewport({ scale: 1 });
-            const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d");
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            await page.render({
-              canvasContext: context!,
-              viewport: viewport,
-              canvas: canvas,
-            }).promise;
-
-            return canvas.toDataURL();
-          })
-        );
+      // Handle image files
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          setPdfPages([dataUrl]);
+          toast.success("Image loaded successfully");
+        };
+        reader.readAsDataURL(file);
+        return;
       }
 
-      const pages = await Promise.all(pagePromises);
-      setPdfPages(pages);
-      toast.success(`Loaded ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+      // Handle PDF files
+      if (file.type === "application/pdf") {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await getDocument({ data: arrayBuffer }).promise;
+        const pagePromises = [];
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          pagePromises.push(
+            pdf.getPage(i).then(async (page) => {
+              const viewport = page.getViewport({ scale: 1 });
+              const canvas = document.createElement("canvas");
+              const context = canvas.getContext("2d");
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+
+              await page.render({
+                canvasContext: context!,
+                viewport: viewport,
+                canvas: canvas,
+              }).promise;
+
+              return canvas.toDataURL();
+            })
+          );
+        }
+
+        const pages = await Promise.all(pagePromises);
+        setPdfPages(pages);
+        toast.success(`Loaded ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+      }
     } catch (error) {
-      toast.error("Failed to load PDF");
+      toast.error("Failed to load file");
       console.error(error);
     }
   };
@@ -69,7 +84,7 @@ const Index = () => {
             <h1 className="text-4xl font-bold mb-2 text-foreground">SparkyMate</h1>
             <p className="text-muted-foreground">Floor Plan Markup Tool for Electricians</p>
           </div>
-          <PdfUpload onPdfLoad={handlePdfLoad} />
+          <FileUpload onFileLoad={handleFileLoad} />
         </div>
       </div>
     );
