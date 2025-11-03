@@ -67,9 +67,9 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   const lastPanPos = useRef<{ x: number; y: number } | null>(null);
 
   // Helper function to snap to grid
-  const snapToGrid = (value: number, gridSpacing: number): number => {
+  const snapToGrid = (value: number, gridSpacing: number, offset: number = 0): number => {
     if (!scale || !showGrid || gridSpacing <= 0) return value;
-    return Math.round(value / gridSpacing) * gridSpacing;
+    return Math.round((value - offset) / gridSpacing) * gridSpacing + offset;
   };
 
   // Create symbol shape based on type
@@ -731,8 +731,17 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       
       // Snap to grid intersection unless Control is held down
       if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-        x = snapToGrid(pointer.x, gridSpacingPx);
-        y = snapToGrid(pointer.y, gridSpacingPx);
+        const vpt = fabricCanvas.viewportTransform;
+        if (vpt) {
+          const spacingInScreenPx = gridSpacingPx * vpt[0];
+          const gridOffsetX = ((-vpt[4]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
+          const gridOffsetY = ((-vpt[5]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
+          const canvasOffsetX = -gridOffsetX / vpt[0];
+          const canvasOffsetY = -gridOffsetY / vpt[0];
+          
+          x = snapToGrid(pointer.x, gridSpacingPx, canvasOffsetX);
+          y = snapToGrid(pointer.y, gridSpacingPx, canvasOffsetY);
+        }
       }
       
       // Remove old preview
@@ -764,8 +773,17 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       
       // Snap to grid intersection unless Control is held down
       if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-        x = snapToGrid(pointer.x, gridSpacingPx);
-        y = snapToGrid(pointer.y, gridSpacingPx);
+        const vpt = fabricCanvas.viewportTransform;
+        if (vpt) {
+          const spacingInScreenPx = gridSpacingPx * vpt[0];
+          const gridOffsetX = ((-vpt[4]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
+          const gridOffsetY = ((-vpt[5]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
+          const canvasOffsetX = -gridOffsetX / vpt[0];
+          const canvasOffsetY = -gridOffsetY / vpt[0];
+          
+          x = snapToGrid(pointer.x, gridSpacingPx, canvasOffsetX);
+          y = snapToGrid(pointer.y, gridSpacingPx, canvasOffsetY);
+        }
       }
       
       // Remove preview
@@ -817,16 +835,26 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     if (!fabricCanvas) return;
 
     const handleMoving = (e: any) => {
-      if (!scale || !showGrid) return;
+      if (!scale || !showGrid || !fabricCanvas) return;
       const obj = e.target as FabricObject | undefined;
       if (!obj || !(obj as any).symbolType) return;
       const spacing = parseFloat(gridSize) * scale;
       if (!spacing) return;
+      
+      const vpt = fabricCanvas.viewportTransform;
+      if (!vpt) return;
+      
+      const spacingInScreenPx = spacing * vpt[0];
+      const gridOffsetX = ((-vpt[4]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
+      const gridOffsetY = ((-vpt[5]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
+      const canvasOffsetX = -gridOffsetX / vpt[0];
+      const canvasOffsetY = -gridOffsetY / vpt[0];
+      
       const left = obj.left ?? 0;
       const top = obj.top ?? 0;
       obj.set({
-        left: snapToGrid(left, spacing),
-        top: snapToGrid(top, spacing),
+        left: snapToGrid(left, spacing, canvasOffsetX),
+        top: snapToGrid(top, spacing, canvasOffsetY),
       });
     };
 
