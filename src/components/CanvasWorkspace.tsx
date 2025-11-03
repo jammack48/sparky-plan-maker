@@ -397,6 +397,69 @@ export const CanvasWorkspace = ({
     };
   }, [fabricCanvas]);
 
+  // Touch panning (single finger)
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const upperCanvas = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
+    if (!upperCanvas) return;
+
+    let isTouchPanning = false;
+    let lastTouchPos: { x: number; y: number } | null = null;
+    let touchStartTime = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1 && mode === "select") {
+        touchStartTime = Date.now();
+        lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        
+        // Start panning after a short delay to distinguish from tap
+        setTimeout(() => {
+          if (lastTouchPos && Date.now() - touchStartTime >= 100) {
+            isTouchPanning = true;
+            fabricCanvas.setCursor("grabbing");
+            fabricCanvas.selection = false;
+          }
+        }, 100);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1 && isTouchPanning && lastTouchPos) {
+        e.preventDefault();
+        
+        const dx = e.touches[0].clientX - lastTouchPos.x;
+        const dy = e.touches[0].clientY - lastTouchPos.y;
+        lastTouchPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        
+        fabricCanvas.relativePan(new Point(dx, dy));
+        fabricCanvas.requestRenderAll();
+        setGridUpdateTrigger((prev) => prev + 1);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (isTouchPanning) {
+        isTouchPanning = false;
+        lastTouchPos = null;
+        fabricCanvas.setCursor("default");
+        fabricCanvas.selection = true;
+      }
+    };
+
+    upperCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    upperCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    upperCanvas.addEventListener('touchend', handleTouchEnd);
+    upperCanvas.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      upperCanvas.removeEventListener('touchstart', handleTouchStart);
+      upperCanvas.removeEventListener('touchmove', handleTouchMove);
+      upperCanvas.removeEventListener('touchend', handleTouchEnd);
+      upperCanvas.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [fabricCanvas, mode]);
+
   // Reset mode to select
   useEffect(() => {
     if (!fabricCanvas || mode === "crop" || mode === "measure" || mode === "erase" || mode === "place-symbol") return;
