@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import * as fabric from "fabric";
 import { Canvas as FabricCanvas, Rect, Line, Image as FabricImage, FabricObject, Point, Circle, Path, Group } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,10 +67,19 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   const isPanningRef = useRef(false);
   const lastPanPos = useRef<{ x: number; y: number } | null>(null);
 
-  // Helper function to snap to grid
-  const snapToGrid = (value: number, gridSpacing: number, offset: number = 0): number => {
-    if (!scale || !showGrid || gridSpacing <= 0) return value;
-    return Math.round((value - offset) / gridSpacing) * gridSpacing + offset;
+  // Helper transforms: canvas coordinates <-> world coordinates
+  // Use Fabric's utilities for robust coordinate conversion under viewport transforms
+  const canvasToWorld = (pt: { x: number; y: number }) => {
+    const vpt = fabricCanvas?.viewportTransform;
+    if (!vpt || !(fabric as any)?.util) return pt;
+    const inv = (fabric as any).util.invertTransform(vpt);
+    return (fabric as any).util.transformPoint(pt, inv);
+  };
+
+  const worldToCanvas = (pt: { x: number; y: number }) => {
+    const vpt = fabricCanvas?.viewportTransform;
+    if (!vpt || !(fabric as any)?.util) return pt;
+    return (fabric as any).util.transformPoint(pt, vpt);
   };
 
   // Create symbol shape based on type
@@ -731,17 +741,16 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       
       // Snap to grid intersection unless Control is held down
       if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-        const vpt = fabricCanvas.viewportTransform;
-        if (vpt) {
-          const spacingInScreenPx = gridSpacingPx * vpt[0];
-          const gridOffsetX = ((-vpt[4]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
-          const gridOffsetY = ((-vpt[5]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
-          const canvasOffsetX = -gridOffsetX / vpt[0];
-          const canvasOffsetY = -gridOffsetY / vpt[0];
-          
-          x = snapToGrid(pointer.x, gridSpacingPx, canvasOffsetX);
-          y = snapToGrid(pointer.y, gridSpacingPx, canvasOffsetY);
-        }
+        // Convert canvas coords to world units, snap there, convert back to canvas coords
+        const worldPoint = canvasToWorld({ x: pointer.x, y: pointer.y });
+        const gridSizeWorld = parseFloat(gridSize);
+        const snappedWorld = {
+          x: Math.round(worldPoint.x / gridSizeWorld) * gridSizeWorld,
+          y: Math.round(worldPoint.y / gridSizeWorld) * gridSizeWorld,
+        };
+        const snappedCanvas = worldToCanvas(snappedWorld);
+        x = snappedCanvas.x;
+        y = snappedCanvas.y;
       }
       
       // Remove old preview
@@ -773,17 +782,16 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       
       // Snap to grid intersection unless Control is held down
       if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-        const vpt = fabricCanvas.viewportTransform;
-        if (vpt) {
-          const spacingInScreenPx = gridSpacingPx * vpt[0];
-          const gridOffsetX = ((-vpt[4]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
-          const gridOffsetY = ((-vpt[5]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
-          const canvasOffsetX = -gridOffsetX / vpt[0];
-          const canvasOffsetY = -gridOffsetY / vpt[0];
-          
-          x = snapToGrid(pointer.x, gridSpacingPx, canvasOffsetX);
-          y = snapToGrid(pointer.y, gridSpacingPx, canvasOffsetY);
-        }
+        // Convert canvas coords to world units, snap there, convert back to canvas coords
+        const worldPoint = canvasToWorld({ x: pointer.x, y: pointer.y });
+        const gridSizeWorld = parseFloat(gridSize);
+        const snappedWorld = {
+          x: Math.round(worldPoint.x / gridSizeWorld) * gridSizeWorld,
+          y: Math.round(worldPoint.y / gridSizeWorld) * gridSizeWorld,
+        };
+        const snappedCanvas = worldToCanvas(snappedWorld);
+        x = snappedCanvas.x;
+        y = snappedCanvas.y;
       }
       
       // Remove preview
@@ -838,23 +846,22 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       if (!scale || !showGrid || !fabricCanvas) return;
       const obj = e.target as FabricObject | undefined;
       if (!obj || !(obj as any).symbolType) return;
-      const spacing = parseFloat(gridSize) * scale;
-      if (!spacing) return;
       
-      const vpt = fabricCanvas.viewportTransform;
-      if (!vpt) return;
-      
-      const spacingInScreenPx = spacing * vpt[0];
-      const gridOffsetX = ((-vpt[4]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
-      const gridOffsetY = ((-vpt[5]) % spacingInScreenPx + spacingInScreenPx) % spacingInScreenPx;
-      const canvasOffsetX = -gridOffsetX / vpt[0];
-      const canvasOffsetY = -gridOffsetY / vpt[0];
-      
+      // Convert object's canvas coords to world coords, snap in world units, convert back
       const left = obj.left ?? 0;
       const top = obj.top ?? 0;
+      
+      const worldPos = canvasToWorld({ x: left, y: top });
+      const gridSizeWorld = parseFloat(gridSize);
+      const snappedWorld = {
+        x: Math.round(worldPos.x / gridSizeWorld) * gridSizeWorld,
+        y: Math.round(worldPos.y / gridSizeWorld) * gridSizeWorld,
+      };
+      const snappedCanvas = worldToCanvas(snappedWorld);
+      
       obj.set({
-        left: snapToGrid(left, spacing, canvasOffsetX),
-        top: snapToGrid(top, spacing, canvasOffsetY),
+        left: snappedCanvas.x,
+        top: snappedCanvas.y,
       });
     };
 
