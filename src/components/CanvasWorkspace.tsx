@@ -1005,18 +1005,9 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     return baseSpacing * vpt[0];
   })();
 
-  // Calculate grid offset based on viewport pan
-  // The offset needs to be modulo grid spacing to properly align the repeating pattern
-  const gridOffset = (() => {
-    if (!fabricCanvas || gridSpacing <= 0) return { x: 0, y: 0 };
-    const vpt = fabricCanvas.viewportTransform;
-    if (!vpt) return { x: 0, y: 0 };
-    // Use modulo to keep offset within one grid square for proper repeating pattern
-    return { 
-      x: vpt[4] % gridSpacing, 
-      y: vpt[5] % gridSpacing 
-    };
-  })();
+  // Grid stays fixed on screen when panning (offset is always 0)
+  // This allows images to be aligned to the grid
+  const gridOffset = { x: 0, y: 0 };
 
   return (
     <div className="flex gap-4 h-full">
