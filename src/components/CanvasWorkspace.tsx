@@ -803,7 +803,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
 
       let baseSpacing = null as number | null;
       if (showGrid && scale && bgScale) {
-        baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
+        baseSpacing = parseFloat(gridSize) * (scale ?? 1);
       }
       console.log("[PREVIEW] Grid snap values:", {
         gridSize: parseFloat(gridSize),
@@ -850,7 +850,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       const pointer = fabricCanvas.getPointer(opt.e);
       let left = pointer.x;
       let top = pointer.y;
-      const baseSpacing = showGrid && scale && bgScale ? parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1) : null;
+      const baseSpacing = showGrid && scale && bgScale ? parseFloat(gridSize) * (scale ?? 1) : null;
       console.log("[PLACE] Symbol placement:", {
         gridSize: parseFloat(gridSize),
         scale,
@@ -926,7 +926,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       const obj = e.target as FabricObject | undefined;
       if (!obj || !(obj as any).symbolType) return;
       
-      const baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
+      const baseSpacing = parseFloat(gridSize) * (scale ?? 1);
       if (!baseSpacing) return;
 
       const left = obj.left ?? 0;
