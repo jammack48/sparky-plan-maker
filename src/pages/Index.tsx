@@ -16,8 +16,10 @@ const Index = () => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [symbols, setSymbols] = useState(DEFAULT_SYMBOLS);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileLoad = async (file: File) => {
+    setIsLoading(true);
     try {
       // Handle image files
       if (file.type.startsWith("image/")) {
@@ -25,6 +27,7 @@ const Index = () => {
         reader.onload = (e) => {
           const dataUrl = e.target?.result as string;
           setPdfPages([dataUrl]);
+          setIsLoading(false);
           toast.success("Image loaded successfully");
         };
         reader.readAsDataURL(file);
@@ -59,9 +62,11 @@ const Index = () => {
 
         const pages = await Promise.all(pagePromises);
         setPdfPages(pages);
+        setIsLoading(false);
         toast.success(`Loaded ${pages.length} page${pages.length > 1 ? "s" : ""}`);
       }
     } catch (error) {
+      setIsLoading(false);
       toast.error("Failed to load file");
       console.error(error);
     }
@@ -99,7 +104,7 @@ const Index = () => {
             <h1 className="text-4xl font-bold mb-2 text-foreground">SparkyMate</h1>
             <p className="text-muted-foreground">Floor Plan Markup Tool for Electricians</p>
           </div>
-          <FileUpload onFileLoad={handleFileLoad} />
+          <FileUpload onFileLoad={handleFileLoad} isLoading={isLoading} />
         </div>
       </div>
     );

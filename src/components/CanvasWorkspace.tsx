@@ -21,6 +21,7 @@ interface CanvasWorkspaceProps {
   imageUrl: string;
   pageNumber: number;
   onExport: (canvas: FabricCanvas) => void;
+  onExtract?: (dataUrl: string) => void;
 }
 
 interface Position {
