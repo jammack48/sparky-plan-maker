@@ -70,6 +70,10 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       backgroundColor: "#ffffff",
     });
 
+    // Enable Fabric right-click events and prevent context menu
+    (canvas as any).fireRightClick = true;
+    (canvas as any).stopContextMenu = true;
+
     FabricImage.fromURL(imageUrl).then((img) => {
       const scale = Math.min(800 / img.width!, 600 / img.height!);
       img.scale(scale);
@@ -186,8 +190,6 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
         fabricCanvas.setCursor("grabbing");
         fabricCanvas.selection = false;
         fabricCanvas.skipTargetFind = true;
-        e.preventDefault();
-        e.stopPropagation();
       }
     };
 
@@ -200,22 +202,13 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       const dy = e.clientY - lastPanPos.current.y;
       lastPanPos.current = { x: e.clientX, y: e.clientY };
       
-      // Direct viewport transform manipulation
-      const vpt = fabricCanvas.viewportTransform;
-      if (vpt) {
-        vpt[4] += dx;
-        vpt[5] += dy;
-        fabricCanvas.setViewportTransform(vpt);
-        fabricCanvas.requestRenderAll();
-      }
-      
-      e.preventDefault();
-      e.stopPropagation();
+      // Use Fabric's relativePan for zoom-aware panning
+      fabricCanvas.relativePan(new Point(dx, dy));
+      fabricCanvas.requestRenderAll();
     };
 
-    const handleMouseUp = (opt: any) => {
-      const e = opt.e as MouseEvent;
-      if (e.button === 2 && isPanningRef.current) {
+    const handleMouseUp = () => {
+      if (isPanningRef.current) {
         isPanningRef.current = false;
         lastPanPos.current = null;
         fabricCanvas.setCursor("default");
@@ -225,8 +218,8 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     };
 
     // Document-level mouseup for reliability
-    const handleDocMouseUp = (e: MouseEvent) => {
-      if (e.button === 2 && isPanningRef.current) {
+    const handleDocMouseUp = () => {
+      if (isPanningRef.current) {
         isPanningRef.current = false;
         lastPanPos.current = null;
         fabricCanvas.setCursor("default");
@@ -419,7 +412,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       fabricCanvas.renderAll();
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = async () => {
       if (!eraseStart || !eraseRect) return;
       
       // Snap to integer pixels to avoid anti-aliased seams
@@ -437,13 +430,10 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
         scaleX: 1,
         scaleY: 1,
         opacity: 1,
-        selectable: true,
-        evented: true,
-        objectCaching: false, // Prevent rendering artifacts
       });
       
-      fabricCanvas.renderAll();
-      saveCanvasState(fabricCanvas);
+      // Flatten the erase rect into the background image
+      await flattenEraseRect(eraseRect);
       
       setEraseStart(null);
       setEraseRect(null);
@@ -589,6 +579,58 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     }
   };
 
+  // Flatten erase rectangle into the background image to eliminate seams
+  const flattenEraseRect = async (rect: Rect) => {
+    if (!fabricCanvas) return;
+    
+    const bg = fabricCanvas.backgroundImage as FabricImage;
+    if (!bg) return;
+    
+    // Create offscreen canvas sized to original image
+    const offCanvas = document.createElement('canvas');
+    const bgWidth = bg.width ?? 0;
+    const bgHeight = bg.height ?? 0;
+    offCanvas.width = bgWidth;
+    offCanvas.height = bgHeight;
+    const ctx = offCanvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Draw current background
+    const bgElement = bg.getElement();
+    ctx.drawImage(bgElement, 0, 0);
+    
+    // Map erase rect from canvas coords to image pixel coords
+    const bgLeft = bg.left ?? 0;
+    const bgTop = bg.top ?? 0;
+    const bgScaleX = bg.scaleX ?? 1;
+    const bgScaleY = bg.scaleY ?? 1;
+    
+    const x = Math.max(0, Math.round((rect.left! - bgLeft) / bgScaleX));
+    const y = Math.max(0, Math.round((rect.top! - bgTop) / bgScaleY));
+    const w = Math.max(0, Math.round((rect.width! * (rect.scaleX ?? 1)) / bgScaleX));
+    const h = Math.max(0, Math.round((rect.height! * (rect.scaleY ?? 1)) / bgScaleY));
+    
+    // Draw white rectangle on image
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x, y, w, h);
+    
+    // Create new background from modified image
+    const newDataUrl = offCanvas.toDataURL('image/png');
+    const newImg = await FabricImage.fromURL(newDataUrl);
+    newImg.set({
+      scaleX: bgScaleX,
+      scaleY: bgScaleY,
+      left: bgLeft,
+      top: bgTop,
+    });
+    
+    // Replace background and remove the rect object
+    fabricCanvas.backgroundImage = newImg;
+    fabricCanvas.remove(rect);
+    fabricCanvas.renderAll();
+    saveCanvasState(fabricCanvas);
+  };
+
   // Calculate grid spacing for CSS overlay
   const gridSpacing = scale && showGrid ? parseFloat(gridSize) * scale * zoomLevel : 0;
 
@@ -684,8 +726,9 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
         <div 
           ref={containerRef}
           className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center relative"
+          onContextMenu={(e) => e.preventDefault()}
         >
-          <canvas ref={canvasRef} />
+          <canvas ref={canvasRef} onContextMenu={(e) => e.preventDefault()} />
           {/* Fixed grid overlay */}
           {showGrid && gridSpacing > 0 && (
             <div
