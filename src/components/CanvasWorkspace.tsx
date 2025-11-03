@@ -106,32 +106,78 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     };
   }, [imageUrl]);
 
-  // Prevent context menu and middle mouse button default behavior
+  // Prevent context menu
   useEffect(() => {
     const canvasEl = canvasRef.current;
     const containerEl = containerRef.current;
     if (!canvasEl || !containerEl) return;
     
     const contextHandler = (e: MouseEvent) => e.preventDefault();
-    const mouseDownHandler = (e: MouseEvent) => {
-      // Prevent middle mouse button default scroll behavior
-      if (e.button === 1) {
-        e.preventDefault();
-      }
-    };
     
     canvasEl.addEventListener("contextmenu", contextHandler);
     containerEl.addEventListener("contextmenu", contextHandler);
-    canvasEl.addEventListener("mousedown", mouseDownHandler);
-    containerEl.addEventListener("mousedown", mouseDownHandler);
     
     return () => {
       canvasEl.removeEventListener("contextmenu", contextHandler);
       containerEl.removeEventListener("contextmenu", contextHandler);
-      canvasEl.removeEventListener("mousedown", mouseDownHandler);
-      containerEl.removeEventListener("mousedown", mouseDownHandler);
     };
   }, []);
+
+  // Diagnostic logging and middle mouse button prevention on upperCanvasEl
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const upperCanvas = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
+    if (!upperCanvas) return;
+
+    const mouseDownHandler = (e: MouseEvent) => {
+      console.log('[UPPER] mousedown', {
+        button: e.button,
+        buttons: e.buttons,
+        which: (e as any).which,
+        type: e.type
+      });
+      if (e.button === 1) {
+        console.log('[UPPER] Preventing middle button default');
+        e.preventDefault();
+      }
+    };
+
+    const auxClickHandler = (e: MouseEvent) => {
+      console.log('[UPPER] auxclick', {
+        button: e.button,
+        buttons: e.buttons,
+        which: (e as any).which,
+        type: e.type
+      });
+      if (e.button === 1) {
+        e.preventDefault();
+      }
+    };
+
+    const pointerDownHandler = (e: PointerEvent) => {
+      console.log('[UPPER] pointerdown', {
+        button: e.button,
+        buttons: e.buttons,
+        which: (e as any).which,
+        type: e.type,
+        pointerType: e.pointerType
+      });
+      if (e.button === 1) {
+        e.preventDefault();
+      }
+    };
+
+    upperCanvas.addEventListener('mousedown', mouseDownHandler);
+    upperCanvas.addEventListener('auxclick', auxClickHandler);
+    upperCanvas.addEventListener('pointerdown', pointerDownHandler);
+
+    return () => {
+      upperCanvas.removeEventListener('mousedown', mouseDownHandler);
+      upperCanvas.removeEventListener('auxclick', auxClickHandler);
+      upperCanvas.removeEventListener('pointerdown', pointerDownHandler);
+    };
+  }, [fabricCanvas]);
 
   // Save canvas state for undo/redo
   const saveCanvasState = (canvas?: FabricCanvas) => {
@@ -195,8 +241,21 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
-      // Button 1 = middle, Button 2 = right
-      if (e.button === 1 || e.button === 2) {
+      
+      // Robust detection: right-click OR middle-click
+      const isRight = e.button === 2;
+      const isMiddle = e.button === 1 || (e as any).which === 2 || (e.buttons & 4) !== 0;
+      
+      console.log('[FABRIC] mouse:down', {
+        button: e.button,
+        buttons: e.buttons,
+        which: (e as any).which,
+        isRight,
+        isMiddle
+      });
+      
+      if (isRight || isMiddle) {
+        console.log('[FABRIC] Starting pan');
         isPanningRef.current = true;
         lastPanPos.current = { x: e.clientX, y: e.clientY };
         fabricCanvas.setCursor("grabbing");
