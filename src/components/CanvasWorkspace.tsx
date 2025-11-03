@@ -42,7 +42,6 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   const [showGrid, setShowGrid] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
-  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
   
   // Crop state
   const [cropStart, setCropStart] = useState<Position | null>(null);
@@ -243,49 +242,14 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       saveCanvasState(canvas);
     });
 
-    // Mouse wheel zoom with grid phase preservation
+    // Mouse wheel zoom
     const handleWheel = (opt: any) => {
       const delta = opt.e.deltaY;
-      const oldZoom = canvas.getZoom();
-      const vpt = canvas.viewportTransform;
-      if (!vpt) return;
-      
-      // Calculate old grid spacing and phase
-      const baseSpacing = parseFloat(gridSize) * (scale || 1);
-      const oldSpacingPx = baseSpacing * oldZoom;
-      const oldE = vpt[4];
-      const oldF = vpt[5];
-      
-      // Calculate fractional phase (where canvas origin is relative to grid)
-      let fracX = 0;
-      let fracY = 0;
-      if (oldSpacingPx > 0 && showGrid && scale) {
-        fracX = ((oldE - gridOffset.x) / oldSpacingPx) % 1;
-        fracY = ((oldF - gridOffset.y) / oldSpacingPx) % 1;
-        if (fracX < 0) fracX += 1;
-        if (fracY < 0) fracY += 1;
-      }
-      
-      // Apply zoom
-      let zoom = oldZoom * (0.999 ** delta);
+      let zoom = canvas.getZoom();
+      zoom *= 0.999 ** delta;
       if (zoom > 5) zoom = 5;
       if (zoom < 0.1) zoom = 0.1;
       canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
-      
-      // Calculate new grid spacing and viewport position
-      const newVpt = canvas.viewportTransform;
-      if (!newVpt) return;
-      const newSpacingPx = baseSpacing * zoom;
-      const newE = newVpt[4];
-      const newF = newVpt[5];
-      
-      // Preserve phase to keep grid aligned with content
-      if (newSpacingPx > 0 && showGrid && scale) {
-        const newOffsetX = newE - newSpacingPx * fracX;
-        const newOffsetY = newF - newSpacingPx * fracY;
-        setGridOffset({ x: newOffsetX, y: newOffsetY });
-      }
-      
       setZoomLevel(zoom);
       setGridUpdateTrigger((prev) => prev + 1);
       opt.e.preventDefault();
@@ -848,6 +812,30 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     };
   }, [fabricCanvas, mode, selectedSymbol, scale, showGrid, gridSize]);
 
+  // Snap symbols to grid while dragging
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const handleMoving = (e: any) => {
+      if (!scale || !showGrid) return;
+      const obj = e.target as FabricObject | undefined;
+      if (!obj || !(obj as any).symbolType) return;
+      const spacing = parseFloat(gridSize) * scale;
+      if (!spacing) return;
+      const left = obj.left ?? 0;
+      const top = obj.top ?? 0;
+      obj.set({
+        left: snapToGrid(left, spacing),
+        top: snapToGrid(top, spacing),
+      });
+    };
+
+    fabricCanvas.on("object:moving", handleMoving);
+    return () => {
+      fabricCanvas.off("object:moving", handleMoving);
+    };
+  }, [fabricCanvas, scale, showGrid, gridSize]);
+
   // Handle delete key for symbols
   useEffect(() => {
     if (!fabricCanvas) return;
@@ -1034,11 +1022,24 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   // Recalculates on every render (triggered by gridUpdateTrigger changes during pan/zoom)
   const gridSpacing = (() => {
     if (!scale || !showGrid || !fabricCanvas) return 0;
-    const baseSpacing = parseFloat(gridSize) * scale;
+    const baseSpacing = parseFloat(gridSize) * scale; // world units
     const vpt = fabricCanvas.viewportTransform;
     if (!vpt) return 0;
-    // Apply zoom from viewport transform
+    // Apply zoom from viewport transform (world spacing -> screen px)
     return baseSpacing * vpt[0];
+  })();
+
+  // Compute grid offset so lines are locked to image (no slide on zoom)
+  const gridOffset = (() => {
+    if (!scale || !showGrid || !fabricCanvas) return { x: 0, y: 0 };
+    const vpt = fabricCanvas.viewportTransform;
+    if (!vpt) return { x: 0, y: 0 };
+    const baseSpacing = parseFloat(gridSize) * scale; // world units
+    const spacingPx = baseSpacing * vpt[0];
+    if (spacingPx <= 0) return { x: 0, y: 0 };
+    const x = ((-vpt[4]) % spacingPx + spacingPx) % spacingPx;
+    const y = ((-vpt[5]) % spacingPx + spacingPx) % spacingPx;
+    return { x, y };
   })();
 
   return (
