@@ -743,7 +743,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
         // Convert canvas coords to world units, snap there, convert back to canvas coords
         const worldPoint = canvasToWorld({ x: pointer.x, y: pointer.y });
-        const gridSizeWorld = parseFloat(gridSize);
+        const gridSizeWorld = parseFloat(gridSize) * (scale ?? 1);
         const snappedWorld = {
           x: Math.round(worldPoint.x / gridSizeWorld) * gridSizeWorld,
           y: Math.round(worldPoint.y / gridSizeWorld) * gridSizeWorld,
@@ -784,7 +784,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
         // Convert canvas coords to world units, snap there, convert back to canvas coords
         const worldPoint = canvasToWorld({ x: pointer.x, y: pointer.y });
-        const gridSizeWorld = parseFloat(gridSize);
+        const gridSizeWorld = parseFloat(gridSize) * (scale ?? 1);
         const snappedWorld = {
           x: Math.round(worldPoint.x / gridSizeWorld) * gridSizeWorld,
           y: Math.round(worldPoint.y / gridSizeWorld) * gridSizeWorld,
@@ -852,7 +852,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       const top = obj.top ?? 0;
       
       const worldPos = canvasToWorld({ x: left, y: top });
-      const gridSizeWorld = parseFloat(gridSize);
+      const gridSizeWorld = parseFloat(gridSize) * (scale ?? 1);
       const snappedWorld = {
         x: Math.round(worldPos.x / gridSizeWorld) * gridSizeWorld,
         y: Math.round(worldPos.y / gridSizeWorld) * gridSizeWorld,
