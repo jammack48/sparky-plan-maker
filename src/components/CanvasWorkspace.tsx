@@ -41,6 +41,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   const [gridSize, setGridSize] = useState<string>("400");
   const [showGrid, setShowGrid] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
   
   // Crop state
   const [cropStart, setCropStart] = useState<Position | null>(null);
@@ -73,7 +74,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
 
   // Create symbol shape based on type
   const createSymbol = (type: string, x: number, y: number): FabricObject | null => {
-    const size = 30;
+    const size = 6; // 5x smaller than original 30
     const halfSize = size / 2;
     
     switch (type) {
@@ -83,15 +84,15 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
           radius: halfSize,
           fill: "transparent",
           stroke: "#000",
-          strokeWidth: 2,
+          strokeWidth: 0.4,
         });
         const lightLine1 = new Line([0, -halfSize, 0, halfSize], {
           stroke: "#000",
-          strokeWidth: 2,
+          strokeWidth: 0.4,
         });
         const lightLine2 = new Line([-halfSize, 0, halfSize, 0], {
           stroke: "#000",
-          strokeWidth: 2,
+          strokeWidth: 0.4,
         });
         const group = new Group([lightCircle, lightLine1, lightLine2], {
           left: x,
@@ -109,17 +110,17 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
           height: size,
           fill: "transparent",
           stroke: "#000",
-          strokeWidth: 2,
+          strokeWidth: 0.4,
           originX: "center",
           originY: "center",
         });
-        const powerLine1 = new Line([-10, -10, -10, 10], {
+        const powerLine1 = new Line([-2, -2, -2, 2], {
           stroke: "#000",
-          strokeWidth: 2,
+          strokeWidth: 0.4,
         });
-        const powerLine2 = new Line([10, -10, 10, 10], {
+        const powerLine2 = new Line([2, -2, 2, 2], {
           stroke: "#000",
-          strokeWidth: 2,
+          strokeWidth: 0.4,
         });
         const powerGroup = new Group([powerRect, powerLine1, powerLine2], {
           left: x,
@@ -134,10 +135,10 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
         // Line with angle
         const switchLine = new Line([-halfSize, 0, 0, -halfSize], {
           stroke: "#000",
-          strokeWidth: 3,
+          strokeWidth: 0.6,
         });
         const switchBase = new Circle({
-          radius: 3,
+          radius: 0.6,
           fill: "#000",
           left: -halfSize,
           top: 0,
@@ -160,7 +161,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
           {
             fill: "transparent",
             stroke: "#000",
-            strokeWidth: 2,
+            strokeWidth: 0.4,
           }
         );
         const dataGroup = new Group([dataPath], {
@@ -179,12 +180,12 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
           {
             fill: "transparent",
             stroke: "#000",
-            strokeWidth: 2,
+            strokeWidth: 0.4,
           }
         );
-        const smokeExclaim = new Path(`M 0,-5 L 0,5 M 0,10 L 0,12`, {
+        const smokeExclaim = new Path(`M 0,-1 L 0,1 M 0,2 L 0,2.4`, {
           stroke: "#000",
-          strokeWidth: 2,
+          strokeWidth: 0.4,
         });
         const smokeGroup = new Group([smokePath, smokeExclaim], {
           left: x,
@@ -198,11 +199,11 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       case "cable":
         // Wavy line
         const cablePath = new Path(
-          `M ${-halfSize},0 Q ${-halfSize / 2},-10 0,0 T ${halfSize},0`,
+          `M ${-halfSize},0 Q ${-halfSize / 2},-2 0,0 T ${halfSize},0`,
           {
             fill: "transparent",
             stroke: "#000",
-            strokeWidth: 2,
+            strokeWidth: 0.4,
           }
         );
         const cableGroup = new Group([cablePath], {
@@ -250,6 +251,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       if (zoom < 0.1) zoom = 0.1;
       canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
       setZoomLevel(zoom);
+      setGridUpdateTrigger((prev) => prev + 1);
       opt.e.preventDefault();
       opt.e.stopPropagation();
     };
@@ -312,6 +314,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       
       fabricCanvas.relativePan(new Point(dx, dy));
       fabricCanvas.requestRenderAll();
+      setGridUpdateTrigger((prev) => prev + 1);
     };
 
     const pointerUpHandler = (e: PointerEvent) => {
@@ -435,6 +438,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       // Use Fabric's relativePan for zoom-aware panning
       fabricCanvas.relativePan(new Point(dx, dy));
       fabricCanvas.requestRenderAll();
+      setGridUpdateTrigger((prev) => prev + 1);
     };
 
     const handleMouseUp = () => {
@@ -714,7 +718,39 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     if (!fabricCanvas || mode !== "place-symbol" || !selectedSymbol) return;
 
     fabricCanvas.selection = false;
-    fabricCanvas.defaultCursor = "crosshair";
+    fabricCanvas.defaultCursor = "none";
+    
+    let previewSymbol: FabricObject | null = null;
+
+    const handleMouseMove = (opt: any) => {
+      const pointer = fabricCanvas.getPointer(opt.e);
+      const gridSpacingPx = scale && showGrid ? parseFloat(gridSize) * scale : 0;
+      
+      let x = pointer.x;
+      let y = pointer.y;
+      
+      // Snap to grid intersection unless Control is held down
+      if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+        x = snapToGrid(pointer.x, gridSpacingPx);
+        y = snapToGrid(pointer.y, gridSpacingPx);
+      }
+      
+      // Remove old preview
+      if (previewSymbol) {
+        fabricCanvas.remove(previewSymbol);
+      }
+      
+      // Create new preview symbol
+      previewSymbol = createSymbol(selectedSymbol, x, y);
+      if (previewSymbol) {
+        previewSymbol.opacity = 0.5;
+        previewSymbol.selectable = false;
+        previewSymbol.evented = false;
+        (previewSymbol as any).isPreview = true;
+        fabricCanvas.add(previewSymbol);
+        fabricCanvas.renderAll();
+      }
+    };
 
     const handleMouseDown = (opt: any) => {
       // Only respond to left-clicks
@@ -732,6 +768,12 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
         y = snapToGrid(pointer.y, gridSpacingPx);
       }
       
+      // Remove preview
+      if (previewSymbol) {
+        fabricCanvas.remove(previewSymbol);
+        previewSymbol = null;
+      }
+      
       const symbol = createSymbol(selectedSymbol, x, y);
       if (symbol) {
         fabricCanvas.add(symbol);
@@ -746,16 +788,25 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (previewSymbol) {
+          fabricCanvas.remove(previewSymbol);
+          previewSymbol = null;
+        }
         onSymbolDeselect?.();
         setMode("select");
         toast.info("Symbol placement cancelled");
       }
     };
 
+    fabricCanvas.on("mouse:move", handleMouseMove);
     fabricCanvas.on("mouse:down", handleMouseDown);
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      if (previewSymbol) {
+        fabricCanvas.remove(previewSymbol);
+      }
+      fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:down", handleMouseDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
@@ -943,8 +994,24 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     saveCanvasState(fabricCanvas);
   };
 
-  // Calculate grid spacing for CSS overlay
-  const gridSpacing = scale && showGrid ? parseFloat(gridSize) * scale * zoomLevel : 0;
+  // Calculate grid spacing for CSS overlay - adjusted for viewport transform
+  // Recalculates on every render (triggered by gridUpdateTrigger changes during pan/zoom)
+  const gridSpacing = (() => {
+    if (!scale || !showGrid || !fabricCanvas) return 0;
+    const baseSpacing = parseFloat(gridSize) * scale;
+    const vpt = fabricCanvas.viewportTransform;
+    if (!vpt) return 0;
+    // Apply zoom from viewport transform
+    return baseSpacing * vpt[0];
+  })();
+
+  // Calculate grid offset based on viewport pan
+  const gridOffset = (() => {
+    if (!fabricCanvas) return { x: 0, y: 0 };
+    const vpt = fabricCanvas.viewportTransform;
+    if (!vpt) return { x: 0, y: 0 };
+    return { x: vpt[4], y: vpt[5] };
+  })();
 
   return (
     <div className="flex gap-4 h-full">
@@ -1051,6 +1118,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
                   repeating-linear-gradient(to bottom, rgba(80,80,80,0.5) 0, rgba(80,80,80,0.5) 1px, transparent 1px, transparent ${gridSpacing}px)
                 `,
                 backgroundSize: `${gridSpacing}px ${gridSpacing}px`,
+                backgroundPosition: `${gridOffset.x}px ${gridOffset.y}px`,
               }}
             />
           )}
