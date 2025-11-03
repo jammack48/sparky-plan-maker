@@ -748,12 +748,29 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       let x = pointer.x;
       let y = pointer.y;
       
-      // Snap to grid unless Control is held
+      let baseSpacing = null as number | null;
       if (showGrid && scale && bgScale) {
-        const baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
+        baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
+        console.debug("[PREVIEW] Grid snap values:", {
+          gridSize: parseFloat(gridSize),
+          scale,
+          bgScale,
+          baseSpacing,
+          pointerX: pointer.x,
+          pointerY: pointer.y,
+          ctrlHeld: opt.e.ctrlKey || opt.e.metaKey,
+        });
+        
         if (baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+          const beforeX = x;
+          const beforeY = y;
           x = Math.round(pointer.x / baseSpacing) * baseSpacing;
           y = Math.round(pointer.y / baseSpacing) * baseSpacing;
+          console.debug("[PREVIEW] Snapped:", {
+            before: { x: beforeX, y: beforeY },
+            after: { x, y },
+            delta: { x: x - beforeX, y: y - beforeY },
+          });
         }
       }
       
@@ -781,12 +798,31 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       let left = pointer.x;
       let top = pointer.y;
       
-      if (showGrid && scale && bgScale) {
-        const baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
-        if (baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-          left = Math.round(pointer.x / baseSpacing) * baseSpacing;
-          top = Math.round(pointer.y / baseSpacing) * baseSpacing;
-        }
+      const baseSpacing = showGrid && scale && bgScale 
+        ? parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1) 
+        : null;
+
+      console.debug("[PLACE] Symbol placement:", {
+        gridSize: parseFloat(gridSize),
+        scale,
+        bgScale,
+        baseSpacing,
+        pointerX: pointer.x,
+        pointerY: pointer.y,
+        ctrlHeld: opt.e.ctrlKey || opt.e.metaKey,
+        showGrid,
+      });
+
+      if (baseSpacing && baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+        const beforeLeft = left;
+        const beforeTop = top;
+        left = Math.round(pointer.x / baseSpacing) * baseSpacing;
+        top = Math.round(pointer.y / baseSpacing) * baseSpacing;
+        console.debug("[PLACE] Snapped:", {
+          before: { left: beforeLeft, top: beforeTop },
+          after: { left, top },
+          delta: { left: left - beforeLeft, top: top - beforeTop },
+        });
       }
       
       // Remove preview
@@ -847,10 +883,28 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       
       const left = obj.left ?? 0;
       const top = obj.top ?? 0;
-      
+
+      console.debug("[DRAG] Object moving:", {
+        gridSize: parseFloat(gridSize),
+        scale,
+        bgScale,
+        baseSpacing,
+        objLeft: left,
+        objTop: top,
+      });
+
+      const snappedLeft = Math.round(left / baseSpacing) * baseSpacing;
+      const snappedTop = Math.round(top / baseSpacing) * baseSpacing;
+
+      console.debug("[DRAG] Snapped:", {
+        before: { left, top },
+        after: { left: snappedLeft, top: snappedTop },
+        delta: { left: snappedLeft - left, top: snappedTop - top },
+      });
+
       obj.set({
-        left: Math.round(left / baseSpacing) * baseSpacing,
-        top: Math.round(top / baseSpacing) * baseSpacing,
+        left: snappedLeft,
+        top: snappedTop,
       });
     };
 
@@ -1065,6 +1119,30 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     const y = ((-vpt[5]) % spacingPx + spacingPx) % spacingPx;
     return { x, y };
   })();
+
+  // Debug: Track grid overlay values
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const vpt = fabricCanvas.viewportTransform;
+    console.debug("[GRID OVERLAY] Current values:", {
+      gridSpacing,
+      gridOffset,
+      bgScale,
+      scale,
+      gridSize: parseFloat(gridSize),
+      showGrid,
+      zoomLevel,
+      viewportTransform: vpt ? {
+        scaleX: vpt[0],
+        scaleY: vpt[3],
+        translateX: vpt[4],
+        translateY: vpt[5],
+      } : null,
+      calculatedBaseSpacing: scale && bgScale ? parseFloat(gridSize) * scale * bgScale : null,
+      calculatedScreenSpacing: vpt ? (parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1) * vpt[0]) : null,
+    });
+  }, [gridUpdateTrigger, gridSpacing, gridOffset, bgScale, scale, fabricCanvas, gridSize, showGrid, zoomLevel]);
 
   // Grid color helpers
   const hexToRgba = (hex: string, alpha: number) => {
