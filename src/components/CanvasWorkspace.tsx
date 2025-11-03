@@ -733,24 +733,40 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     let previewSymbol: FabricObject | null = null;
 
     const handleMouseMove = (opt: any) => {
-      const pointer = fabricCanvas.getPointer(opt.e);
-      const gridSpacingPx = scale && showGrid ? parseFloat(gridSize) * scale : 0;
+      if (!canvasRef.current) return;
       
-      let x = pointer.x;
-      let y = pointer.y;
+      // Get screen coordinates relative to canvas element
+      const rect = canvasRef.current.getBoundingClientRect();
+      const clientX = opt.e.clientX;
+      const clientY = opt.e.clientY;
+      const screenPoint = { x: clientX - rect.left, y: clientY - rect.top };
+      
+      let x: number;
+      let y: number;
       
       // Snap to grid intersection unless Control is held down
-      if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-        // Convert canvas coords to world units, snap there, convert back to canvas coords
-        const worldPoint = canvasToWorld({ x: pointer.x, y: pointer.y });
-        const gridSizeWorld = parseFloat(gridSize) * (scale ?? 1);
-        const snappedWorld = {
-          x: Math.round(worldPoint.x / gridSizeWorld) * gridSizeWorld,
-          y: Math.round(worldPoint.y / gridSizeWorld) * gridSizeWorld,
-        };
-        const snappedCanvas = worldToCanvas(snappedWorld);
-        x = snappedCanvas.x;
-        y = snappedCanvas.y;
+      if (showGrid && scale) {
+        const baseSpacing = parseFloat(gridSize) * (scale ?? 1);
+        if (baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+          // Convert screen → object coords, snap in object coords
+          const worldPoint = canvasToWorld(screenPoint);
+          const snappedWorld = {
+            x: Math.round(worldPoint.x / baseSpacing) * baseSpacing,
+            y: Math.round(worldPoint.y / baseSpacing) * baseSpacing,
+          };
+          x = snappedWorld.x;
+          y = snappedWorld.y;
+        } else {
+          // Convert to object coords without snapping
+          const worldPoint = canvasToWorld(screenPoint);
+          x = worldPoint.x;
+          y = worldPoint.y;
+        }
+      } else {
+        // No grid: just convert to object coords
+        const worldPoint = canvasToWorld(screenPoint);
+        x = worldPoint.x;
+        y = worldPoint.y;
       }
       
       // Remove old preview
@@ -773,25 +789,40 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     const handleMouseDown = (opt: any) => {
       // Only respond to left-clicks
       if (opt.e.button !== 0) return;
+      if (!canvasRef.current) return;
 
-      const pointer = fabricCanvas.getPointer(opt.e);
-      const gridSpacingPx = scale && showGrid ? parseFloat(gridSize) * scale : 0;
+      // Get screen coordinates relative to canvas element
+      const rect = canvasRef.current.getBoundingClientRect();
+      const clientX = opt.e.clientX;
+      const clientY = opt.e.clientY;
+      const screenPoint = { x: clientX - rect.left, y: clientY - rect.top };
       
-      let x = pointer.x;
-      let y = pointer.y;
+      let left: number;
+      let top: number;
       
       // Snap to grid intersection unless Control is held down
-      if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
-        // Convert canvas coords to world units, snap there, convert back to canvas coords
-        const worldPoint = canvasToWorld({ x: pointer.x, y: pointer.y });
-        const gridSizeWorld = parseFloat(gridSize) * (scale ?? 1);
-        const snappedWorld = {
-          x: Math.round(worldPoint.x / gridSizeWorld) * gridSizeWorld,
-          y: Math.round(worldPoint.y / gridSizeWorld) * gridSizeWorld,
-        };
-        const snappedCanvas = worldToCanvas(snappedWorld);
-        x = snappedCanvas.x;
-        y = snappedCanvas.y;
+      if (showGrid && scale) {
+        const baseSpacing = parseFloat(gridSize) * (scale ?? 1);
+        if (baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+          // Convert screen → object coords, snap in object coords
+          const worldPoint = canvasToWorld(screenPoint);
+          const snappedWorld = {
+            x: Math.round(worldPoint.x / baseSpacing) * baseSpacing,
+            y: Math.round(worldPoint.y / baseSpacing) * baseSpacing,
+          };
+          left = snappedWorld.x;
+          top = snappedWorld.y;
+        } else {
+          // Convert to object coords without snapping
+          const worldPoint = canvasToWorld(screenPoint);
+          left = worldPoint.x;
+          top = worldPoint.y;
+        }
+      } else {
+        // No grid: just convert to object coords
+        const worldPoint = canvasToWorld(screenPoint);
+        left = worldPoint.x;
+        top = worldPoint.y;
       }
       
       // Remove preview
@@ -800,14 +831,14 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
         previewSymbol = null;
       }
       
-      const symbol = createSymbol(selectedSymbol, x, y);
+      const symbol = createSymbol(selectedSymbol, left, top);
       if (symbol) {
         fabricCanvas.add(symbol);
         fabricCanvas.setActiveObject(symbol);
         fabricCanvas.renderAll();
         saveCanvasState();
         onSymbolPlaced?.(selectedSymbol);
-        const snapStatus = (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) ? " (snapped)" : "";
+        const snapStatus = (showGrid && scale && !opt.e.ctrlKey && !opt.e.metaKey) ? " (snapped)" : "";
         toast.success(`${selectedSymbol} placed${snapStatus}`);
       }
     };
@@ -847,21 +878,16 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       const obj = e.target as FabricObject | undefined;
       if (!obj || !(obj as any).symbolType) return;
       
-      // Convert object's canvas coords to world coords, snap in world units, convert back
+      // Snap object's position directly in object coords
+      const baseSpacing = parseFloat(gridSize) * (scale ?? 1);
+      if (!baseSpacing) return;
+      
       const left = obj.left ?? 0;
       const top = obj.top ?? 0;
       
-      const worldPos = canvasToWorld({ x: left, y: top });
-      const gridSizeWorld = parseFloat(gridSize) * (scale ?? 1);
-      const snappedWorld = {
-        x: Math.round(worldPos.x / gridSizeWorld) * gridSizeWorld,
-        y: Math.round(worldPos.y / gridSizeWorld) * gridSizeWorld,
-      };
-      const snappedCanvas = worldToCanvas(snappedWorld);
-      
       obj.set({
-        left: snappedCanvas.x,
-        top: snappedCanvas.y,
+        left: Math.round(left / baseSpacing) * baseSpacing,
+        top: Math.round(top / baseSpacing) * baseSpacing,
       });
     };
 
