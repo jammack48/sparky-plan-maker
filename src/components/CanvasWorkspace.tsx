@@ -723,9 +723,14 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       const pointer = fabricCanvas.getPointer(opt.e);
       const gridSpacingPx = scale && showGrid ? parseFloat(gridSize) * scale : 0;
       
-      // Snap to grid if enabled
-      const x = gridSpacingPx > 0 ? snapToGrid(pointer.x, gridSpacingPx) : pointer.x;
-      const y = gridSpacingPx > 0 ? snapToGrid(pointer.y, gridSpacingPx) : pointer.y;
+      let x = pointer.x;
+      let y = pointer.y;
+      
+      // Snap to grid intersection unless Control is held down
+      if (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+        x = snapToGrid(pointer.x, gridSpacingPx);
+        y = snapToGrid(pointer.y, gridSpacingPx);
+      }
       
       const symbol = createSymbol(selectedSymbol, x, y);
       if (symbol) {
@@ -734,7 +739,8 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
         fabricCanvas.renderAll();
         saveCanvasState();
         onSymbolPlaced?.(selectedSymbol);
-        toast.success(`${selectedSymbol} placed`);
+        const snapStatus = (gridSpacingPx > 0 && !opt.e.ctrlKey && !opt.e.metaKey) ? " (snapped)" : "";
+        toast.success(`${selectedSymbol} placed${snapStatus}`);
       }
     };
 
