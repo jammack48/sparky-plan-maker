@@ -662,8 +662,8 @@ export const CanvasWorkspace = ({
   }, [gridUpdateTrigger, gridSpacing, gridOffset, bgScale, scale, fabricCanvas, gridSize]);
 
   return (
-    <div className="flex gap-4 h-full">
-      <div className="flex-1 flex flex-col">
+    <div className="flex gap-2 sm:gap-4 h-full">
+      <div className="flex-1 flex flex-col min-h-0">
         <CanvasToolbar
           mode={mode}
           scale={scale}

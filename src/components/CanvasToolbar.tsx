@@ -53,8 +53,8 @@ export const CanvasToolbar = ({
   onExport,
 }: CanvasToolbarProps) => {
   return (
-    <Card className="p-4 mb-4">
-      <div className="flex items-center gap-2 flex-wrap">
+    <Card className="p-4 mb-4 overflow-x-auto">
+      <div className="flex items-center gap-2 flex-nowrap min-w-max">
         <Button
           variant={mode === "crop" ? "default" : "outline"}
           size="sm"

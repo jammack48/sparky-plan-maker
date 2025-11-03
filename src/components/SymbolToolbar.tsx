@@ -17,22 +17,25 @@ interface SymbolToolbarProps {
 
 export const SymbolToolbar = ({ symbols, onSymbolSelect, selectedSymbol }: SymbolToolbarProps) => {
   return (
-    <Card className="p-4 space-y-2">
-      <h3 className="font-semibold mb-3 text-foreground">Symbols</h3>
-      {symbols.map((symbol) => (
-        <Button
-          key={symbol.id}
-          variant={selectedSymbol === symbol.id ? "default" : "outline"}
-          className="w-full justify-between"
-          onClick={() => onSymbolSelect(symbol.id)}
-        >
-          <span className="flex items-center gap-2">
-            {symbol.icon}
-            {symbol.name}
-          </span>
-          <span className="text-xs">{symbol.count}</span>
-        </Button>
-      ))}
+    <Card className="p-3 sm:p-4 space-y-2">
+      <h3 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base text-foreground">Symbols</h3>
+      <div className="flex flex-row md:flex-col gap-2 flex-wrap md:flex-nowrap">
+        {symbols.map((symbol) => (
+          <Button
+            key={symbol.id}
+            variant={selectedSymbol === symbol.id ? "default" : "outline"}
+            className="flex-1 md:w-full justify-between min-w-[80px] text-xs sm:text-sm"
+            size="sm"
+            onClick={() => onSymbolSelect(symbol.id)}
+          >
+            <span className="flex items-center gap-1 sm:gap-2">
+              {symbol.icon}
+              <span className="hidden sm:inline">{symbol.name}</span>
+            </span>
+            <span className="text-xs">{symbol.count}</span>
+          </Button>
+        ))}
+      </div>
     </Card>
   );
 };
