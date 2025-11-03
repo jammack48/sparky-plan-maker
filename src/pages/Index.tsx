@@ -4,6 +4,7 @@ import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOLS } from "@/components/SymbolToolbar";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 // Set worker for PDF.js (Vite)
@@ -124,15 +125,45 @@ const Index = () => {
     );
   }
 
+  const handlePreviousPage = () => {
+    if (currentPageIndex > 0) {
+      setCurrentPageIndex(currentPageIndex - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPageIndex < selectedPages.length - 1) {
+      setCurrentPageIndex(currentPageIndex + 1);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card px-6 py-4">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold text-foreground">SparkyMate</h1>
-            <p className="text-sm text-muted-foreground">
-              Page {currentPageIndex + 1} of {selectedPages.length}
-            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousPage}
+                disabled={currentPageIndex === 0}
+              >
+                ← Previous
+              </Button>
+              <span className="text-sm text-muted-foreground px-2">
+                Page {currentPageIndex + 1} of {selectedPages.length}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={currentPageIndex === selectedPages.length - 1}
+              >
+                Next →
+              </Button>
+            </div>
           </div>
         </div>
       </header>

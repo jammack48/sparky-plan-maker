@@ -358,7 +358,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       width,
       height,
       format: "png",
-      multiplier: 1,
+      multiplier: 3, // Higher quality for readability
     });
 
     // Send to parent to open as new sheet
