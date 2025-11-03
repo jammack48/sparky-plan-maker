@@ -808,8 +808,8 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
               className="absolute inset-0 pointer-events-none"
               style={{
                 backgroundImage: `
-                  repeating-linear-gradient(to right, rgba(136,136,136,0.3) 0, rgba(136,136,136,0.3) 1px, transparent 1px, transparent ${gridSpacing}px),
-                  repeating-linear-gradient(to bottom, rgba(136,136,136,0.3) 0, rgba(136,136,136,0.3) 1px, transparent 1px, transparent ${gridSpacing}px)
+                  repeating-linear-gradient(to right, rgba(80,80,80,0.5) 0, rgba(80,80,80,0.5) 1px, transparent 1px, transparent ${gridSpacing}px),
+                  repeating-linear-gradient(to bottom, rgba(80,80,80,0.5) 0, rgba(80,80,80,0.5) 1px, transparent 1px, transparent ${gridSpacing}px)
                 `,
                 backgroundSize: `${gridSpacing}px ${gridSpacing}px`,
               }}
