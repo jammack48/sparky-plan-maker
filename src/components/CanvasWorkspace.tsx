@@ -60,6 +60,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
   
   // Right-click panning
   const isPanningRef = useRef(false);
+  const lastPanPos = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -174,30 +175,45 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       const e = opt.e as MouseEvent;
       if (e.button === 2) {
         isPanningRef.current = true;
+        lastPanPos.current = { x: e.clientX, y: e.clientY };
         fabricCanvas.setCursor("grabbing");
+        fabricCanvas.selection = false;
+        fabricCanvas.skipTargetFind = true;
         e.preventDefault();
+        e.stopPropagation();
       }
     };
 
     const handleMouseMove = (opt: any) => {
-      if (!isPanningRef.current) return;
+      if (!isPanningRef.current || !lastPanPos.current) return;
       const e = opt.e as MouseEvent;
       
-      // Direct viewport transform manipulation for reliable panning
+      // Calculate delta using clientX/Y for reliability
+      const dx = e.clientX - lastPanPos.current.x;
+      const dy = e.clientY - lastPanPos.current.y;
+      lastPanPos.current = { x: e.clientX, y: e.clientY };
+      
+      // Direct viewport transform manipulation
       const vpt = fabricCanvas.viewportTransform;
       if (vpt) {
-        vpt[4] += e.movementX;
-        vpt[5] += e.movementY;
+        vpt[4] += dx;
+        vpt[5] += dy;
         fabricCanvas.setViewportTransform(vpt);
         fabricCanvas.requestRenderAll();
       }
+      
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     const handleMouseUp = (opt: any) => {
       const e = opt.e as MouseEvent;
       if (e.button === 2 && isPanningRef.current) {
         isPanningRef.current = false;
+        lastPanPos.current = null;
         fabricCanvas.setCursor("default");
+        fabricCanvas.selection = true;
+        fabricCanvas.skipTargetFind = false;
       }
     };
 
@@ -205,7 +221,10 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     const handleDocMouseUp = (e: MouseEvent) => {
       if (e.button === 2 && isPanningRef.current) {
         isPanningRef.current = false;
+        lastPanPos.current = null;
         fabricCanvas.setCursor("default");
+        fabricCanvas.selection = true;
+        fabricCanvas.skipTargetFind = false;
       }
     };
 
@@ -395,11 +414,24 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     const handleMouseUp = () => {
       if (!eraseStart || !eraseRect) return;
       
-      // Finalize the erase rectangle
+      // Snap to integer pixels to avoid anti-aliased seams
+      const width = Math.abs((eraseRect.width ?? 0) * (eraseRect.scaleX ?? 1));
+      const height = Math.abs((eraseRect.height ?? 0) * (eraseRect.scaleY ?? 1));
+      const left = Math.round(eraseRect.left ?? 0);
+      const top = Math.round(eraseRect.top ?? 0);
+      
+      // Finalize the erase rectangle with precise integer bounds
       eraseRect.set({
+        left,
+        top,
+        width: Math.round(width),
+        height: Math.round(height),
+        scaleX: 1,
+        scaleY: 1,
         opacity: 1,
         selectable: true,
         evented: true,
+        objectCaching: false, // Prevent rendering artifacts
       });
       
       fabricCanvas.renderAll();
