@@ -351,7 +351,10 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
       return;
     }
 
-    // Export cropped region as image (grid/crop handles are excluded from export)
+    // Remove crop rect before export to avoid dotted lines
+    fabricCanvas.remove(cropRect);
+
+    // Export cropped region as image
     const dataUrl = fabricCanvas.toDataURL({
       left,
       top,
@@ -366,7 +369,6 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     toast.success("Extracted to new sheet");
     
     // Clean up
-    fabricCanvas.remove(cropRect);
     setCropStart(null);
     setCropRect(null);
     setShowCropDialog(false);
@@ -397,7 +399,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
     
     const pixelsPerMm = measureDistance / realWorldMm;
     setScale(pixelsPerMm);
-    toast.success(`Scale set: ${pixelsPerMm.toFixed(2)} pixels per mm`);
+    toast.success(`Scale set: ${pixelsPerMm.toFixed(1)}:1`);
     
     // Remove the red measurement line
     if (measureLine && fabricCanvas) {
@@ -466,7 +468,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract }: C
             <div className="flex items-center gap-4 ml-4">
               {scale && (
                 <span className="text-sm text-muted-foreground">
-                  Scale: {scale.toFixed(2)} px/mm
+                  Scale: {scale.toFixed(1)}:1
                 </span>
               )}
               <span className="text-sm text-muted-foreground">
