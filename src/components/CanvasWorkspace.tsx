@@ -484,7 +484,7 @@ export const CanvasWorkspace = ({
   // Grid calculations
   const gridSpacing = (() => {
     if (!scale || !showGrid || !fabricCanvas) return 0;
-    const baseSpacing = parseFloat(gridSize) * scale * bgScale;
+    const baseSpacing = parseFloat(gridSize) * scale;
     const vpt = fabricCanvas.viewportTransform;
     if (!vpt) return 0;
     return baseSpacing * vpt[0];
@@ -494,7 +494,7 @@ export const CanvasWorkspace = ({
     if (!scale || !showGrid || !fabricCanvas) return { x: 0, y: 0 };
     const vpt = fabricCanvas.viewportTransform;
     if (!vpt) return { x: 0, y: 0 };
-    const baseSpacing = parseFloat(gridSize) * scale * bgScale;
+    const baseSpacing = parseFloat(gridSize) * scale;
     const spacingPx = baseSpacing * vpt[0];
     if (spacingPx <= 0) return { x: 0, y: 0 };
     const x = ((-vpt[4]) % spacingPx + spacingPx) % spacingPx;
