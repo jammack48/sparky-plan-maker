@@ -688,19 +688,19 @@ export const CanvasWorkspace = ({
           onExport={() => fabricCanvas && onExport(fabricCanvas)}
         />
 
-        <div 
-          ref={containerRef}
-          className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center relative"
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <canvas ref={canvasRef} onContextMenu={(e) => e.preventDefault()} />
-          <GridOverlay
-            showGrid={showGrid}
-            gridSpacing={gridSpacing}
-            gridOffset={gridOffset}
-            gridLineColor={gridLineColor}
-            gridLineThickness={gridLineThickness}
-          />
+          <div 
+            ref={containerRef}
+            className="flex-1 border border-border rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center relative touch-none"
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <canvas ref={canvasRef} className="touch-none select-none block" onContextMenu={(e) => e.preventDefault()} />
+            <GridOverlay
+              showGrid={showGrid}
+              gridSpacing={gridSpacing}
+              gridOffset={gridOffset}
+              gridLineColor={gridLineColor}
+              gridLineThickness={gridLineThickness}
+            />
         </div>
       </div>
 

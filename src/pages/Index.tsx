@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
@@ -18,6 +18,29 @@ const Index = () => {
   const [symbols, setSymbols] = useState(DEFAULT_SYMBOLS);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Auto-generate a simple sample plan: white background with a black square
+    const size = 1600;
+    const squareSize = 800;
+    const c = document.createElement('canvas');
+    c.width = size;
+    c.height = size;
+    const ctx = c.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 8;
+      const offset = (size - squareSize) / 2;
+      ctx.strokeRect(offset, offset, squareSize, squareSize);
+    }
+    const dataUrl = c.toDataURL('image/png');
+    setPdfPages([dataUrl]);
+    setSelectedPages([0]);
+    setCurrentPageIndex(0);
+    toast.success('Loaded sample plan');
+  }, []);
 
   const handleFileLoad = async (file: File) => {
     setIsLoading(true);
