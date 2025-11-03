@@ -42,6 +42,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   const [showGrid, setShowGrid] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
   
   // Crop state
   const [cropStart, setCropStart] = useState<Position | null>(null);
@@ -242,14 +243,49 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       saveCanvasState(canvas);
     });
 
-    // Mouse wheel zoom
+    // Mouse wheel zoom with grid phase preservation
     const handleWheel = (opt: any) => {
       const delta = opt.e.deltaY;
-      let zoom = canvas.getZoom();
-      zoom *= 0.999 ** delta;
+      const oldZoom = canvas.getZoom();
+      const vpt = canvas.viewportTransform;
+      if (!vpt) return;
+      
+      // Calculate old grid spacing and phase
+      const baseSpacing = parseFloat(gridSize) * (scale || 1);
+      const oldSpacingPx = baseSpacing * oldZoom;
+      const oldE = vpt[4];
+      const oldF = vpt[5];
+      
+      // Calculate fractional phase (where canvas origin is relative to grid)
+      let fracX = 0;
+      let fracY = 0;
+      if (oldSpacingPx > 0 && showGrid && scale) {
+        fracX = ((oldE - gridOffset.x) / oldSpacingPx) % 1;
+        fracY = ((oldF - gridOffset.y) / oldSpacingPx) % 1;
+        if (fracX < 0) fracX += 1;
+        if (fracY < 0) fracY += 1;
+      }
+      
+      // Apply zoom
+      let zoom = oldZoom * (0.999 ** delta);
       if (zoom > 5) zoom = 5;
       if (zoom < 0.1) zoom = 0.1;
       canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
+      
+      // Calculate new grid spacing and viewport position
+      const newVpt = canvas.viewportTransform;
+      if (!newVpt) return;
+      const newSpacingPx = baseSpacing * zoom;
+      const newE = newVpt[4];
+      const newF = newVpt[5];
+      
+      // Preserve phase to keep grid aligned with content
+      if (newSpacingPx > 0 && showGrid && scale) {
+        const newOffsetX = newE - newSpacingPx * fracX;
+        const newOffsetY = newF - newSpacingPx * fracY;
+        setGridOffset({ x: newOffsetX, y: newOffsetY });
+      }
+      
       setZoomLevel(zoom);
       setGridUpdateTrigger((prev) => prev + 1);
       opt.e.preventDefault();
@@ -1003,18 +1039,6 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     if (!vpt) return 0;
     // Apply zoom from viewport transform
     return baseSpacing * vpt[0];
-  })();
-
-  // Anchor grid to canvas coordinate system origin
-  // vpt[4] and vpt[5] represent where canvas (0,0) is in screen space
-  const gridOffset = (() => {
-    if (!fabricCanvas) return { x: 0, y: 0 };
-    const vpt = fabricCanvas.viewportTransform;
-    if (!vpt) return { x: 0, y: 0 };
-    return { 
-      x: vpt[4], 
-      y: vpt[5] 
-    };
   })();
 
   return (
