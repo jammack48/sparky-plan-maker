@@ -245,6 +245,28 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       backgroundColor: "#ffffff",
     });
 
+    // Make Fabric canvas match the container DOM size so coordinates and CSS overlay align
+    const setCanvasToContainerSize = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      const w = Math.max(1, Math.floor(container.clientWidth));
+      const h = Math.max(1, Math.floor(container.clientHeight));
+      canvas.setWidth(w);
+      canvas.setHeight(h);
+      // Ensure Fabric recomputes offsets
+      canvas.calcOffset && canvas.calcOffset();
+    };
+    
+    // Initial sizing
+    setCanvasToContainerSize();
+    
+    // Update on resize
+    const onResize = () => {
+      setCanvasToContainerSize();
+      setGridUpdateTrigger((s) => s + 1);
+    };
+    window.addEventListener("resize", onResize);
+
     // Enable Fabric right-click events and prevent context menu
     (canvas as any).fireRightClick = true;
     (canvas as any).stopContextMenu = true;
@@ -272,7 +294,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   canvas.requestRenderAll();
 
   // Debug: report computed values
-  console.debug("Canvas background loaded", {
+  console.log("Canvas background loaded", {
     canvasWidth,
     canvasHeight,
     imgWidth: img.width,
@@ -300,7 +322,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
 
   // Debug log
   const vpt = canvas.viewportTransform;
-  console.debug("wheel zoom", { zoom, offsetX: opt.e.offsetX, offsetY: opt.e.offsetY, vpt });
+  console.log("wheel zoom", { zoom, offsetX: opt.e.offsetX, offsetY: opt.e.offsetY, vpt });
 
   opt.e.preventDefault();
   opt.e.stopPropagation();
@@ -311,6 +333,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
     setFabricCanvas(canvas);
 
     return () => {
+      window.removeEventListener("resize", onResize);
       canvas.dispose();
     };
   }, [imageUrl]);
@@ -782,7 +805,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       if (showGrid && scale && bgScale) {
         baseSpacing = parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1);
       }
-      console.debug("[PREVIEW] Grid snap values:", {
+      console.log("[PREVIEW] Grid snap values:", {
         gridSize: parseFloat(gridSize),
         scale,
         bgScale,
@@ -797,7 +820,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
         const beforeY = y;
         x = Math.round(pointer.x / baseSpacing) * baseSpacing;
         y = Math.round(pointer.y / baseSpacing) * baseSpacing;
-        console.debug("[PREVIEW] Snapped:", {
+        console.log("[PREVIEW] Snapped:", {
           before: { x: beforeX, y: beforeY },
           after: { x, y },
           delta: { x: x - beforeX, y: y - beforeY },
@@ -828,7 +851,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       let left = pointer.x;
       let top = pointer.y;
       const baseSpacing = showGrid && scale && bgScale ? parseFloat(gridSize) * (scale ?? 1) * (bgScale ?? 1) : null;
-      console.debug("[PLACE] Symbol placement:", {
+      console.log("[PLACE] Symbol placement:", {
         gridSize: parseFloat(gridSize),
         scale,
         bgScale,
@@ -843,7 +866,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
         const beforeTop = top;
         left = Math.round(pointer.x / baseSpacing) * baseSpacing;
         top = Math.round(pointer.y / baseSpacing) * baseSpacing;
-        console.debug("[PLACE] Snapped:", {
+        console.log("[PLACE] Snapped:", {
           before: { left: beforeLeft, top: beforeTop },
           after: { left, top },
           delta: { left: left - beforeLeft, top: top - beforeTop },
@@ -909,7 +932,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       const left = obj.left ?? 0;
       const top = obj.top ?? 0;
 
-      console.debug("[DRAG] Object moving:", {
+      console.log("[DRAG] Object moving:", {
         gridSize: parseFloat(gridSize),
         scale,
         bgScale,
@@ -921,7 +944,7 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
       const snappedLeft = Math.round(left / baseSpacing) * baseSpacing;
       const snappedTop = Math.round(top / baseSpacing) * baseSpacing;
 
-      console.debug("[DRAG] Snapped:", {
+      console.log("[DRAG] Snapped:", {
         before: { left, top },
         after: { left: snappedLeft, top: snappedTop },
         delta: { left: snappedLeft - left, top: snappedTop - top },
@@ -1166,8 +1189,8 @@ export const CanvasWorkspace = ({ imageUrl, pageNumber, onExport, onExtract, sel
   // Debug: print grid overlay values whenever gridUpdateTrigger changes
   useEffect(() => {
     if (!fabricCanvas) return;
-    console.debug("grid overlay values", { gridSpacing, gridOffset, bgScale, scale });
-  }, [gridUpdateTrigger, gridSpacing, gridOffset, bgScale, scale, fabricCanvas]);
+    console.log("[GRID] overlay values", { gridSpacing, gridOffset, bgScale, scale, gridSize: parseFloat(gridSize) });
+  }, [gridUpdateTrigger, gridSpacing, gridOffset, bgScale, scale, fabricCanvas, gridSize]);
 
   return (
     <div className="flex gap-4 h-full">
