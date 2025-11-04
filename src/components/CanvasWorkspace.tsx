@@ -50,6 +50,7 @@ export const CanvasWorkspace = ({
   const [zoom, setZoom] = useState(1);
   const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
   const [isPanning, setIsPanning] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
@@ -166,9 +167,9 @@ export const CanvasWorkspace = ({
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
-      console.log("[MOUSEDOWN]", { button: e.button, buttons: (e as any).buttons, which: (e as any).which, ctrl: e.ctrlKey });
-      // Right mouse button is button === 2
-      if (e.button === 2) {
+      console.log("[MOUSEDOWN]", { button: e.button, buttons: (e as any).buttons, which: (e as any).which, ctrl: e.ctrlKey, space: isSpacePressed });
+      // Pan with right mouse OR space+left
+      if (e.button === 2 || (isSpacePressed && e.button === 0)) {
         e.preventDefault();
         (fabricCanvas as any).isDragging = true;
         setIsPanning(true);
@@ -176,7 +177,7 @@ export const CanvasWorkspace = ({
         (fabricCanvas as any).lastPosX = e.clientX;
         (fabricCanvas as any).lastPosY = e.clientY;
         fabricCanvas.defaultCursor = "grabbing";
-        console.log("[PAN:start]", { clientX: e.clientX, clientY: e.clientY });
+        console.log("[PAN:start]", { clientX: e.clientX, clientY: e.clientY, via: e.button === 2 ? 'right' : 'space+left' });
       }
     };
 
@@ -299,7 +300,35 @@ export const CanvasWorkspace = ({
   // Grid is screen-anchored; no offset recomputation on pan/zoom
   // (gridOffset is always {0,0} when rendering)
 
+  // Spacebar pan key handling
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
+        setIsSpacePressed(true);
+        // prevent page scroll
+        e.preventDefault();
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
+        setIsSpacePressed(false);
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown as any, { passive: false } as any);
+    window.addEventListener('keyup', onKeyUp as any, { passive: false } as any);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown as any);
+      window.removeEventListener('keyup', onKeyUp as any);
+    };
+  }, []);
 
+  // Update cursor when holding space (not dragging)
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    if ((fabricCanvas as any).isDragging) return;
+    fabricCanvas.defaultCursor = isSpacePressed ? 'grab' : (mode === 'place-symbol' ? 'none' : 'default');
+  }, [fabricCanvas, isSpacePressed, mode]);
   useEffect(() => {
     if (!fabricCanvas || !scale || !showGrid) return;
 
