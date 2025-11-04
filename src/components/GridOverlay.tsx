@@ -4,6 +4,7 @@ interface GridOverlayProps {
   gridOffset: { x: number; y: number };
   gridLineColor: string;
   gridLineThickness: string;
+  gridOpacity?: number;
 }
 
 export const GridOverlay = ({
@@ -12,8 +13,19 @@ export const GridOverlay = ({
   gridOffset,
   gridLineColor,
   gridLineThickness,
+  gridOpacity = 1,
 }: GridOverlayProps) => {
   if (!showGrid || gridSpacing <= 0) return null;
+
+  // Convert hex color to rgba with opacity
+  const hexToRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  const lineColor = hexToRgba(gridLineColor, gridOpacity);
 
   return (
     <div
@@ -31,15 +43,15 @@ export const GridOverlay = ({
         backgroundImage: `
           repeating-linear-gradient(
             to right,
-            ${gridLineColor} 0,
-            ${gridLineColor} ${gridLineThickness},
+            ${lineColor} 0,
+            ${lineColor} ${gridLineThickness},
             transparent ${gridLineThickness},
             transparent ${gridSpacing}px
           ),
           repeating-linear-gradient(
             to bottom,
-            ${gridLineColor} 0,
-            ${gridLineColor} ${gridLineThickness},
+            ${lineColor} 0,
+            ${lineColor} ${gridLineThickness},
             transparent ${gridLineThickness},
             transparent ${gridSpacing}px
           )

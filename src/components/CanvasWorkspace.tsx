@@ -160,7 +160,8 @@ export const CanvasWorkspace = ({
     };
 
     const handleMouseDown = (opt: any) => {
-      if (opt.e.altKey || opt.e.button === 1) {
+      // Only enable panning in select mode or with alt/middle mouse
+      if ((mode === "select" && opt.e.altKey) || opt.e.button === 1) {
         (fabricCanvas as any).isDragging = true;
         fabricCanvas.selection = false;
         (fabricCanvas as any).lastPosX = opt.e.clientX;
@@ -227,39 +228,40 @@ export const CanvasWorkspace = ({
 
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showMeasureDialog, setShowMeasureDialog] = useState(false);
-  const [measureDistance, setMeasureDistance] = useState(0);
+
+  const { cropRect, cancelCrop } = useCropMode(fabricCanvas, mode, () => setShowCropDialog(true));
+  const { measureDistance, measureLine, cancelMeasure } = useMeasureMode(fabricCanvas, mode, () => setShowMeasureDialog(true));
+  useEraseMode(fabricCanvas, mode, saveCanvasState);
 
   const handleCropExtract = useCallback(() => {
-    if (!fabricCanvas) return;
-    const activeObj = fabricCanvas.getActiveObject();
-    if (activeObj && activeObj.type === "rect") {
-      const dataUrl = fabricCanvas.toDataURL({
-        left: activeObj.left,
-        top: activeObj.top,
-        width: activeObj.width! * activeObj.scaleX!,
-        height: activeObj.height! * activeObj.scaleY!,
-        multiplier: 1,
-      });
-      onExtract(dataUrl);
-      fabricCanvas.remove(activeObj);
-      setShowCropDialog(false);
-      setMode("select");
-    }
-  }, [fabricCanvas, onExtract]);
+    if (!fabricCanvas || !cropRect) return;
+    const dataUrl = fabricCanvas.toDataURL({
+      left: cropRect.left,
+      top: cropRect.top,
+      width: cropRect.width! * cropRect.scaleX!,
+      height: cropRect.height! * cropRect.scaleY!,
+      multiplier: 1,
+    });
+    onExtract(dataUrl);
+    fabricCanvas.remove(cropRect);
+    cancelCrop();
+    setShowCropDialog(false);
+    setMode("select");
+  }, [fabricCanvas, cropRect, onExtract, cancelCrop]);
 
   const handleMeasureSubmit = useCallback((realDistance: number) => {
-    if (measureDistance > 0) {
+    if (measureDistance && measureDistance > 0) {
       const calculatedScale = realDistance / measureDistance;
       setScale(calculatedScale);
       toast.success(`Scale set: ${realDistance}mm = ${measureDistance.toFixed(0)}px`);
     }
+    if (measureLine && fabricCanvas) {
+      fabricCanvas.remove(measureLine);
+    }
+    cancelMeasure();
     setShowMeasureDialog(false);
     setMode("select");
-  }, [measureDistance]);
-
-  useCropMode(fabricCanvas, mode, () => setShowCropDialog(true));
-  useMeasureMode(fabricCanvas, mode, () => setShowMeasureDialog(true));
-  useEraseMode(fabricCanvas, mode, saveCanvasState);
+  }, [measureDistance, measureLine, fabricCanvas, cancelMeasure]);
   useSymbolPlacement(
     fabricCanvas,
     mode,
@@ -341,6 +343,7 @@ export const CanvasWorkspace = ({
           gridOffset={gridOffset}
           gridLineColor={gridColor}
           gridLineThickness={`${gridThickness}px`}
+          gridOpacity={gridOpacity}
         />
       </div>
 
@@ -351,11 +354,19 @@ export const CanvasWorkspace = ({
         onMeasureDialogChange={setShowMeasureDialog}
         onCropExtract={handleCropExtract}
         onCancelCrop={() => {
+          if (cropRect && fabricCanvas) {
+            fabricCanvas.remove(cropRect);
+          }
+          cancelCrop();
           setShowCropDialog(false);
           setMode("select");
         }}
         onMeasureSubmit={handleMeasureSubmit}
         onCancelMeasure={() => {
+          if (measureLine && fabricCanvas) {
+            fabricCanvas.remove(measureLine);
+          }
+          cancelMeasure();
           setShowMeasureDialog(false);
           setMode("select");
         }}

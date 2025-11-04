@@ -1,6 +1,6 @@
-import { Lightbulb, Zap, ToggleLeft, ToggleRight, Layers, Fan } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SymbolIcon } from "./SymbolIcon";
 
 export interface SymbolType {
   id: string;
@@ -41,10 +41,10 @@ export const SymbolToolbar = ({ symbols, onSymbolSelect, selectedSymbol }: Symbo
 };
 
 export const DEFAULT_SYMBOLS: SymbolType[] = [
-  { id: "downlight", name: "Downlight", icon: <Lightbulb className="w-4 h-4" />, count: 0 },
-  { id: "power-point", name: "Power Point", icon: <Zap className="w-4 h-4" />, count: 0 },
-  { id: "single-switch", name: "Single Switch", icon: <ToggleLeft className="w-4 h-4" />, count: 0 },
-  { id: "double-switch", name: "Double Switch", icon: <ToggleRight className="w-4 h-4" />, count: 0 },
-  { id: "triple-switch", name: "Triple Switch", icon: <Layers className="w-4 h-4" />, count: 0 },
-  { id: "fan", name: "Fan", icon: <Fan className="w-4 h-4" />, count: 0 },
+  { id: "downlight", name: "Downlight", icon: <SymbolIcon type="downlight" />, count: 0 },
+  { id: "power-point", name: "Power Point", icon: <SymbolIcon type="power-point" />, count: 0 },
+  { id: "single-switch", name: "Single Switch", icon: <SymbolIcon type="single-switch" />, count: 0 },
+  { id: "double-switch", name: "Double Switch", icon: <SymbolIcon type="double-switch" />, count: 0 },
+  { id: "triple-switch", name: "Triple Switch", icon: <SymbolIcon type="triple-switch" />, count: 0 },
+  { id: "fan", name: "Fan", icon: <SymbolIcon type="fan" />, count: 0 },
 ];
