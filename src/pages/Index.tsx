@@ -239,17 +239,27 @@ const Index = () => {
               symbols={symbols}
               onSymbolSelect={setSelectedSymbol}
               selectedSymbol={selectedSymbol}
-            />
-            <SymbolStyleControls
-              color={symbolColor}
-              thickness={symbolThickness}
-              transparency={symbolTransparency}
-              scale={symbolScale}
+              symbolColor={symbolColor}
+              symbolThickness={symbolThickness}
+              symbolTransparency={symbolTransparency}
+              symbolScale={symbolScale}
               onColorChange={setSymbolColor}
               onThicknessChange={setSymbolThickness}
               onTransparencyChange={setSymbolTransparency}
               onScaleChange={setSymbolScale}
             />
+            <div className="portrait:hidden landscape:block md:block">
+              <SymbolStyleControls
+                color={symbolColor}
+                thickness={symbolThickness}
+                transparency={symbolTransparency}
+                scale={symbolScale}
+                onColorChange={setSymbolColor}
+                onThicknessChange={setSymbolThickness}
+                onTransparencyChange={setSymbolTransparency}
+                onScaleChange={setSymbolScale}
+              />
+            </div>
           </div>
         </aside>
       </div>

@@ -62,13 +62,20 @@ export const useSymbolPlacement = (
     };
 
     const handleMouseDown = (opt: any) => {
-      if (opt.e.button !== 0) return;
+      if (opt.e.button !== 0 && opt.e.type !== 'touchstart') return;
       
       const vpt = fabricCanvas.viewportTransform;
       if (!vpt) return;
 
       let finalX = opt.e.offsetX;
       let finalY = opt.e.offsetY;
+
+      // For touch events, calculate offset from touch position
+      if (opt.e.type === 'touchstart' && opt.e.touches && opt.e.touches.length > 0) {
+        const rect = fabricCanvas.upperCanvasEl.getBoundingClientRect();
+        finalX = opt.e.touches[0].clientX - rect.left;
+        finalY = opt.e.touches[0].clientY - rect.top;
+      }
 
       // Snap to screen-anchored grid if Ctrl/Meta is held
       if (showGrid && scale && (opt.e.ctrlKey || opt.e.metaKey)) {
@@ -102,6 +109,35 @@ export const useSymbolPlacement = (
       }
     };
 
+    const handleTouchMove = (opt: any) => {
+      if (opt.e.type !== 'touchmove' || !opt.e.touches || opt.e.touches.length === 0) return;
+      
+      const vpt = fabricCanvas.viewportTransform;
+      if (!vpt) return;
+
+      const rect = fabricCanvas.upperCanvasEl.getBoundingClientRect();
+      let finalX = opt.e.touches[0].clientX - rect.left;
+      let finalY = opt.e.touches[0].clientY - rect.top;
+
+      // Convert screen coordinates to world coordinates
+      const xWorld = (finalX - vpt[4]) / vpt[0];
+      const yWorld = (finalY - vpt[5]) / vpt[3];
+      
+      if (previewSymbol) {
+        fabricCanvas.remove(previewSymbol);
+      }
+      
+      previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld);
+      if (previewSymbol) {
+        previewSymbol.opacity = 0.5;
+        previewSymbol.selectable = false;
+        previewSymbol.evented = false;
+        (previewSymbol as any).isPreview = true;
+        fabricCanvas.add(previewSymbol);
+        fabricCanvas.renderAll();
+      }
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (previewSymbol) {
@@ -116,6 +152,7 @@ export const useSymbolPlacement = (
 
     fabricCanvas.on("mouse:move", handleMouseMove);
     fabricCanvas.on("mouse:down", handleMouseDown);
+    fabricCanvas.on("mouse:move", handleTouchMove);
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
@@ -124,6 +161,7 @@ export const useSymbolPlacement = (
       }
       fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:down", handleMouseDown);
+      fabricCanvas.off("mouse:move", handleTouchMove);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [fabricCanvas, mode, selectedSymbol, scale, showGrid, gridSize, bgScale, onSymbolPlaced, onSymbolDeselect, createSymbol, onSaveState, setMode]);
