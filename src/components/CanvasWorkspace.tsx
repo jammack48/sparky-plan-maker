@@ -167,8 +167,8 @@ export const CanvasWorkspace = ({
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
       console.log("[MOUSEDOWN]", { button: e.button, buttons: (e as any).buttons, which: (e as any).which, ctrl: e.ctrlKey });
-      const isRight = e.button === 2 || (e as any).which === 3 || (e as any).buttons === 2 || (e.ctrlKey && e.button === 0);
-      if (isRight) {
+      // Right mouse button is button === 2
+      if (e.button === 2) {
         e.preventDefault();
         (fabricCanvas as any).isDragging = true;
         setIsPanning(true);
