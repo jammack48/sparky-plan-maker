@@ -43,7 +43,7 @@ export const useSymbolPlacement = (
         ctrlHeld: opt.e.ctrlKey || opt.e.metaKey,
       });
 
-      if (baseSpacing && baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+      if (baseSpacing && baseSpacing > 0 && (opt.e.ctrlKey || opt.e.metaKey)) {
         const beforeX = x;
         const beforeY = y;
         x = Math.round(pointer.x / baseSpacing) * baseSpacing;
@@ -87,7 +87,7 @@ export const useSymbolPlacement = (
         ctrlHeld: opt.e.ctrlKey || opt.e.metaKey,
         showGrid,
       });
-      if (baseSpacing && baseSpacing > 0 && !opt.e.ctrlKey && !opt.e.metaKey) {
+      if (baseSpacing && baseSpacing > 0 && (opt.e.ctrlKey || opt.e.metaKey)) {
         const beforeLeft = left;
         const beforeTop = top;
         left = Math.round(pointer.x / baseSpacing) * baseSpacing;
@@ -111,7 +111,7 @@ export const useSymbolPlacement = (
         fabricCanvas.renderAll();
         onSaveState();
         onSymbolPlaced?.(selectedSymbol);
-        const snapStatus = (showGrid && scale && bgScale && !opt.e.ctrlKey && !opt.e.metaKey) ? " (snapped)" : "";
+        const snapStatus = (showGrid && scale && bgScale && (opt.e.ctrlKey || opt.e.metaKey)) ? " (snapped)" : "";
         toast.success(`${selectedSymbol} placed${snapStatus}`);
       }
     };

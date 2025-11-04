@@ -18,6 +18,10 @@ const Index = () => {
   const [symbols, setSymbols] = useState(DEFAULT_SYMBOLS);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [symbolColor, setSymbolColor] = useState("#000000");
+  const [symbolThickness, setSymbolThickness] = useState(2);
+  const [symbolTransparency, setSymbolTransparency] = useState(1);
+  const [symbolScale, setSymbolScale] = useState(1);
 
   useEffect(() => {
     // Auto-generate a simple sample plan: white background with a black square
