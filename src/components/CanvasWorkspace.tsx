@@ -38,6 +38,7 @@ export const CanvasWorkspace = ({
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [mode, setMode] = useState<"select" | "crop" | "measure" | "erase" | "place-symbol">("select");
   const [showGrid, setShowGrid] = useState(false);
@@ -168,45 +169,44 @@ export const CanvasWorkspace = ({
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
       console.log("[MOUSEDOWN]", { button: e.button, buttons: (e as any).buttons, which: (e as any).which, ctrl: e.ctrlKey, space: isSpacePressed });
-      // Pan with right mouse OR space+left
-      if (e.button === 2 || (isSpacePressed && e.button === 0)) {
+      // Space+Left pans via Fabric events; right-button handled by DOM below
+      if (isSpacePressed && e.button === 0) {
         e.preventDefault();
         (fabricCanvas as any).isDragging = true;
+        panRef.current.dragging = true;
+        panRef.current.lastX = e.clientX;
+        panRef.current.lastY = e.clientY;
         setIsPanning(true);
         fabricCanvas.selection = false;
-        (fabricCanvas as any).lastPosX = e.clientX;
-        (fabricCanvas as any).lastPosY = e.clientY;
         fabricCanvas.defaultCursor = "grabbing";
-        console.log("[PAN:start]", { clientX: e.clientX, clientY: e.clientY, via: e.button === 2 ? 'right' : 'space+left' });
+        console.log("[PAN:start]", { clientX: e.clientX, clientY: e.clientY, via: 'space+left (fabric)' });
       }
     };
 
     const handleMouseMove = (opt: any) => {
-      if ((fabricCanvas as any).isDragging) {
-        const vpt = fabricCanvas.viewportTransform;
-        if (vpt) {
-          const dx = opt.e.clientX - (fabricCanvas as any).lastPosX;
-          const dy = opt.e.clientY - (fabricCanvas as any).lastPosY;
-          vpt[4] += dx;
-          vpt[5] += dy;
-          fabricCanvas.requestRenderAll();
-          (fabricCanvas as any).lastPosX = opt.e.clientX;
-          (fabricCanvas as any).lastPosY = opt.e.clientY;
-          console.log("[PAN:move]", { dx, dy, vptTx: vpt[4], vptTy: vpt[5] });
-        }
+      if (!panRef.current.dragging) return;
+      const vpt = fabricCanvas.viewportTransform;
+      if (vpt) {
+        const dx = opt.e.clientX - panRef.current.lastX;
+        const dy = opt.e.clientY - panRef.current.lastY;
+        vpt[4] += dx;
+        vpt[5] += dy;
+        fabricCanvas.requestRenderAll();
+        panRef.current.lastX = opt.e.clientX;
+        panRef.current.lastY = opt.e.clientY;
+        console.log("[PAN:move] (fabric)", { dx, dy, vptTx: vpt[4], vptTy: vpt[5] });
       }
     };
 
     const handleMouseUp = () => {
+      if (!panRef.current.dragging) return;
       fabricCanvas.setViewportTransform(fabricCanvas.viewportTransform!);
       (fabricCanvas as any).isDragging = false;
+      panRef.current.dragging = false;
       setIsPanning(false);
       fabricCanvas.selection = true;
       fabricCanvas.defaultCursor = mode === "place-symbol" ? "none" : "default";
-      // Only log pan end if we were dragging
-      if ((fabricCanvas as any).wasDraggingLogged !== false) {
-        console.log("[PAN:end]");
-      }
+      console.log("[PAN:end]");
     };
 
     fabricCanvas.on("mouse:wheel", handleWheel);
@@ -214,12 +214,56 @@ export const CanvasWorkspace = ({
     fabricCanvas.on("mouse:move", handleMouseMove);
     fabricCanvas.on("mouse:up", handleMouseUp);
 
+    // DOM listeners for right-button pan
+    const el = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
+    const domDown = (e: MouseEvent) => {
+      if (e.button === 2) {
+        e.preventDefault();
+        panRef.current.dragging = true;
+        panRef.current.lastX = e.clientX;
+        panRef.current.lastY = e.clientY;
+        setIsPanning(true);
+        fabricCanvas.selection = false;
+        fabricCanvas.defaultCursor = 'grabbing';
+        console.log('[PAN:start] (dom right)', { clientX: e.clientX, clientY: e.clientY });
+      }
+    };
+    const domMove = (e: MouseEvent) => {
+      if (!panRef.current.dragging) return;
+      const vpt = fabricCanvas.viewportTransform;
+      if (vpt) {
+        const dx = e.clientX - panRef.current.lastX;
+        const dy = e.clientY - panRef.current.lastY;
+        vpt[4] += dx;
+        vpt[5] += dy;
+        fabricCanvas.requestRenderAll();
+        panRef.current.lastX = e.clientX;
+        panRef.current.lastY = e.clientY;
+        console.log('[PAN:move] (dom)', { dx, dy, vptTx: vpt[4], vptTy: vpt[5] });
+      }
+    };
+    const domUp = () => {
+      if (!panRef.current.dragging) return;
+      fabricCanvas.setViewportTransform(fabricCanvas.viewportTransform!);
+      panRef.current.dragging = false;
+      setIsPanning(false);
+      fabricCanvas.selection = true;
+      fabricCanvas.defaultCursor = mode === 'place-symbol' ? 'none' : 'default';
+      console.log('[PAN:end] (dom)');
+    };
+    el?.addEventListener('mousedown', domDown);
+    window.addEventListener('mousemove', domMove);
+    window.addEventListener('mouseup', domUp);
+
     return () => {
       fabricCanvas.upperCanvasEl?.removeEventListener("contextmenu", preventContextMenu);
       fabricCanvas.off("mouse:wheel", handleWheel);
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:up", handleMouseUp);
+      el?.removeEventListener('mousedown', domDown);
+      window.removeEventListener('mousemove', domMove);
+      window.removeEventListener('mouseup', domUp);
     };
   }, [fabricCanvas, mode, scale, showGrid, gridSize]);
 
