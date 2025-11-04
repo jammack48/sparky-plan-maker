@@ -373,6 +373,105 @@ export const CanvasWorkspace = ({
     if ((fabricCanvas as any).isDragging) return;
     fabricCanvas.defaultCursor = isSpacePressed ? 'grab' : (mode === 'place-symbol' ? 'none' : 'default');
   }, [fabricCanvas, isSpacePressed, mode]);
+
+  // Touch gesture support for pinch zoom and two-finger pan
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    const el = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
+    if (!el) return;
+
+    let touchState = {
+      active: false,
+      initialDistance: 0,
+      initialZoom: 1,
+      lastCenter: { x: 0, y: 0 },
+      touches: [] as Touch[]
+    };
+
+    const getTouchDistance = (t1: Touch, t2: Touch) => {
+      const dx = t2.clientX - t1.clientX;
+      const dy = t2.clientY - t1.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const getTouchCenter = (t1: Touch, t2: Touch) => ({
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2
+    });
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        touchState.active = true;
+        touchState.initialDistance = getTouchDistance(t1, t2);
+        touchState.initialZoom = fabricCanvas.getZoom();
+        touchState.lastCenter = getTouchCenter(t1, t2);
+        touchState.touches = [t1, t2];
+        console.log('[TOUCH] start', { distance: touchState.initialDistance, zoom: touchState.initialZoom });
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchState.active || e.touches.length !== 2) return;
+      e.preventDefault();
+
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const currentDistance = getTouchDistance(t1, t2);
+      const currentCenter = getTouchCenter(t1, t2);
+
+      // Pinch zoom
+      const scale = currentDistance / touchState.initialDistance;
+      const newZoom = Math.min(Math.max(0.1, touchState.initialZoom * scale), 20);
+      
+      // Get canvas-relative center point
+      const rect = el.getBoundingClientRect();
+      const centerPoint = new Point(
+        currentCenter.x - rect.left,
+        currentCenter.y - rect.top
+      );
+      
+      fabricCanvas.zoomToPoint(centerPoint, newZoom);
+
+      // Two-finger pan
+      const dx = currentCenter.x - touchState.lastCenter.x;
+      const dy = currentCenter.y - touchState.lastCenter.y;
+      
+      const vpt = fabricCanvas.viewportTransform;
+      if (vpt) {
+        vpt[4] += dx;
+        vpt[5] += dy;
+      }
+
+      touchState.lastCenter = currentCenter;
+      fabricCanvas.requestRenderAll();
+      setZoom(newZoom);
+      setGridUpdateTrigger(prev => prev + 1);
+
+      console.log('[TOUCH] move', { scale, newZoom, dx, dy });
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchState.active) {
+        console.log('[TOUCH] end');
+        touchState.active = false;
+      }
+    };
+
+    el.addEventListener('touchstart', handleTouchStart, { passive: false });
+    el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    el.addEventListener('touchend', handleTouchEnd);
+    el.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchmove', handleTouchMove);
+      el.removeEventListener('touchend', handleTouchEnd);
+      el.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [fabricCanvas]);
   useEffect(() => {
     if (!fabricCanvas || !scale || !showGrid) return;
 
