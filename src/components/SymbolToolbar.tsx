@@ -1,4 +1,4 @@
-import { Lightbulb, Plug, ToggleLeft, Wifi, Flame, Cable } from "lucide-react";
+import { Lightbulb, Zap, ToggleLeft, ToggleRight, Flame, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -41,10 +41,11 @@ export const SymbolToolbar = ({ symbols, onSymbolSelect, selectedSymbol }: Symbo
 };
 
 export const DEFAULT_SYMBOLS: SymbolType[] = [
-  { id: "light", name: "Light", icon: <Lightbulb className="w-4 h-4" />, count: 0 },
-  { id: "power", name: "Power", icon: <Plug className="w-4 h-4" />, count: 0 },
-  { id: "switch", name: "Switch", icon: <ToggleLeft className="w-4 h-4" />, count: 0 },
-  { id: "data", name: "Data", icon: <Wifi className="w-4 h-4" />, count: 0 },
+  { id: "downlight", name: "Downlight", icon: <Lightbulb className="w-4 h-4" />, count: 0 },
+  { id: "socket", name: "Socket", icon: <Zap className="w-4 h-4" />, count: 0 },
+  { id: "single-switch", name: "1-Way", icon: <ToggleLeft className="w-4 h-4" />, count: 0 },
+  { id: "double-switch", name: "2-Way", icon: <ToggleRight className="w-4 h-4" />, count: 0 },
+  { id: "triple-switch", name: "3-Gang", icon: <Minus className="w-4 h-4" />, count: 0 },
   { id: "smoke", name: "Smoke", icon: <Flame className="w-4 h-4" />, count: 0 },
-  { id: "cable", name: "Cable", icon: <Cable className="w-4 h-4" />, count: 0 },
+  { id: "fluoro", name: "Fluoro", icon: <Minus className="w-4 h-4" />, count: 0 },
 ];

@@ -6,22 +6,23 @@ export const useSymbolCreation = () => {
     const halfSize = size / 2;
     
     switch (type) {
-      case "light": {
-        const lightCircle = new Circle({
+      case "downlight": {
+        // NZ Standard: Circle with X (downlight)
+        const circle = new Circle({
           radius: halfSize,
           fill: "transparent",
           stroke: "#000",
           strokeWidth: 0.4,
         });
-        const lightLine1 = new Line([0, -halfSize, 0, halfSize], {
+        const xLine1 = new Line([-halfSize * 0.7, -halfSize * 0.7, halfSize * 0.7, halfSize * 0.7], {
           stroke: "#000",
           strokeWidth: 0.4,
         });
-        const lightLine2 = new Line([-halfSize, 0, halfSize, 0], {
+        const xLine2 = new Line([-halfSize * 0.7, halfSize * 0.7, halfSize * 0.7, -halfSize * 0.7], {
           stroke: "#000",
           strokeWidth: 0.4,
         });
-        const group = new Group([lightCircle, lightLine1, lightLine2], {
+        const group = new Group([circle, xLine1, xLine2], {
           left: x,
           top: y,
           originX: "center",
@@ -31,77 +32,136 @@ export const useSymbolCreation = () => {
         return group;
       }
         
-      case "power": {
-        const powerRect = new Rect({
-          width: size,
-          height: size,
-          fill: "transparent",
-          stroke: "#000",
-          strokeWidth: 0.4,
-          originX: "center",
-          originY: "center",
-        });
-        const powerLine1 = new Line([-2, -2, -2, 2], {
-          stroke: "#000",
-          strokeWidth: 0.4,
-        });
-        const powerLine2 = new Line([2, -2, 2, 2], {
-          stroke: "#000",
-          strokeWidth: 0.4,
-        });
-        const powerGroup = new Group([powerRect, powerLine1, powerLine2], {
-          left: x,
-          top: y,
-          originX: "center",
-          originY: "center",
-        });
-        (powerGroup as any).symbolType = type;
-        return powerGroup;
-      }
-        
-      case "switch": {
-        const switchLine = new Line([-halfSize, 0, 0, -halfSize], {
-          stroke: "#000",
-          strokeWidth: 0.6,
-        });
-        const switchBase = new Circle({
-          radius: 0.6,
-          fill: "#000",
-          left: -halfSize,
-          top: 0,
-          originX: "center",
-          originY: "center",
-        });
-        const switchGroup = new Group([switchLine, switchBase], {
-          left: x,
-          top: y,
-          originX: "center",
-          originY: "center",
-        });
-        (switchGroup as any).symbolType = type;
-        return switchGroup;
-      }
-        
-      case "data": {
-        const dataPath = new Path(
-          `M 0,${-halfSize} L ${halfSize},0 L 0,${halfSize} L ${-halfSize},0 Z`,
+      case "socket": {
+        // NZ Standard: Single socket outlet (half circle with vertical line)
+        const arc = new Path(
+          `M ${-halfSize},0 A ${halfSize},${halfSize} 0 0,1 ${halfSize},0`,
           {
             fill: "transparent",
             stroke: "#000",
             strokeWidth: 0.4,
           }
         );
-        const dataGroup = new Group([dataPath], {
+        const line = new Line([0, 0, 0, halfSize], {
+          stroke: "#000",
+          strokeWidth: 0.4,
+        });
+        const group = new Group([arc, line], {
           left: x,
           top: y,
           originX: "center",
           originY: "center",
         });
-        (dataGroup as any).symbolType = type;
-        return dataGroup;
+        (group as any).symbolType = type;
+        return group;
+      }
+        
+      case "single-switch": {
+        // NZ Standard: One way switch (circle with diagonal line)
+        const circle = new Circle({
+          radius: halfSize * 0.6,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 0.4,
+        });
+        const line = new Line([-halfSize * 0.8, 0, halfSize * 0.4, -halfSize * 0.8], {
+          stroke: "#000",
+          strokeWidth: 0.5,
+        });
+        const group = new Group([circle, line], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (group as any).symbolType = type;
+        return group;
+      }
+        
+      case "double-switch": {
+        // NZ Standard: Two way switch (two circles with diagonal line)
+        const circle1 = new Circle({
+          radius: halfSize * 0.4,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 0.4,
+          left: -halfSize * 0.6,
+          top: halfSize * 0.3,
+          originX: "center",
+          originY: "center",
+        });
+        const circle2 = new Circle({
+          radius: halfSize * 0.4,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 0.4,
+          left: halfSize * 0.6,
+          top: -halfSize * 0.3,
+          originX: "center",
+          originY: "center",
+        });
+        const line = new Line([-halfSize * 0.6, halfSize * 0.3, halfSize * 0.6, -halfSize * 0.3], {
+          stroke: "#000",
+          strokeWidth: 0.5,
+        });
+        const group = new Group([circle1, circle2, line], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (group as any).symbolType = type;
+        return group;
+      }
+        
+      case "triple-switch": {
+        // NZ Standard: Three switches in a row
+        const switch1 = new Circle({
+          radius: halfSize * 0.35,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 0.4,
+          left: -halfSize,
+          top: 0,
+          originX: "center",
+          originY: "center",
+        });
+        const switch2 = new Circle({
+          radius: halfSize * 0.35,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 0.4,
+          left: 0,
+          top: 0,
+          originX: "center",
+          originY: "center",
+        });
+        const switch3 = new Circle({
+          radius: halfSize * 0.35,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 0.4,
+          left: halfSize,
+          top: 0,
+          originX: "center",
+          originY: "center",
+        });
+        const line = new Line([-halfSize * 0.8, 0, halfSize * 0.8, 0], {
+          stroke: "#000",
+          strokeWidth: 0.5,
+        });
+        const group = new Group([switch1, switch2, switch3, line], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+        });
+        (group as any).symbolType = type;
+        return group;
       }
         
       case "smoke": {
+        // NZ Standard: Smoke detector (triangle with dot)
         const smokePath = new Path(
           `M 0,${-halfSize} L ${halfSize},${halfSize} L ${-halfSize},${halfSize} Z`,
           {
@@ -110,11 +170,14 @@ export const useSymbolCreation = () => {
             strokeWidth: 0.4,
           }
         );
-        const smokeExclaim = new Path(`M 0,-1 L 0,1 M 0,2 L 0,2.4`, {
-          stroke: "#000",
-          strokeWidth: 0.4,
+        const smokeDot = new Circle({
+          radius: 0.5,
+          fill: "#000",
+          top: halfSize * 0.2,
+          originX: "center",
+          originY: "center",
         });
-        const smokeGroup = new Group([smokePath, smokeExclaim], {
+        const smokeGroup = new Group([smokePath, smokeDot], {
           left: x,
           top: y,
           originX: "center",
@@ -124,23 +187,25 @@ export const useSymbolCreation = () => {
         return smokeGroup;
       }
         
-      case "cable": {
-        const cablePath = new Path(
-          `M ${-halfSize},0 Q ${-halfSize / 2},-2 0,0 T ${halfSize},0`,
-          {
-            fill: "transparent",
-            stroke: "#000",
-            strokeWidth: 0.4,
-          }
-        );
-        const cableGroup = new Group([cablePath], {
+      case "fluoro": {
+        // NZ Standard: Fluorescent lamp (rectangle)
+        const rect = new Rect({
+          width: size * 1.2,
+          height: size * 0.4,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 0.4,
+          originX: "center",
+          originY: "center",
+        });
+        const group = new Group([rect], {
           left: x,
           top: y,
           originX: "center",
           originY: "center",
         });
-        (cableGroup as any).symbolType = type;
-        return cableGroup;
+        (group as any).symbolType = type;
+        return group;
       }
         
       default:
