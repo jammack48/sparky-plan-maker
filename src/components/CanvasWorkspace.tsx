@@ -94,8 +94,13 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas || !imageUrl) return;
 
-    fabricCanvas.clear();
-    fabricCanvas.backgroundColor = "#f5f5f5";
+    try {
+      fabricCanvas.clear();
+      fabricCanvas.backgroundColor = "#f5f5f5";
+    } catch (e) {
+      console.error("Canvas clear error:", e);
+      return;
+    }
 
     const img = new Image();
     img.crossOrigin = "anonymous";

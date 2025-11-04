@@ -4,6 +4,7 @@ import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOLS } from "@/components/SymbolToolbar";
+import { SymbolStyleControls } from "@/components/SymbolStyleControls";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -225,15 +226,29 @@ const Index = () => {
             selectedSymbol={selectedSymbol}
             onSymbolPlaced={handleSymbolPlaced}
             onSymbolDeselect={() => setSelectedSymbol(null)}
+            symbolColor={symbolColor}
+            symbolThickness={symbolThickness}
+            symbolTransparency={symbolTransparency}
+            symbolScale={symbolScale}
           />
         </main>
 
         <aside className="w-full md:w-48 lg:w-56 border-t md:border-t-0 md:border-l border-border bg-card shrink-0 overflow-hidden">
-          <div className="h-full overflow-y-auto p-2 sm:p-3">
+          <div className="h-full overflow-y-auto p-2 sm:p-3 space-y-3">
             <SymbolToolbar
               symbols={symbols}
               onSymbolSelect={setSelectedSymbol}
               selectedSymbol={selectedSymbol}
+            />
+            <SymbolStyleControls
+              color={symbolColor}
+              thickness={symbolThickness}
+              transparency={symbolTransparency}
+              scale={symbolScale}
+              onColorChange={setSymbolColor}
+              onThicknessChange={setSymbolThickness}
+              onTransparencyChange={setSymbolTransparency}
+              onScaleChange={setSymbolScale}
             />
           </div>
         </aside>
