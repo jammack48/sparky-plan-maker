@@ -222,6 +222,80 @@ export const CanvasWorkspace = ({
     };
   }, [fabricCanvas, mode, scale, showGrid, gridSize]);
 
+  // Debug listeners: DOM and Fabric mouse events to identify which mouse input is sent
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    const el = fabricCanvas.upperCanvasEl as HTMLCanvasElement | null;
+
+    const logDom = (label: string) => (ev: any) => {
+      console.log(`[DOM ${label}]`, {
+        type: ev?.type,
+        button: ev?.button,
+        buttons: ev?.buttons,
+        which: ev?.which,
+        ctrl: !!ev?.ctrlKey,
+        alt: !!ev?.altKey,
+        meta: !!ev?.metaKey,
+        shift: !!ev?.shiftKey,
+        clientX: ev?.clientX,
+        clientY: ev?.clientY,
+      });
+    };
+
+    const domDown = logDom('mousedown');
+    const domUp = logDom('mouseup');
+    const domMove = logDom('mousemove');
+    const domContext = logDom('contextmenu');
+    const ptrDown = logDom('pointerdown');
+    const ptrUp = logDom('pointerup');
+    const ptrMove = logDom('pointermove');
+
+    el?.addEventListener('mousedown', domDown);
+    el?.addEventListener('mouseup', domUp);
+    el?.addEventListener('mousemove', domMove);
+    el?.addEventListener('contextmenu', domContext);
+    el?.addEventListener('pointerdown', ptrDown);
+    el?.addEventListener('pointerup', ptrUp);
+    el?.addEventListener('pointermove', ptrMove);
+
+    const logFabric = (label: string) => (opt: any) => {
+      const e = opt?.e;
+      console.log(`[FABRIC ${label}]`, e ? {
+        type: e.type,
+        button: e.button,
+        buttons: e.buttons,
+        which: e.which,
+        ctrl: e.ctrlKey,
+        alt: e.altKey,
+        meta: e.metaKey,
+        shift: e.shiftKey,
+        clientX: e.clientX,
+        clientY: e.clientY,
+      } : { opt });
+    };
+
+    const fDown = logFabric('mouse:down');
+    const fUp = logFabric('mouse:up');
+    const fMove = logFabric('mouse:move');
+
+    fabricCanvas.on('mouse:down', fDown);
+    fabricCanvas.on('mouse:up', fUp);
+    fabricCanvas.on('mouse:move', fMove);
+
+    return () => {
+      el?.removeEventListener('mousedown', domDown);
+      el?.removeEventListener('mouseup', domUp);
+      el?.removeEventListener('mousemove', domMove);
+      el?.removeEventListener('contextmenu', domContext);
+      el?.removeEventListener('pointerdown', ptrDown);
+      el?.removeEventListener('pointerup', ptrUp);
+      el?.removeEventListener('pointermove', ptrMove);
+      fabricCanvas.off('mouse:down', fDown);
+      fabricCanvas.off('mouse:up', fUp);
+      fabricCanvas.off('mouse:move', fMove);
+    };
+  }, [fabricCanvas]);
+
   // Grid is screen-anchored; no offset recomputation on pan/zoom
   // (gridOffset is always {0,0} when rendering)
 
