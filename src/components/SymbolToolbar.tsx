@@ -43,8 +43,8 @@ export const SymbolToolbar = ({ symbols, onSymbolSelect, selectedSymbol }: Symbo
 export const DEFAULT_SYMBOLS: SymbolType[] = [
   { id: "downlight", name: "Downlight", icon: <Lightbulb className="w-4 h-4" />, count: 0 },
   { id: "power-point", name: "Power Point", icon: <Zap className="w-4 h-4" />, count: 0 },
-  { id: "single-switch", name: "Single", icon: <ToggleLeft className="w-4 h-4" />, count: 0 },
-  { id: "double-switch", name: "Double", icon: <ToggleRight className="w-4 h-4" />, count: 0 },
-  { id: "triple-switch", name: "Triple", icon: <Layers className="w-4 h-4" />, count: 0 },
+  { id: "single-switch", name: "Single Switch", icon: <ToggleLeft className="w-4 h-4" />, count: 0 },
+  { id: "double-switch", name: "Double Switch", icon: <ToggleRight className="w-4 h-4" />, count: 0 },
+  { id: "triple-switch", name: "Triple Switch", icon: <Layers className="w-4 h-4" />, count: 0 },
   { id: "fan", name: "Fan", icon: <Fan className="w-4 h-4" />, count: 0 },
 ];
