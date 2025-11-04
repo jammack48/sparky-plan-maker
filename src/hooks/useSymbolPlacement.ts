@@ -25,41 +25,32 @@ export const useSymbolPlacement = (
     let previewSymbol: FabricObject | null = null;
 
     const handleMouseMove = (opt: any) => {
-      const pointer = fabricCanvas.getPointer(opt.e);
-      let x = pointer.x;
-      let y = pointer.y;
+      const vpt = fabricCanvas.viewportTransform;
+      if (!vpt) return;
 
-      let baseSpacing = null as number | null;
-      if (showGrid && scale && bgScale) {
-        baseSpacing = parseFloat(gridSize) * (scale ?? 1);
-      }
-      console.log("[PREVIEW] Grid snap values:", {
-        gridSize: parseFloat(gridSize),
-        scale,
-        bgScale,
-        baseSpacing,
-        pointerX: pointer.x,
-        pointerY: pointer.y,
-        ctrlHeld: opt.e.ctrlKey || opt.e.metaKey,
-      });
+      let finalX = opt.e.offsetX;
+      let finalY = opt.e.offsetY;
 
-      if (baseSpacing && baseSpacing > 0 && (opt.e.ctrlKey || opt.e.metaKey)) {
-        const beforeX = x;
-        const beforeY = y;
-        x = Math.round(pointer.x / baseSpacing) * baseSpacing;
-        y = Math.round(pointer.y / baseSpacing) * baseSpacing;
-        console.log("[PREVIEW] Snapped:", {
-          before: { x: beforeX, y: beforeY },
-          after: { x, y },
-          delta: { x: x - beforeX, y: y - beforeY },
-        });
+      // Snap to screen-anchored grid if Ctrl/Meta is held
+      if (showGrid && scale && (opt.e.ctrlKey || opt.e.metaKey)) {
+        const zoom = vpt[0]; // Assuming uniform zoom
+        const baseSpacing = parseFloat(gridSize) * scale * zoom;
+        const stepPx = baseSpacing / 2;
+        if (stepPx > 0) {
+          finalX = Math.round(finalX / stepPx) * stepPx;
+          finalY = Math.round(finalY / stepPx) * stepPx;
+        }
       }
+
+      // Convert screen coordinates to world coordinates
+      const xWorld = (finalX - vpt[4]) / vpt[0];
+      const yWorld = (finalY - vpt[5]) / vpt[3];
       
       if (previewSymbol) {
         fabricCanvas.remove(previewSymbol);
       }
       
-      previewSymbol = createSymbol(selectedSymbol, x, y);
+      previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld);
       if (previewSymbol) {
         previewSymbol.opacity = 0.5;
         previewSymbol.selectable = false;
@@ -73,45 +64,40 @@ export const useSymbolPlacement = (
     const handleMouseDown = (opt: any) => {
       if (opt.e.button !== 0) return;
       
-      const pointer = fabricCanvas.getPointer(opt.e);
-      let left = pointer.x;
-      let top = pointer.y;
-      const baseSpacing = showGrid && scale && bgScale ? parseFloat(gridSize) * (scale ?? 1) : null;
-      console.log("[PLACE] Symbol placement:", {
-        gridSize: parseFloat(gridSize),
-        scale,
-        bgScale,
-        baseSpacing,
-        pointerX: pointer.x,
-        pointerY: pointer.y,
-        ctrlHeld: opt.e.ctrlKey || opt.e.metaKey,
-        showGrid,
-      });
-      if (baseSpacing && baseSpacing > 0 && (opt.e.ctrlKey || opt.e.metaKey)) {
-        const beforeLeft = left;
-        const beforeTop = top;
-        left = Math.round(pointer.x / baseSpacing) * baseSpacing;
-        top = Math.round(pointer.y / baseSpacing) * baseSpacing;
-        console.log("[PLACE] Snapped:", {
-          before: { left: beforeLeft, top: beforeTop },
-          after: { left, top },
-          delta: { left: left - beforeLeft, top: top - beforeTop },
-        });
+      const vpt = fabricCanvas.viewportTransform;
+      if (!vpt) return;
+
+      let finalX = opt.e.offsetX;
+      let finalY = opt.e.offsetY;
+
+      // Snap to screen-anchored grid if Ctrl/Meta is held
+      if (showGrid && scale && (opt.e.ctrlKey || opt.e.metaKey)) {
+        const zoom = vpt[0];
+        const baseSpacing = parseFloat(gridSize) * scale * zoom;
+        const stepPx = baseSpacing / 2;
+        if (stepPx > 0) {
+          finalX = Math.round(finalX / stepPx) * stepPx;
+          finalY = Math.round(finalY / stepPx) * stepPx;
+        }
       }
+
+      // Convert screen coordinates to world coordinates
+      const xWorld = (finalX - vpt[4]) / vpt[0];
+      const yWorld = (finalY - vpt[5]) / vpt[3];
       
       if (previewSymbol) {
         fabricCanvas.remove(previewSymbol);
         previewSymbol = null;
       }
       
-      const symbol = createSymbol(selectedSymbol, left, top);
+      const symbol = createSymbol(selectedSymbol, xWorld, yWorld);
       if (symbol) {
         fabricCanvas.add(symbol);
         fabricCanvas.setActiveObject(symbol);
         fabricCanvas.renderAll();
         onSaveState();
         onSymbolPlaced?.(selectedSymbol);
-        const snapStatus = (showGrid && scale && bgScale && (opt.e.ctrlKey || opt.e.metaKey)) ? " (snapped)" : "";
+        const snapStatus = (showGrid && scale && (opt.e.ctrlKey || opt.e.metaKey)) ? " (snapped)" : "";
         toast.success(`${selectedSymbol} placed${snapStatus}`);
       }
     };

@@ -146,6 +146,10 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas) return;
 
+    // Prevent right-click context menu
+    const preventContextMenu = (e: MouseEvent) => e.preventDefault();
+    fabricCanvas.upperCanvasEl.addEventListener("contextmenu", preventContextMenu);
+
     const handleWheel = (opt: any) => {
       const delta = opt.e.deltaY;
       let newZoom = fabricCanvas.getZoom();
@@ -156,12 +160,12 @@ export const CanvasWorkspace = ({
       opt.e.stopPropagation();
       fabricCanvas.renderAll();
       setZoom(newZoom);
-      setGridUpdateTrigger(prev => prev + 1);
     };
 
     const handleMouseDown = (opt: any) => {
-      // Only enable panning in select mode or with alt/middle mouse
-      if ((mode === "select" && opt.e.altKey) || opt.e.button === 1) {
+      // Right mouse button pans the image (grid stays fixed)
+      if (opt.e.button === 2) {
+        opt.e.preventDefault();
         (fabricCanvas as any).isDragging = true;
         fabricCanvas.selection = false;
         (fabricCanvas as any).lastPosX = opt.e.clientX;
@@ -179,7 +183,6 @@ export const CanvasWorkspace = ({
           fabricCanvas.requestRenderAll();
           (fabricCanvas as any).lastPosX = opt.e.clientX;
           (fabricCanvas as any).lastPosY = opt.e.clientY;
-          setGridUpdateTrigger(prev => prev + 1);
         }
       }
     };
@@ -197,6 +200,7 @@ export const CanvasWorkspace = ({
     fabricCanvas.on("mouse:up", handleMouseUp);
 
     return () => {
+      fabricCanvas.upperCanvasEl.removeEventListener("contextmenu", preventContextMenu);
       fabricCanvas.off("mouse:wheel", handleWheel);
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
@@ -211,11 +215,37 @@ export const CanvasWorkspace = ({
       const obj = e.target;
       if (!obj || (obj as any).isPreview) return;
 
-      const baseSpacing = parseFloat(gridSize) * scale;
-      if (baseSpacing > 0 && (e.e.ctrlKey || e.e.metaKey)) {
-        const left = Math.round(obj.left / baseSpacing) * baseSpacing;
-        const top = Math.round(obj.top / baseSpacing) * baseSpacing;
-        obj.set({ left, top });
+      if (e.e.ctrlKey || e.e.metaKey) {
+        const vpt = fabricCanvas.viewportTransform;
+        if (!vpt) return;
+
+        // Calculate half-grid spacing in screen pixels
+        const baseSpacing = parseFloat(gridSize) * scale * zoom;
+        const stepPx = baseSpacing / 2;
+
+        if (stepPx <= 0) return;
+
+        // Get object center in world coordinates
+        const center = obj.getCenterPoint();
+        
+        // Convert to screen coordinates
+        const xScreen = center.x * vpt[0] + vpt[4];
+        const yScreen = center.y * vpt[3] + vpt[5];
+
+        // Snap to screen grid
+        const xSnap = Math.round(xScreen / stepPx) * stepPx;
+        const ySnap = Math.round(yScreen / stepPx) * stepPx;
+
+        // Convert back to world coordinates
+        const xWorld = (xSnap - vpt[4]) / vpt[0];
+        const yWorld = (ySnap - vpt[5]) / vpt[3];
+
+        // Set position (objects have center origin)
+        obj.set({
+          left: xWorld - (obj.width! * obj.scaleX!) / 2,
+          top: yWorld - (obj.height! * obj.scaleY!) / 2,
+        });
+        obj.setCoords();
       }
     };
 
@@ -224,7 +254,7 @@ export const CanvasWorkspace = ({
     return () => {
       fabricCanvas.off("object:moving", handleObjectMoving);
     };
-  }, [fabricCanvas, scale, showGrid, gridSize]);
+  }, [fabricCanvas, scale, showGrid, gridSize, zoom]);
 
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showMeasureDialog, setShowMeasureDialog] = useState(false);
@@ -251,7 +281,7 @@ export const CanvasWorkspace = ({
 
   const handleMeasureSubmit = useCallback((realDistance: number) => {
     if (measureDistance && measureDistance > 0) {
-      const calculatedScale = realDistance / measureDistance;
+      const calculatedScale = measureDistance / realDistance; // px per mm
       setScale(calculatedScale);
       toast.success(`Scale set: ${realDistance}mm = ${measureDistance.toFixed(0)}px`);
     }
@@ -279,27 +309,8 @@ export const CanvasWorkspace = ({
 
   const gridSpacing = scale && showGrid ? parseFloat(gridSize) * scale * zoom : 0;
   
-  const gridOffset = (() => {
-    if (!fabricCanvas || !scale || !showGrid || gridSpacing <= 0) {
-      return { x: 0, y: 0 };
-    }
-
-    const vpt = fabricCanvas.viewportTransform;
-    if (!vpt || !containerRef.current || !fabricCanvas.upperCanvasEl) {
-      return { x: 0, y: 0 };
-    }
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const canvasRect = fabricCanvas.upperCanvasEl.getBoundingClientRect();
-    
-    const canvasOffsetX = canvasRect.left - containerRect.left;
-    const canvasOffsetY = canvasRect.top - containerRect.top;
-
-    const offsetX = (canvasOffsetX + (vpt[4] % gridSpacing) + gridSpacing) % gridSpacing;
-    const offsetY = (canvasOffsetY + (vpt[5] % gridSpacing) + gridSpacing) % gridSpacing;
-
-    return { x: offsetX, y: offsetY };
-  })();
+  // Grid is anchored to screen, does not move during panning
+  const gridOffset = { x: 0, y: 0 };
 
   const handleModeChange = (newMode: "crop" | "measure" | "erase") => {
     if (mode === newMode) {

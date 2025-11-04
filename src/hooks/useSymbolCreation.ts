@@ -7,27 +7,27 @@ export const useSymbolCreation = (
   scale: number = 1
 ) => {
   const createSymbol = (type: string, x: number, y: number): FabricObject | null => {
-    const baseSize = 6 * scale;
+    const baseSize = 12 * scale; // Doubled from 6 to 12
     const halfSize = baseSize / 2;
     
     switch (type) {
       case "downlight": {
-        // Circle with X
+        // Circle with full X
         const circle = new Circle({
           radius: halfSize,
           fill: "transparent",
           stroke: color,
-          strokeWidth: 0.4 * thickness,
+          strokeWidth: thickness,
           opacity: transparency,
         });
-        const xLine1 = new Line([-halfSize * 0.7, -halfSize * 0.7, halfSize * 0.7, halfSize * 0.7], {
+        const xLine1 = new Line([-halfSize, -halfSize, halfSize, halfSize], {
           stroke: color,
-          strokeWidth: 0.4 * thickness,
+          strokeWidth: thickness,
           opacity: transparency,
         });
-        const xLine2 = new Line([-halfSize * 0.7, halfSize * 0.7, halfSize * 0.7, -halfSize * 0.7], {
+        const xLine2 = new Line([halfSize, -halfSize, -halfSize, halfSize], {
           stroke: color,
-          strokeWidth: 0.4 * thickness,
+          strokeWidth: thickness,
           opacity: transparency,
         });
         const group = new Group([circle, xLine1, xLine2], {
