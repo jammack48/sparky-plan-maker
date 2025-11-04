@@ -7,7 +7,7 @@ export const useSymbolCreation = () => {
     
     switch (type) {
       case "downlight": {
-        // NZ Standard: Circle with X (downlight)
+        // Circle with X
         const circle = new Circle({
           radius: halfSize,
           fill: "transparent",
@@ -32,8 +32,8 @@ export const useSymbolCreation = () => {
         return group;
       }
         
-      case "socket": {
-        // NZ Standard: Single socket outlet (half circle with vertical line)
+      case "power-point": {
+        // Half circle with vertical line
         const arc = new Path(
           `M ${-halfSize},0 A ${halfSize},${halfSize} 0 0,1 ${halfSize},0`,
           {
@@ -57,14 +57,14 @@ export const useSymbolCreation = () => {
       }
         
       case "single-switch": {
-        // NZ Standard: One way switch (circle with diagonal line)
+        // Circle with single diagonal line
         const circle = new Circle({
-          radius: halfSize * 0.6,
+          radius: halfSize * 0.7,
           fill: "transparent",
           stroke: "#000",
           strokeWidth: 0.4,
         });
-        const line = new Line([-halfSize * 0.8, 0, halfSize * 0.4, -halfSize * 0.8], {
+        const line = new Line([-halfSize * 0.5, halfSize * 0.3, halfSize * 0.5, -halfSize * 0.5], {
           stroke: "#000",
           strokeWidth: 0.5,
         });
@@ -79,28 +79,28 @@ export const useSymbolCreation = () => {
       }
         
       case "double-switch": {
-        // NZ Standard: Two way switch (two circles with diagonal line)
+        // Similar to single but with two elements
         const circle1 = new Circle({
-          radius: halfSize * 0.4,
+          radius: halfSize * 0.5,
           fill: "transparent",
           stroke: "#000",
           strokeWidth: 0.4,
-          left: -halfSize * 0.6,
-          top: halfSize * 0.3,
+          left: -halfSize * 0.5,
+          top: halfSize * 0.2,
           originX: "center",
           originY: "center",
         });
         const circle2 = new Circle({
-          radius: halfSize * 0.4,
+          radius: halfSize * 0.5,
           fill: "transparent",
           stroke: "#000",
           strokeWidth: 0.4,
-          left: halfSize * 0.6,
-          top: -halfSize * 0.3,
+          left: halfSize * 0.5,
+          top: -halfSize * 0.2,
           originX: "center",
           originY: "center",
         });
-        const line = new Line([-halfSize * 0.6, halfSize * 0.3, halfSize * 0.6, -halfSize * 0.3], {
+        const line = new Line([-halfSize * 0.8, halfSize * 0.4, halfSize * 0.8, -halfSize * 0.6], {
           stroke: "#000",
           strokeWidth: 0.5,
         });
@@ -115,38 +115,38 @@ export const useSymbolCreation = () => {
       }
         
       case "triple-switch": {
-        // NZ Standard: Three switches in a row
+        // Three elements in a row
         const switch1 = new Circle({
-          radius: halfSize * 0.35,
+          radius: halfSize * 0.4,
           fill: "transparent",
           stroke: "#000",
           strokeWidth: 0.4,
-          left: -halfSize,
+          left: -halfSize * 0.9,
           top: 0,
           originX: "center",
           originY: "center",
         });
         const switch2 = new Circle({
-          radius: halfSize * 0.35,
+          radius: halfSize * 0.4,
           fill: "transparent",
           stroke: "#000",
           strokeWidth: 0.4,
           left: 0,
-          top: 0,
+          top: -halfSize * 0.1,
           originX: "center",
           originY: "center",
         });
         const switch3 = new Circle({
-          radius: halfSize * 0.35,
+          radius: halfSize * 0.4,
           fill: "transparent",
           stroke: "#000",
           strokeWidth: 0.4,
-          left: halfSize,
+          left: halfSize * 0.9,
           top: 0,
           originX: "center",
           originY: "center",
         });
-        const line = new Line([-halfSize * 0.8, 0, halfSize * 0.8, 0], {
+        const line = new Line([-halfSize * 1.1, halfSize * 0.1, halfSize * 1.1, -halfSize * 0.3], {
           stroke: "#000",
           strokeWidth: 0.5,
         });
@@ -160,45 +160,23 @@ export const useSymbolCreation = () => {
         return group;
       }
         
-      case "smoke": {
-        // NZ Standard: Smoke detector (triangle with dot)
-        const smokePath = new Path(
-          `M 0,${-halfSize} L ${halfSize},${halfSize} L ${-halfSize},${halfSize} Z`,
+      case "fan": {
+        // Capital F in a circle
+        const circle = new Circle({
+          radius: halfSize,
+          fill: "transparent",
+          stroke: "#000",
+          strokeWidth: 0.4,
+        });
+        const fPath = new Path(
+          `M ${-halfSize * 0.4},${-halfSize * 0.5} L ${-halfSize * 0.4},${halfSize * 0.5} M ${-halfSize * 0.4},${-halfSize * 0.5} L ${halfSize * 0.3},${-halfSize * 0.5} M ${-halfSize * 0.4},0 L ${halfSize * 0.1},0`,
           {
             fill: "transparent",
             stroke: "#000",
             strokeWidth: 0.4,
           }
         );
-        const smokeDot = new Circle({
-          radius: 0.5,
-          fill: "#000",
-          top: halfSize * 0.2,
-          originX: "center",
-          originY: "center",
-        });
-        const smokeGroup = new Group([smokePath, smokeDot], {
-          left: x,
-          top: y,
-          originX: "center",
-          originY: "center",
-        });
-        (smokeGroup as any).symbolType = type;
-        return smokeGroup;
-      }
-        
-      case "fluoro": {
-        // NZ Standard: Fluorescent lamp (rectangle)
-        const rect = new Rect({
-          width: size * 1.2,
-          height: size * 0.4,
-          fill: "transparent",
-          stroke: "#000",
-          strokeWidth: 0.4,
-          originX: "center",
-          originY: "center",
-        });
-        const group = new Group([rect], {
+        const group = new Group([circle, fPath], {
           left: x,
           top: y,
           originX: "center",
