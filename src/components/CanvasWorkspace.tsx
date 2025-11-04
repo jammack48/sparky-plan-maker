@@ -49,7 +49,8 @@ export const CanvasWorkspace = ({
   const [bgScale, setBgScale] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
-
+  const [isPanning, setIsPanning] = useState(false);
+  const [gridOffset, setGridOffset] = useState({ x: 0, y: 0 });
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
@@ -152,25 +153,30 @@ export const CanvasWorkspace = ({
 
     const handleWheel = (opt: any) => {
       const delta = opt.e.deltaY;
-      let newZoom = fabricCanvas.getZoom();
-      newZoom *= 0.999 ** delta;
+      const prevZoom = fabricCanvas.getZoom();
+      let newZoom = prevZoom * (0.999 ** delta);
       newZoom = Math.min(Math.max(0.1, newZoom), 20);
       fabricCanvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), newZoom);
       opt.e.preventDefault();
       opt.e.stopPropagation();
       fabricCanvas.renderAll();
       setZoom(newZoom);
+      setGridUpdateTrigger(prev => prev + 1);
+      console.log("[ZOOM]", { delta, prevZoom, newZoom, offsetX: opt.e.offsetX, offsetY: opt.e.offsetY });
     };
 
     const handleMouseDown = (opt: any) => {
-      // Right mouse button pans the image (grid stays fixed)
-      if (opt.e.button === 2) {
-        opt.e.preventDefault();
+      const e = opt.e as MouseEvent;
+      const isRight = e.button === 2 || (e as any).which === 3;
+      if (isRight) {
+        e.preventDefault();
         (fabricCanvas as any).isDragging = true;
+        setIsPanning(true);
         fabricCanvas.selection = false;
-        (fabricCanvas as any).lastPosX = opt.e.clientX;
-        (fabricCanvas as any).lastPosY = opt.e.clientY;
+        (fabricCanvas as any).lastPosX = e.clientX;
+        (fabricCanvas as any).lastPosY = e.clientY;
         fabricCanvas.defaultCursor = "grabbing";
+        console.log("[PAN:start]", { clientX: e.clientX, clientY: e.clientY });
       }
     };
 
@@ -178,11 +184,14 @@ export const CanvasWorkspace = ({
       if ((fabricCanvas as any).isDragging) {
         const vpt = fabricCanvas.viewportTransform;
         if (vpt) {
-          vpt[4] += opt.e.clientX - (fabricCanvas as any).lastPosX;
-          vpt[5] += opt.e.clientY - (fabricCanvas as any).lastPosY;
+          const dx = opt.e.clientX - (fabricCanvas as any).lastPosX;
+          const dy = opt.e.clientY - (fabricCanvas as any).lastPosY;
+          vpt[4] += dx;
+          vpt[5] += dy;
           fabricCanvas.requestRenderAll();
           (fabricCanvas as any).lastPosX = opt.e.clientX;
           (fabricCanvas as any).lastPosY = opt.e.clientY;
+          console.log("[PAN:move]", { dx, dy, vptTx: vpt[4], vptTy: vpt[5] });
         }
       }
     };
@@ -190,8 +199,21 @@ export const CanvasWorkspace = ({
     const handleMouseUp = () => {
       fabricCanvas.setViewportTransform(fabricCanvas.viewportTransform!);
       (fabricCanvas as any).isDragging = false;
+      setIsPanning(false);
       fabricCanvas.selection = true;
       fabricCanvas.defaultCursor = mode === "place-symbol" ? "none" : "default";
+      console.log("[PAN:end]");
+
+      // After pan ends, recompute grid offset (for zoom alignment)
+      const vpt = fabricCanvas.viewportTransform;
+      if (vpt && scale && showGrid) {
+        const spacing = parseFloat(gridSize) * scale * fabricCanvas.getZoom();
+        if (spacing > 0) {
+          const ox = ((vpt[4] % spacing) + spacing) % spacing;
+          const oy = ((vpt[5] % spacing) + spacing) % spacing;
+          setGridOffset({ x: ox, y: oy });
+        }
+      }
     };
 
     fabricCanvas.on("mouse:wheel", handleWheel);
@@ -206,7 +228,24 @@ export const CanvasWorkspace = ({
       fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:up", handleMouseUp);
     };
-  }, [fabricCanvas, mode]);
+  }, [fabricCanvas, mode, scale, showGrid, gridSize]);
+
+  // Keep grid aligned to image on zoom updates, but keep it static during pan
+  useEffect(() => {
+    if (!fabricCanvas || !scale || !showGrid) return;
+    if (isPanning) return; // don't update while panning
+
+    const vpt = fabricCanvas.viewportTransform;
+    if (!vpt) return;
+
+    const spacing = parseFloat(gridSize) * scale * zoom;
+    if (spacing <= 0) return;
+
+    const ox = ((vpt[4] % spacing) + spacing) % spacing;
+    const oy = ((vpt[5] % spacing) + spacing) % spacing;
+    setGridOffset({ x: ox, y: oy });
+    console.log("[GRID:recalc]", { spacing, ox, oy, zoom });
+  }, [fabricCanvas, scale, showGrid, zoom, isPanning, gridSize]);
 
   useEffect(() => {
     if (!fabricCanvas || !scale || !showGrid) return;
@@ -308,9 +347,6 @@ export const CanvasWorkspace = ({
   );
 
   const gridSpacing = scale && showGrid ? parseFloat(gridSize) * scale * zoom : 0;
-  
-  // Grid is anchored to screen, does not move during panning
-  const gridOffset = { x: 0, y: 0 };
 
   const handleModeChange = (newMode: "crop" | "measure" | "erase") => {
     if (mode === newMode) {
