@@ -3,7 +3,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown } from "lucide-react";
+import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings } from "lucide-react";
 
 interface CanvasToolbarProps {
   mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol";
@@ -29,6 +29,7 @@ interface CanvasToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   onExport: () => void;
+  onPageSetup: () => void;
 }
 
 export const CanvasToolbar = ({
@@ -55,6 +56,7 @@ export const CanvasToolbar = ({
   onUndo,
   onRedo,
   onExport,
+  onPageSetup,
 }: CanvasToolbarProps) => {
   return (
     <Card className="p-2 sm:p-3 mb-2 sm:mb-3 overflow-x-auto">
@@ -179,6 +181,14 @@ export const CanvasToolbar = ({
           disabled={redoStackLength === 0}
         >
           <Redo2 className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onPageSetup}
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          Page Setup
         </Button>
         <Button
           variant="outline"

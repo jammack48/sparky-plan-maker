@@ -6,6 +6,8 @@ import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOLS } from "@/components/SymbolToolbar";
 import { SymbolStyleControls } from "@/components/SymbolStyleControls";
 import { Button } from "@/components/ui/button";
+import { PageSetupDialog } from "@/components/PageSetupDialog";
+import { PageSetup, DEFAULT_PAGE_SETUP } from "@/types/pageSetup";
 import { toast } from "sonner";
 
 // Set worker for PDF.js (Vite)
@@ -34,6 +36,18 @@ const Index = () => {
   const [symbolThickness, setSymbolThickness] = useState(2);
   const [symbolTransparency, setSymbolTransparency] = useState(1);
   const [symbolScale, setSymbolScale] = useState(1);
+
+  // Page setup state
+  const [pageSetup, setPageSetup] = useState<PageSetup>(() => {
+    const saved = localStorage.getItem('sparkymate-page-setup');
+    return saved ? JSON.parse(saved) : DEFAULT_PAGE_SETUP;
+  });
+  const [showPageSetupDialog, setShowPageSetupDialog] = useState(false);
+
+  // Save page setup to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('sparkymate-page-setup', JSON.stringify(pageSetup));
+  }, [pageSetup]);
 
   const handleUseTemplate = () => {
     // Generate a simple sample plan: white background with a black square
@@ -131,8 +145,15 @@ const Index = () => {
     // Keep symbol selected for multiple placements
   };
 
-  const handleExport = () => {
-    toast.info("Export functionality coming soon!");
+  const handleExport = (canvasDataUrl: string, imgWidth: number, imgHeight: number) => {
+    // This will be called from CanvasWorkspace with the high-res canvas data
+    import('@/lib/pdfExport').then(({ generatePDF }) => {
+      generatePDF(canvasDataUrl, pageSetup, imgWidth, imgHeight);
+    });
+  };
+
+  const handlePageSetupSave = (setup: PageSetup) => {
+    setPageSetup(setup);
   };
 
   const handleExtractCrop = (dataUrl: string) => {
@@ -316,6 +337,7 @@ const Index = () => {
             pageNumber={selectedPages[currentPageIndex] + 1}
             onExport={handleExport}
             onExtract={handleExtractCrop}
+            onPageSetup={() => setShowPageSetupDialog(true)}
             selectedSymbol={selectedSymbol}
             onSymbolPlaced={handleSymbolPlaced}
             onSymbolDeselect={() => setSelectedSymbol(null)}
@@ -358,6 +380,13 @@ const Index = () => {
           </div>
         </aside>
       </div>
+
+      <PageSetupDialog
+        open={showPageSetupDialog}
+        onOpenChange={setShowPageSetupDialog}
+        pageSetup={pageSetup}
+        onSave={handlePageSetupSave}
+      />
     </div>
   );
 };

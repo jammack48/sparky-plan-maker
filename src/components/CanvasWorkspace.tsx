@@ -14,8 +14,9 @@ import { toast } from "sonner";
 export interface CanvasWorkspaceProps {
   imageUrl: string;
   pageNumber: number;
-  onExport: () => void;
+  onExport: (canvasDataUrl: string, imgWidth: number, imgHeight: number) => void;
   onExtract: (dataUrl: string) => void;
+  onPageSetup: () => void;
   selectedSymbol: string | null;
   onSymbolPlaced?: (symbolId: string) => void;
   onSymbolDeselect?: () => void;
@@ -27,7 +28,9 @@ export interface CanvasWorkspaceProps {
 
 export const CanvasWorkspace = ({
   imageUrl,
+  onExport,
   onExtract,
+  onPageSetup,
   selectedSymbol,
   onSymbolPlaced,
   onSymbolDeselect,
@@ -52,6 +55,7 @@ export const CanvasWorkspace = ({
   const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
   const [isPanning, setIsPanning] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [originalImageSize, setOriginalImageSize] = useState({ width: 0, height: 0 });
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
@@ -107,6 +111,9 @@ export const CanvasWorkspace = ({
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
+      // Store original image dimensions
+      setOriginalImageSize({ width: img.width, height: img.height });
+
       const fabricImage = new FabricImage(img, {
         left: 0,
         top: 0,
@@ -579,6 +586,20 @@ export const CanvasWorkspace = ({
     setMode
   );
 
+  const handleExportPDF = useCallback(() => {
+    if (!fabricCanvas) return;
+    
+    // Export at high resolution
+    const multiplier = bgScale ? 1 / bgScale : 2;
+    const dataUrl = fabricCanvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: multiplier,
+    });
+    
+    onExport(dataUrl, originalImageSize.width, originalImageSize.height);
+  }, [fabricCanvas, bgScale, originalImageSize, onExport]);
+
   const gridSpacing = scale && showGrid ? parseFloat(gridSize) * scale * zoom : 0;
 
   const handleModeChange = (newMode: "crop" | "measure" | "erase") => {
@@ -683,7 +704,8 @@ export const CanvasWorkspace = ({
         onGridOpacityChange={setGridOpacity}
         onUndo={handleUndo}
         onRedo={handleRedo}
-        onExport={() => toast.info("Export coming soon")}
+        onExport={handleExportPDF}
+        onPageSetup={onPageSetup}
       />
 
       <div ref={containerRef} className="relative flex-1 bg-muted">
