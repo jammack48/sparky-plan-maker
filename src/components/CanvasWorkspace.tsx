@@ -40,7 +40,7 @@ export const CanvasWorkspace = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [mode, setMode] = useState<"none" | "select" | "crop" | "measure" | "erase" | "place-symbol">("select");
+  const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol">("select");
   const [showGrid, setShowGrid] = useState(false);
   const [gridSize, setGridSize] = useState("1000");
   const [gridColor, setGridColor] = useState("#ff0000");
@@ -601,6 +601,59 @@ export const CanvasWorkspace = ({
     }
   };
 
+  const handleMoveMode = () => {
+    if (mode === "move") {
+      if (fabricCanvas) {
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.requestRenderAll();
+      }
+      setMode("none");
+    } else {
+      setMode("move");
+      if (onSymbolDeselect) {
+        onSymbolDeselect();
+      }
+    }
+  };
+
+  // Handle object selection controls based on mode
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const handleSelection = () => {
+      const activeObject = fabricCanvas.getActiveObject();
+      if (activeObject) {
+        if (mode === "move") {
+          // In move mode: hide controls but allow movement
+          activeObject.hasControls = false;
+          activeObject.hasBorders = true;
+          activeObject.lockRotation = true;
+          activeObject.lockScalingX = true;
+          activeObject.lockScalingY = true;
+        } else if (mode === "select") {
+          // In select mode: show all controls
+          activeObject.hasControls = true;
+          activeObject.hasBorders = true;
+          activeObject.lockRotation = false;
+          activeObject.lockScalingX = false;
+          activeObject.lockScalingY = false;
+        }
+        fabricCanvas.requestRenderAll();
+      }
+    };
+
+    fabricCanvas.on("selection:created", handleSelection);
+    fabricCanvas.on("selection:updated", handleSelection);
+
+    // Also update currently selected object when mode changes
+    handleSelection();
+
+    return () => {
+      fabricCanvas.off("selection:created", handleSelection);
+      fabricCanvas.off("selection:updated", handleSelection);
+    };
+  }, [fabricCanvas, mode]);
+
   return (
     <div className="flex flex-col h-full">
       <CanvasToolbar
@@ -615,6 +668,7 @@ export const CanvasWorkspace = ({
         undoStackLength={undoStack.length}
         redoStackLength={redoStack.length}
         onSelect={handleSelectMode}
+        onMove={handleMoveMode}
         onCrop={() => handleModeChange("crop")}
         onMeasure={() => handleModeChange("measure")}
         onErase={() => handleModeChange("erase")}

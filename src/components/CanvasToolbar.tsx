@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown } from "lucide-react";
 
 interface CanvasToolbarProps {
-  mode: "none" | "select" | "crop" | "measure" | "erase" | "place-symbol";
+  mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol";
   scale: number | null;
   showGrid: boolean;
   gridSize: string;
@@ -17,6 +17,7 @@ interface CanvasToolbarProps {
   undoStackLength: number;
   redoStackLength: number;
   onSelect: () => void;
+  onMove: () => void;
   onCrop: () => void;
   onMeasure: () => void;
   onErase: () => void;
@@ -42,6 +43,7 @@ export const CanvasToolbar = ({
   undoStackLength,
   redoStackLength,
   onSelect,
+  onMove,
   onCrop,
   onMeasure,
   onErase,
@@ -63,6 +65,13 @@ export const CanvasToolbar = ({
           onClick={onSelect}
         >
           Select
+        </Button>
+        <Button
+          variant={mode === "move" ? "default" : "outline"}
+          size="sm"
+          onClick={onMove}
+        >
+          Move
         </Button>
         <Button
           variant={mode === "crop" ? "default" : "outline"}
