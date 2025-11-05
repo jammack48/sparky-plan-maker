@@ -533,6 +533,11 @@ export const CanvasWorkspace = ({
 
   const handleCropExtract = useCallback(() => {
     if (!fabricCanvas || !cropRect) return;
+    
+    // Remove the crop rectangle before exporting to avoid blue outline
+    fabricCanvas.remove(cropRect);
+    fabricCanvas.renderAll();
+    
     const dataUrl = fabricCanvas.toDataURL({
       left: cropRect.left,
       top: cropRect.top,
@@ -541,7 +546,6 @@ export const CanvasWorkspace = ({
       multiplier: 1,
     });
     onExtract(dataUrl);
-    fabricCanvas.remove(cropRect);
     cancelCrop();
     setShowCropDialog(false);
     setMode("select");
