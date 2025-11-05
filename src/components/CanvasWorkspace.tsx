@@ -214,10 +214,10 @@ export const CanvasWorkspace = ({
     fabricCanvas.on("mouse:move", handleMouseMove);
     fabricCanvas.on("mouse:up", handleMouseUp);
 
-    // DOM listeners for right-button pan
+    // DOM listeners for right-button and middle-button pan
     const el = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
     const domDown = (e: MouseEvent) => {
-      if (e.button === 2) {
+      if (e.button === 1 || e.button === 2) {
         e.preventDefault();
         panRef.current.dragging = true;
         panRef.current.lastX = e.clientX;
@@ -225,7 +225,7 @@ export const CanvasWorkspace = ({
         setIsPanning(true);
         fabricCanvas.selection = false;
         fabricCanvas.defaultCursor = 'grabbing';
-        console.log('[PAN:start] (dom right)', { clientX: e.clientX, clientY: e.clientY });
+        console.log('[PAN:start] (dom middle/right)', { button: e.button, clientX: e.clientX, clientY: e.clientY });
       }
     };
     const domMove = (e: MouseEvent) => {

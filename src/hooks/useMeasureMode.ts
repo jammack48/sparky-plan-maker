@@ -55,9 +55,25 @@ export const useMeasureMode = (
       if (!measureStart || !measureLine) return;
       
       const pointer = fabricCanvas.getPointer(opt.e);
+      let x2 = pointer.x;
+      let y2 = pointer.y;
+      
+      // Snap to horizontal or vertical when Control key is pressed
+      if (opt.e.ctrlKey) {
+        const dx = Math.abs(x2 - measureStart.x);
+        const dy = Math.abs(y2 - measureStart.y);
+        
+        // Snap to whichever axis has greater distance
+        if (dx > dy) {
+          y2 = measureStart.y; // Snap to horizontal
+        } else {
+          x2 = measureStart.x; // Snap to vertical
+        }
+      }
+      
       measureLine.set({
-        x2: pointer.x,
-        y2: pointer.y,
+        x2: x2,
+        y2: y2,
       });
       
       fabricCanvas.renderAll();
