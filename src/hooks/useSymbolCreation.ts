@@ -12,7 +12,8 @@ export const useSymbolCreation = (
     
     switch (type) {
       case "downlight": {
-        // Circle with full X
+        // Circle with X inside (matching icon)
+        const xExtent = halfSize * 0.85; // X fits nicely inside circle
         const circle = new Circle({
           radius: halfSize,
           fill: "transparent",
@@ -20,12 +21,12 @@ export const useSymbolCreation = (
           strokeWidth: thickness,
           opacity: transparency,
         });
-        const xLine1 = new Line([-halfSize, -halfSize, halfSize, halfSize], {
+        const xLine1 = new Line([-xExtent, -xExtent, xExtent, xExtent], {
           stroke: color,
           strokeWidth: thickness,
           opacity: transparency,
         });
-        const xLine2 = new Line([halfSize, -halfSize, -halfSize, halfSize], {
+        const xLine2 = new Line([xExtent, -xExtent, -xExtent, xExtent], {
           stroke: color,
           strokeWidth: thickness,
           opacity: transparency,
