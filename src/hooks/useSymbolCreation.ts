@@ -12,8 +12,8 @@ export const useSymbolCreation = (
     
     switch (type) {
       case "downlight": {
-        // Circle with X extending beyond it (matching icon)
-        const xExtent = baseSize * 0.48; // X extends almost to edges of bounding box
+        // Circle with X inside it (matching icon)
+        const xExtent = halfSize * 0.7; // X stays inside the circle
         const circle = new Circle({
           radius: halfSize,
           fill: "transparent",

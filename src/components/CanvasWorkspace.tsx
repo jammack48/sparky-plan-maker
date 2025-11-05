@@ -586,9 +586,17 @@ export const CanvasWorkspace = ({
   };
 
   const handleSelectMode = () => {
-    setMode("select");
-    if (onSymbolDeselect) {
-      onSymbolDeselect();
+    if (mode === "select") {
+      // If already in select mode, deselect any active objects
+      if (fabricCanvas) {
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.requestRenderAll();
+      }
+    } else {
+      setMode("select");
+      if (onSymbolDeselect) {
+        onSymbolDeselect();
+      }
     }
   };
 
