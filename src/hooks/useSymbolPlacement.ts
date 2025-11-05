@@ -100,7 +100,6 @@ export const useSymbolPlacement = (
       const symbol = createSymbol(selectedSymbol, xWorld, yWorld);
       if (symbol) {
         fabricCanvas.add(symbol);
-        fabricCanvas.setActiveObject(symbol);
         fabricCanvas.renderAll();
         onSaveState();
         onSymbolPlaced?.(selectedSymbol);

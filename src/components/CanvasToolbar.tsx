@@ -61,7 +61,6 @@ export const CanvasToolbar = ({
           variant={mode === "select" ? "default" : "outline"}
           size="sm"
           onClick={onSelect}
-          className="md:hidden"
         >
           Select
         </Button>
