@@ -543,7 +543,7 @@ export const CanvasWorkspace = ({
       top: cropRect.top,
       width: cropRect.width! * cropRect.scaleX!,
       height: cropRect.height! * cropRect.scaleY!,
-      multiplier: 2,
+      multiplier: 1,
     });
     onExtract(dataUrl);
     cancelCrop();
