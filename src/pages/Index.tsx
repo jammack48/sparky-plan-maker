@@ -24,8 +24,8 @@ const Index = () => {
   const [symbolTransparency, setSymbolTransparency] = useState(1);
   const [symbolScale, setSymbolScale] = useState(1);
 
-  useEffect(() => {
-    // Auto-generate a simple sample plan: white background with a black square
+  const handleUseTemplate = () => {
+    // Generate a simple sample plan: white background with a black square
     const size = 1600;
     const squareSize = 800;
     const c = document.createElement('canvas');
@@ -44,8 +44,15 @@ const Index = () => {
     setPdfPages([dataUrl]);
     setSelectedPages([0]);
     setCurrentPageIndex(0);
-    toast.success('Loaded sample plan');
-  }, []);
+    toast.success('Loaded template');
+  };
+
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileLoad(file);
+    }
+  };
 
   const handleFileLoad = async (file: File) => {
     setIsLoading(true);
@@ -141,17 +148,24 @@ const Index = () => {
             <p className="text-muted-foreground">Floor Plan Markup Tool for Electricians</p>
           </div>
           <FileUpload onFileLoad={handleFileLoad} isLoading={isLoading} />
-          <div className="mt-4 flex items-center justify-center">
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
               variant="secondary"
-              onClick={() => {
-                setPdfPages(["/images/sample-floorplan.png"]);
-                setSelectedPages([0]);
-                setCurrentPageIndex(0);
-                toast.success("Loaded sample plan");
-              }}
+              onClick={handleUseTemplate}
             >
-              Load sample plan
+              Use Template
+            </Button>
+            <Button variant="outline" asChild>
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleCameraCapture}
+                  className="hidden"
+                />
+                Take a Photo
+              </label>
             </Button>
           </div>
         </div>
