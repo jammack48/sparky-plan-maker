@@ -543,13 +543,13 @@ export const CanvasWorkspace = ({
       top: cropRect.top,
       width: cropRect.width! * cropRect.scaleX!,
       height: cropRect.height! * cropRect.scaleY!,
-      multiplier: 1,
+      multiplier: bgScale ? 1 / bgScale : 1,
     });
     onExtract(dataUrl);
     cancelCrop();
     setShowCropDialog(false);
     setMode("select");
-  }, [fabricCanvas, cropRect, onExtract, cancelCrop]);
+  }, [fabricCanvas, cropRect, onExtract, cancelCrop, bgScale]);
 
   const handleMeasureSubmit = useCallback((realDistance: number) => {
     if (measureDistance && measureDistance > 0) {
