@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Canvas as FabricCanvas, FabricImage, Point } from "fabric";
+import { Canvas as FabricCanvas, FabricImage, Point, Rect as FabricRect, FabricText, Group } from "fabric";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { CanvasDialogs } from "./CanvasDialogs";
 import { GridOverlay } from "./GridOverlay";
-import { TitleBlockOverlay } from "./TitleBlockOverlay";
 import { useCropMode } from "@/hooks/useCropMode";
 import { useMeasureMode } from "@/hooks/useMeasureMode";
 import { useEraseMode } from "@/hooks/useEraseMode";
@@ -64,6 +63,7 @@ export const CanvasWorkspace = ({
   const [isPanning, setIsPanning] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [originalImageSize, setOriginalImageSize] = useState({ width: 0, height: 0 });
+  const titleBlockGroupRef = useRef<Group | null>(null);
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
@@ -159,6 +159,182 @@ export const CanvasWorkspace = ({
     };
     img.src = imageUrl;
   }, [fabricCanvas, imageUrl]);
+
+  // Create title block as Fabric objects
+  useEffect(() => {
+    if (!fabricCanvas || !showTitleBlock) {
+      // Remove title block if it exists
+      if (titleBlockGroupRef.current) {
+        fabricCanvas?.remove(titleBlockGroupRef.current);
+        titleBlockGroupRef.current = null;
+      }
+      return;
+    }
+
+    const canvasWidth = fabricCanvas.getWidth();
+    const canvasHeight = fabricCanvas.getHeight();
+    const titleBarHeight = pageSetup.layout.titleBarHeight;
+    const logoSize = (pageSetup.layout.logoSize / 100) * titleBarHeight;
+
+    // Remove existing title block
+    if (titleBlockGroupRef.current) {
+      fabricCanvas.remove(titleBlockGroupRef.current);
+    }
+
+    const objects: any[] = [];
+
+    // Black background
+    const bg = new FabricRect({
+      left: 0,
+      top: 0,
+      width: canvasWidth,
+      height: titleBarHeight,
+      fill: 'black',
+      selectable: false,
+      evented: false,
+    });
+    objects.push(bg);
+
+    // White border around title block
+    const border = new FabricRect({
+      left: 0,
+      top: 0,
+      width: canvasWidth,
+      height: titleBarHeight,
+      fill: 'transparent',
+      stroke: 'white',
+      strokeWidth: 2,
+      selectable: false,
+      evented: false,
+    });
+    objects.push(border);
+
+    let logoSectionWidth = 0;
+
+    // Logo if provided
+    if (pageSetup.logo) {
+      const img = new Image();
+      img.onload = () => {
+        const fabricLogo = new FabricImage(img, {
+          left: logoSize * 0.25,
+          top: (titleBarHeight - logoSize) / 2,
+          scaleX: logoSize / img.width,
+          scaleY: logoSize / img.height,
+          selectable: false,
+          evented: false,
+        });
+        objects.push(fabricLogo);
+
+        // Logo separator
+        logoSectionWidth = logoSize * 1.5;
+        const logoSep = new FabricRect({
+          left: logoSectionWidth,
+          top: 0,
+          width: 2,
+          height: titleBarHeight,
+          fill: 'white',
+          selectable: false,
+          evented: false,
+        });
+        objects.push(logoSep);
+
+        finalizeTitleBlock();
+      };
+      img.src = pageSetup.logo;
+    } else {
+      finalizeTitleBlock();
+    }
+
+    function finalizeTitleBlock() {
+      const tableStartX = logoSectionWidth;
+      const tableWidth = canvasWidth - logoSectionWidth;
+      const col1Width = tableWidth / 2;
+      const rowHeight = titleBarHeight / 3;
+
+      // Vertical separator between columns
+      const colSep = new FabricRect({
+        left: tableStartX + col1Width,
+        top: 0,
+        width: 1,
+        height: titleBarHeight,
+        fill: 'white',
+        selectable: false,
+        evented: false,
+      });
+      objects.push(colSep);
+
+      // Horizontal separators
+      const row1Sep = new FabricRect({
+        left: tableStartX,
+        top: rowHeight,
+        width: tableWidth,
+        height: 1,
+        fill: 'white',
+        selectable: false,
+        evented: false,
+      });
+      objects.push(row1Sep);
+
+      const row2Sep = new FabricRect({
+        left: tableStartX,
+        top: rowHeight * 2,
+        width: tableWidth,
+        height: 1,
+        fill: 'white',
+        selectable: false,
+        evented: false,
+      });
+      objects.push(row2Sep);
+
+      // Text styling
+      const labelStyle = { fontSize: 10, fill: 'white', fontWeight: 'bold', fontFamily: 'Arial' };
+      const valueStyle = { fontSize: 12, fill: 'white', fontFamily: 'Arial' };
+
+      // Row 1, Column 1: Client
+      const clientLabel = new FabricText('CLIENT:', { ...labelStyle, left: tableStartX + 5, top: rowHeight * 0 + rowHeight / 2 - 6, selectable: false, evented: false });
+      const clientValue = new FabricText(pageSetup.title || '', { ...valueStyle, left: tableStartX + 60, top: rowHeight * 0 + rowHeight / 2 - 7, selectable: false, evented: false });
+      objects.push(clientLabel, clientValue);
+
+      // Row 2, Column 1: Description
+      const descLabel = new FabricText('DESCRIPTION:', { ...labelStyle, left: tableStartX + 5, top: rowHeight * 1 + rowHeight / 2 - 6, selectable: false, evented: false });
+      const descValue = new FabricText(pageSetup.subtitle || 'Floor Plan', { ...valueStyle, left: tableStartX + 100, top: rowHeight * 1 + rowHeight / 2 - 7, selectable: false, evented: false });
+      objects.push(descLabel, descValue);
+
+      // Row 3, Column 1: Job Address
+      const addrLabel = new FabricText('JOB ADDRESS:', { ...labelStyle, left: tableStartX + 5, top: rowHeight * 2 + rowHeight / 2 - 6, selectable: false, evented: false });
+      const addrValue = new FabricText(pageSetup.details || '', { ...valueStyle, left: tableStartX + 100, top: rowHeight * 2 + rowHeight / 2 - 7, selectable: false, evented: false });
+      objects.push(addrLabel, addrValue);
+
+      // Row 1, Column 2: File name
+      const fileLabel = new FabricText('FILE NAME:', { ...labelStyle, left: tableStartX + col1Width + 5, top: rowHeight * 0 + rowHeight / 2 - 6, selectable: false, evented: false });
+      const fileValue = new FabricText(pageSetup.footer || 'floor_plan.pdf', { ...valueStyle, left: tableStartX + col1Width + 80, top: rowHeight * 0 + rowHeight / 2 - 7, selectable: false, evented: false });
+      objects.push(fileLabel, fileValue);
+
+      // Row 2, Column 2: Date
+      const dateLabel = new FabricText('DATE:', { ...labelStyle, left: tableStartX + col1Width + 5, top: rowHeight * 1 + rowHeight / 2 - 6, selectable: false, evented: false });
+      const dateValue = new FabricText(new Date().toLocaleDateString(), { ...valueStyle, left: tableStartX + col1Width + 50, top: rowHeight * 1 + rowHeight / 2 - 7, selectable: false, evented: false });
+      objects.push(dateLabel, dateValue);
+
+      // Row 3, Column 2: Sheet
+      const sheetLabel = new FabricText('SHEET:', { ...labelStyle, left: tableStartX + col1Width + 5, top: rowHeight * 2 + rowHeight / 2 - 6, selectable: false, evented: false });
+      const sheetValue = new FabricText('1 of 1', { ...valueStyle, left: tableStartX + col1Width + 55, top: rowHeight * 2 + rowHeight / 2 - 7, selectable: false, evented: false });
+      objects.push(sheetLabel, sheetValue);
+
+      // Create group and position at bottom
+      const group = new Group(objects, {
+        left: 0,
+        top: canvasHeight - titleBarHeight,
+        selectable: false,
+        evented: false,
+        excludeFromExport: false,
+      });
+
+      fabricCanvas.add(group);
+      fabricCanvas.bringObjectToFront(group);
+      titleBlockGroupRef.current = group;
+      fabricCanvas.renderAll();
+    }
+  }, [fabricCanvas, showTitleBlock, pageSetup]);
 
   useEffect(() => {
     if (!fabricCanvas) return;
@@ -728,7 +904,6 @@ export const CanvasWorkspace = ({
           gridLineThickness={`${gridThickness}px`}
           gridOpacity={gridOpacity}
         />
-        {showTitleBlock && <TitleBlockOverlay pageSetup={pageSetup} />}
       </div>
 
       <CanvasDialogs
