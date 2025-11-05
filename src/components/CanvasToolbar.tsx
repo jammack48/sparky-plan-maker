@@ -3,12 +3,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings } from "lucide-react";
 
 interface CanvasToolbarProps {
   mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol";
   scale: number | null;
   showGrid: boolean;
+  showTitleBlock: boolean;
   gridSize: string;
   gridColor: string;
   gridThickness: number;
@@ -22,6 +24,7 @@ interface CanvasToolbarProps {
   onMeasure: () => void;
   onErase: () => void;
   onToggleGrid: () => void;
+  onToggleTitleBlock: (show: boolean) => void;
   onGridSizeChange: (value: string) => void;
   onGridColorChange: (value: string) => void;
   onGridThicknessChange: (value: number) => void;
@@ -36,6 +39,7 @@ export const CanvasToolbar = ({
   mode,
   scale,
   showGrid,
+  showTitleBlock,
   gridSize,
   gridColor,
   gridThickness,
@@ -49,6 +53,7 @@ export const CanvasToolbar = ({
   onMeasure,
   onErase,
   onToggleGrid,
+  onToggleTitleBlock,
   onGridSizeChange,
   onGridColorChange,
   onGridThicknessChange,
@@ -182,6 +187,16 @@ export const CanvasToolbar = ({
         >
           <Redo2 className="w-4 h-4" />
         </Button>
+        <div className="flex items-center gap-2 ml-2">
+          <Switch
+            id="title-block-toggle"
+            checked={showTitleBlock}
+            onCheckedChange={onToggleTitleBlock}
+          />
+          <Label htmlFor="title-block-toggle" className="text-sm whitespace-nowrap cursor-pointer">
+            Title Block
+          </Label>
+        </div>
         <Button
           variant="outline"
           size="sm"

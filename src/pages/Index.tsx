@@ -43,11 +43,22 @@ const Index = () => {
     return saved ? JSON.parse(saved) : DEFAULT_PAGE_SETUP;
   });
   const [showPageSetupDialog, setShowPageSetupDialog] = useState(false);
+  
+  // Title block visibility state
+  const [showTitleBlock, setShowTitleBlock] = useState<boolean>(() => {
+    const saved = localStorage.getItem('sparkymate-show-title-block');
+    return saved ? JSON.parse(saved) : true;
+  });
 
   // Save page setup to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('sparkymate-page-setup', JSON.stringify(pageSetup));
   }, [pageSetup]);
+
+  // Save title block visibility to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('sparkymate-show-title-block', JSON.stringify(showTitleBlock));
+  }, [showTitleBlock]);
 
   const handleUseTemplate = () => {
     // Generate a simple sample plan: white background with a black square
@@ -339,6 +350,8 @@ const Index = () => {
             onExtract={handleExtractCrop}
             onPageSetup={() => setShowPageSetupDialog(true)}
             pageSetup={pageSetup}
+            showTitleBlock={showTitleBlock}
+            onToggleTitleBlock={setShowTitleBlock}
             selectedSymbol={selectedSymbol}
             onSymbolPlaced={handleSymbolPlaced}
             onSymbolDeselect={() => setSelectedSymbol(null)}

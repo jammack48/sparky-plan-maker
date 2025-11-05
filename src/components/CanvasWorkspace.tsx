@@ -20,6 +20,8 @@ export interface CanvasWorkspaceProps {
   onExtract: (dataUrl: string) => void;
   onPageSetup: () => void;
   pageSetup: PageSetup;
+  showTitleBlock: boolean;
+  onToggleTitleBlock: (show: boolean) => void;
   selectedSymbol: string | null;
   onSymbolPlaced?: (symbolId: string) => void;
   onSymbolDeselect?: () => void;
@@ -35,6 +37,8 @@ export const CanvasWorkspace = ({
   onExtract,
   onPageSetup,
   pageSetup,
+  showTitleBlock,
+  onToggleTitleBlock,
   selectedSymbol,
   onSymbolPlaced,
   onSymbolDeselect,
@@ -702,6 +706,8 @@ export const CanvasWorkspace = ({
         onMeasure={() => handleModeChange("measure")}
         onErase={() => handleModeChange("erase")}
         onToggleGrid={() => setShowGrid(!showGrid)}
+        showTitleBlock={showTitleBlock}
+        onToggleTitleBlock={onToggleTitleBlock}
         onGridSizeChange={setGridSize}
         onGridColorChange={setGridColor}
         onGridThicknessChange={setGridThickness}
@@ -722,7 +728,7 @@ export const CanvasWorkspace = ({
           gridLineThickness={`${gridThickness}px`}
           gridOpacity={gridOpacity}
         />
-        <TitleBlockOverlay pageSetup={pageSetup} />
+        {showTitleBlock && <TitleBlockOverlay pageSetup={pageSetup} />}
       </div>
 
       <CanvasDialogs
