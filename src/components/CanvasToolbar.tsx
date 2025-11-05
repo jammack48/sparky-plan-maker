@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown } from "lucide-react";
 
 interface CanvasToolbarProps {
-  mode: "select" | "crop" | "measure" | "erase" | "place-symbol";
+  mode: "none" | "select" | "crop" | "measure" | "erase" | "place-symbol";
   scale: number | null;
   showGrid: boolean;
   gridSize: string;

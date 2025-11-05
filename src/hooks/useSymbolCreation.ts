@@ -16,6 +16,10 @@ export const useSymbolCreation = (
         const xExtent = halfSize * 0.7; // X stays inside the circle
         const circle = new Circle({
           radius: halfSize,
+          left: 0,
+          top: 0,
+          originX: "center",
+          originY: "center",
           fill: "transparent",
           stroke: color,
           strokeWidth: thickness,

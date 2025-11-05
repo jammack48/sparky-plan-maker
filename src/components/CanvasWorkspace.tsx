@@ -40,7 +40,7 @@ export const CanvasWorkspace = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [mode, setMode] = useState<"select" | "crop" | "measure" | "erase" | "place-symbol">("select");
+  const [mode, setMode] = useState<"none" | "select" | "crop" | "measure" | "erase" | "place-symbol">("select");
   const [showGrid, setShowGrid] = useState(false);
   const [gridSize, setGridSize] = useState("1000");
   const [gridColor, setGridColor] = useState("#ff0000");
@@ -587,11 +587,12 @@ export const CanvasWorkspace = ({
 
   const handleSelectMode = () => {
     if (mode === "select") {
-      // If already in select mode, deselect any active objects
+      // Toggle off select: clear selection and show no active tool
       if (fabricCanvas) {
         fabricCanvas.discardActiveObject();
         fabricCanvas.requestRenderAll();
       }
+      setMode("none");
     } else {
       setMode("select");
       if (onSymbolDeselect) {
