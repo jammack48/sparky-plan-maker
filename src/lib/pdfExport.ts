@@ -7,10 +7,9 @@ export const generatePDF = async (
   originalImageWidth: number,
   originalImageHeight: number
 ): Promise<void> => {
-  // Determine page orientation based on image aspect ratio
-  const isLandscape = originalImageWidth > originalImageHeight;
+  // Force landscape orientation for floor plans
   const pdf = new jsPDF({
-    orientation: isLandscape ? 'landscape' : 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: 'a4',
   });
@@ -44,55 +43,90 @@ export const generatePDF = async (
     }
   }
 
-  // Draw title bar background at bottom
-  pdf.setFillColor(245, 245, 245);
+  // Draw title bar background at bottom (black)
+  pdf.setFillColor(0, 0, 0);
   pdf.rect(contentX, titleBlockY, contentWidth, titleBarHeightMm, 'F');
+  
+  // Draw white border around title block
+  pdf.setDrawColor(255, 255, 255);
+  pdf.setLineWidth(0.5);
+  pdf.rect(contentX, titleBlockY, contentWidth, titleBarHeightMm);
 
+  // Logo section width
+  const logoSectionWidth = 30;
+  let currentX = contentX;
+  
   // Draw logo if provided
   if (pageSetup.logo) {
     try {
-      const logoSize = (pageSetup.layout.logoSize / 100) * titleBarHeightMm;
-      let logoX = contentX + 5;
-      
-      if (pageSetup.layout.logoPosition === 'center') {
-        logoX = contentX + (contentWidth - logoSize) / 2;
-      } else if (pageSetup.layout.logoPosition === 'right') {
-        logoX = contentX + contentWidth - logoSize - 5;
-      }
-      
+      const logoSize = (pageSetup.layout.logoSize / 100) * titleBarHeightMm * 0.8;
+      const logoX = currentX + (logoSectionWidth - logoSize) / 2;
       const logoY = titleBlockY + (titleBarHeightMm - logoSize) / 2;
       pdf.addImage(pageSetup.logo, 'PNG', logoX, logoY, logoSize, logoSize);
+      
+      // Draw vertical separator after logo
+      pdf.setDrawColor(255, 255, 255);
+      pdf.line(contentX + logoSectionWidth, titleBlockY, contentX + logoSectionWidth, titleBlockY + titleBarHeightMm);
+      currentX += logoSectionWidth;
     } catch (error) {
       console.error('Error adding logo to PDF:', error);
     }
   }
 
-  // Draw title and subtitle
-  pdf.setTextColor(0, 0, 0);
+  // Table layout for text fields
+  const tableStartX = currentX;
+  const tableWidth = contentWidth - (pageSetup.logo ? logoSectionWidth : 0);
+  const col1Width = tableWidth / 2;
+  const col2Width = tableWidth / 2;
+  const rowHeight = titleBarHeightMm / 3;
   
-  const textStartX = pageSetup.logo && pageSetup.layout.logoPosition === 'left' 
-    ? contentX + (pageSetup.layout.logoSize / 100) * titleBarHeightMm + 10
-    : contentX + 5;
+  // Draw vertical separator between columns
+  pdf.setDrawColor(255, 255, 255);
+  pdf.line(tableStartX + col1Width, titleBlockY, tableStartX + col1Width, titleBlockY + titleBarHeightMm);
   
-  const textStartY = titleBlockY + titleBarHeightMm / 2;
-
-  if (pageSetup.title) {
-    pdf.setFontSize(16);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(pageSetup.title, textStartX, textStartY - 3);
-  }
-
-  if (pageSetup.subtitle) {
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(pageSetup.subtitle, textStartX, textStartY + 5);
-  }
-
-  if (pageSetup.details) {
-    pdf.setFontSize(8);
-    pdf.setFont('helvetica', 'italic');
-    pdf.text(pageSetup.details, textStartX, textStartY + 11);
-  }
+  // Draw horizontal separators
+  pdf.line(tableStartX, titleBlockY + rowHeight, contentX + contentWidth, titleBlockY + rowHeight);
+  pdf.line(tableStartX, titleBlockY + rowHeight * 2, contentX + contentWidth, titleBlockY + rowHeight * 2);
+  
+  // Set text color to white
+  pdf.setTextColor(255, 255, 255);
+  
+  // Row 1, Column 1: Client
+  pdf.setFontSize(8);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('CLIENT:', tableStartX + 2, titleBlockY + rowHeight / 2 - 1);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(pageSetup.title || '', tableStartX + 15, titleBlockY + rowHeight / 2 - 1);
+  
+  // Row 2, Column 1: Description
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('DESCRIPTION:', tableStartX + 2, titleBlockY + rowHeight * 1.5 - 1);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(pageSetup.subtitle || 'Floor Plan', tableStartX + 25, titleBlockY + rowHeight * 1.5 - 1);
+  
+  // Row 3, Column 1: Job Address
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('JOB ADDRESS:', tableStartX + 2, titleBlockY + rowHeight * 2.5 - 1);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(pageSetup.details || '', tableStartX + 25, titleBlockY + rowHeight * 2.5 - 1, { maxWidth: col1Width - 27 });
+  
+  // Row 1, Column 2: File name
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('FILE NAME:', tableStartX + col1Width + 2, titleBlockY + rowHeight / 2 - 1);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(pageSetup.footer || 'floor_plan.pdf', tableStartX + col1Width + 20, titleBlockY + rowHeight / 2 - 1);
+  
+  // Row 2, Column 2: Date
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('DATE:', tableStartX + col1Width + 2, titleBlockY + rowHeight * 1.5 - 1);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(new Date().toLocaleDateString(), tableStartX + col1Width + 12, titleBlockY + rowHeight * 1.5 - 1);
+  
+  // Row 3, Column 2: Sheet
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('SHEET:', tableStartX + col1Width + 2, titleBlockY + rowHeight * 2.5 - 1);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('1 of 1', tableStartX + col1Width + 14, titleBlockY + rowHeight * 2.5 - 1);
 
   // Add the canvas image to PDF
   try {

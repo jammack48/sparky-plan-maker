@@ -10,49 +10,62 @@ export const TitleBlockOverlay = ({ pageSetup }: TitleBlockOverlayProps) => {
 
   return (
     <div 
-      className="absolute bottom-0 left-0 right-0 bg-muted/90 border-t border-border pointer-events-none"
+      className="absolute bottom-0 left-0 right-0 bg-black text-white border-t-2 border-white pointer-events-none"
       style={{ height: `${titleBarHeightPx}px` }}
     >
-      <div className="relative h-full flex items-center px-3 gap-3">
-        {/* Logo */}
+      <div className="relative h-full flex items-stretch">
+        {/* Logo section */}
         {pageSetup.logo && (
           <div 
-            className={`shrink-0 ${
-              pageSetup.layout.logoPosition === 'center' ? 'absolute left-1/2 -translate-x-1/2' :
-              pageSetup.layout.logoPosition === 'right' ? 'absolute right-3' : ''
-            }`}
+            className="shrink-0 flex items-center justify-center bg-black border-r-2 border-white px-2"
             style={{ 
-              width: `${logoSizePx}px`, 
-              height: `${logoSizePx}px` 
+              width: `${logoSizePx * 1.5}px`
             }}
           >
             <img 
               src={pageSetup.logo} 
               alt="Logo" 
-              className="w-full h-full object-contain"
+              className="max-w-full max-h-full object-contain"
+              style={{ maxHeight: `${logoSizePx}px` }}
             />
           </div>
         )}
 
-        {/* Text content */}
-        <div className={`flex-1 min-w-0 ${
-          pageSetup.layout.logoPosition === 'left' && pageSetup.logo ? 'ml-2' : ''
-        }`}>
-          {pageSetup.title && (
-            <div className="font-bold text-foreground truncate" style={{ fontSize: '0.9rem' }}>
-              {pageSetup.title}
+        {/* Text content - table-like layout */}
+        <div className="flex-1 grid grid-cols-2 border-r-2 border-white">
+          {/* Left column */}
+          <div className="border-r border-white">
+            {pageSetup.title && (
+              <div className="border-b border-white px-2 py-1 flex items-center h-1/3">
+                <span className="text-[10px] font-bold uppercase">Client: </span>
+                <span className="text-xs ml-1">{pageSetup.title}</span>
+              </div>
+            )}
+            <div className="border-b border-white px-2 py-1 flex items-center h-1/3">
+              <span className="text-[10px] font-bold uppercase">Description: </span>
+              <span className="text-xs ml-1">{pageSetup.subtitle || 'Floor Plan'}</span>
             </div>
-          )}
-          {pageSetup.subtitle && (
-            <div className="text-xs text-muted-foreground truncate">
-              {pageSetup.subtitle}
+            <div className="px-2 py-1 flex items-center h-1/3">
+              <span className="text-[10px] font-bold uppercase">Job Address: </span>
+              <span className="text-xs ml-1 truncate">{pageSetup.details || ''}</span>
             </div>
-          )}
-          {pageSetup.details && (
-            <div className="text-xs text-muted-foreground/80 italic truncate">
-              {pageSetup.details}
+          </div>
+          
+          {/* Right column */}
+          <div>
+            <div className="border-b border-white px-2 py-1 flex items-center h-1/3">
+              <span className="text-[10px] font-bold uppercase">File name: </span>
+              <span className="text-xs ml-1">{pageSetup.footer || 'floor_plan.pdf'}</span>
             </div>
-          )}
+            <div className="border-b border-white px-2 py-1 flex items-center h-1/3">
+              <span className="text-[10px] font-bold uppercase">Date: </span>
+              <span className="text-xs ml-1">{new Date().toLocaleDateString()}</span>
+            </div>
+            <div className="px-2 py-1 flex items-center h-1/3">
+              <span className="text-[10px] font-bold uppercase">Sheet: </span>
+              <span className="text-xs ml-1">1 of 1</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
