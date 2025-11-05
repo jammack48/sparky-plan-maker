@@ -19,6 +19,17 @@ const Index = () => {
   const [symbols, setSymbols] = useState(DEFAULT_SYMBOLS);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Per-symbol settings storage
+  const [symbolSettings, setSymbolSettings] = useState<Record<string, {
+    color: string;
+    thickness: number;
+    transparency: number;
+    scale: number;
+    colorHistory: string[];
+  }>>({});
+
+  // Current display values
   const [symbolColor, setSymbolColor] = useState("#000000");
   const [symbolThickness, setSymbolThickness] = useState(2);
   const [symbolTransparency, setSymbolTransparency] = useState(1);
@@ -139,6 +150,74 @@ const Index = () => {
     toast.success("Opened cropped area as a new sheet");
   };
 
+  // Save settings for current symbol when they change
+  const saveSymbolSettings = (symbolId: string, color: string, thickness: number, transparency: number, scale: number) => {
+    setSymbolSettings((prev) => {
+      const current = prev[symbolId] || { color: "#000000", thickness: 2, transparency: 1, scale: 1, colorHistory: [] };
+      const history = [...current.colorHistory];
+      
+      // Add color to history if it's new and different from the last one
+      if (color !== history[0] && !history.includes(color)) {
+        history.unshift(color);
+        // Keep only 5 most recent colors
+        if (history.length > 5) {
+          history.pop();
+        }
+      }
+      
+      return {
+        ...prev,
+        [symbolId]: { color, thickness, transparency, scale, colorHistory: history }
+      };
+    });
+  };
+
+  // Load settings when symbol is selected
+  const handleSymbolSelect = (symbolId: string | null) => {
+    if (symbolId) {
+      const saved = symbolSettings[symbolId];
+      if (saved) {
+        setSymbolColor(saved.color);
+        setSymbolThickness(saved.thickness);
+        setSymbolTransparency(saved.transparency);
+        setSymbolScale(saved.scale);
+      }
+    }
+    setSelectedSymbol(symbolId);
+  };
+
+  // Update color and save to current symbol
+  const handleColorChange = (color: string) => {
+    setSymbolColor(color);
+    if (selectedSymbol) {
+      saveSymbolSettings(selectedSymbol, color, symbolThickness, symbolTransparency, symbolScale);
+    }
+  };
+
+  // Update thickness and save
+  const handleThicknessChange = (thickness: number) => {
+    setSymbolThickness(thickness);
+    if (selectedSymbol) {
+      saveSymbolSettings(selectedSymbol, symbolColor, thickness, symbolTransparency, symbolScale);
+    }
+  };
+
+  // Update transparency and save
+  const handleTransparencyChange = (transparency: number) => {
+    setSymbolTransparency(transparency);
+    if (selectedSymbol) {
+      saveSymbolSettings(selectedSymbol, symbolColor, symbolThickness, transparency, symbolScale);
+    }
+  };
+
+  // Update scale and save
+  const handleScaleChange = (scale: number) => {
+    setSymbolScale(scale);
+    if (selectedSymbol) {
+      saveSymbolSettings(selectedSymbol, symbolColor, symbolThickness, symbolTransparency, scale);
+    }
+  };
+
   if (pdfPages.length === 0) {
     return (
       <div className="min-h-screen bg-background p-8">
@@ -251,16 +330,17 @@ const Index = () => {
           <div className="h-full overflow-y-auto p-2 sm:p-3 space-y-3">
             <SymbolToolbar
               symbols={symbols}
-              onSymbolSelect={setSelectedSymbol}
+              onSymbolSelect={handleSymbolSelect}
               selectedSymbol={selectedSymbol}
               symbolColor={symbolColor}
               symbolThickness={symbolThickness}
               symbolTransparency={symbolTransparency}
               symbolScale={symbolScale}
-              onColorChange={setSymbolColor}
-              onThicknessChange={setSymbolThickness}
-              onTransparencyChange={setSymbolTransparency}
-              onScaleChange={setSymbolScale}
+              onColorChange={handleColorChange}
+              onThicknessChange={handleThicknessChange}
+              onTransparencyChange={handleTransparencyChange}
+              onScaleChange={handleScaleChange}
+              colorHistory={selectedSymbol ? (symbolSettings[selectedSymbol]?.colorHistory || []) : []}
             />
             <div className="portrait:hidden landscape:block md:block">
               <SymbolStyleControls
@@ -268,10 +348,11 @@ const Index = () => {
                 thickness={symbolThickness}
                 transparency={symbolTransparency}
                 scale={symbolScale}
-                onColorChange={setSymbolColor}
-                onThicknessChange={setSymbolThickness}
-                onTransparencyChange={setSymbolTransparency}
-                onScaleChange={setSymbolScale}
+                onColorChange={handleColorChange}
+                onThicknessChange={handleThicknessChange}
+                onTransparencyChange={handleTransparencyChange}
+                onScaleChange={handleScaleChange}
+                colorHistory={selectedSymbol ? (symbolSettings[selectedSymbol]?.colorHistory || []) : []}
               />
             </div>
           </div>

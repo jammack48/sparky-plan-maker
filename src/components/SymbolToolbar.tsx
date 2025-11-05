@@ -27,6 +27,7 @@ interface SymbolToolbarProps {
   onThicknessChange: (thickness: number) => void;
   onTransparencyChange: (transparency: number) => void;
   onScaleChange: (scale: number) => void;
+  colorHistory: string[];
 }
 
 export const SymbolToolbar = ({ 
@@ -40,7 +41,8 @@ export const SymbolToolbar = ({
   onColorChange,
   onThicknessChange,
   onTransparencyChange,
-  onScaleChange
+  onScaleChange,
+  colorHistory
 }: SymbolToolbarProps) => {
   const [isStyleOpen, setIsStyleOpen] = useState(false);
 
@@ -88,6 +90,19 @@ export const SymbolToolbar = ({
                 onChange={(e) => onColorChange(e.target.value)}
                 className="h-10 cursor-pointer"
               />
+              {colorHistory.length > 0 && (
+                <div className="flex gap-1 mt-2">
+                  {colorHistory.map((color, index) => (
+                    <button
+                      key={index}
+                      onClick={() => onColorChange(color)}
+                      className="w-8 h-8 rounded border-2 border-border hover:border-primary transition-colors"
+                      style={{ backgroundColor: color }}
+                      title={`Recent color: ${color}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

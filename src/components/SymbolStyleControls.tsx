@@ -13,6 +13,7 @@ interface SymbolStyleControlsProps {
   onThicknessChange: (thickness: number) => void;
   onTransparencyChange: (transparency: number) => void;
   onScaleChange: (scale: number) => void;
+  colorHistory?: string[];
 }
 
 export const SymbolStyleControls = ({
@@ -24,6 +25,7 @@ export const SymbolStyleControls = ({
   onThicknessChange,
   onTransparencyChange,
   onScaleChange,
+  colorHistory = [],
 }: SymbolStyleControlsProps) => {
   return (
     <Card className="p-4 space-y-4">
@@ -41,6 +43,19 @@ export const SymbolStyleControls = ({
           onChange={(e) => onColorChange(e.target.value)}
           className="h-10 cursor-pointer"
         />
+        {colorHistory.length > 0 && (
+          <div className="flex gap-1 mt-2">
+            {colorHistory.map((historyColor, index) => (
+              <button
+                key={index}
+                onClick={() => onColorChange(historyColor)}
+                className="w-8 h-8 rounded border-2 border-border hover:border-primary transition-colors"
+                style={{ backgroundColor: historyColor }}
+                title={`Recent color: ${historyColor}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
