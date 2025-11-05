@@ -16,6 +16,7 @@ interface CanvasToolbarProps {
   zoomLevel: number;
   undoStackLength: number;
   redoStackLength: number;
+  onSelect: () => void;
   onCrop: () => void;
   onMeasure: () => void;
   onErase: () => void;
@@ -40,6 +41,7 @@ export const CanvasToolbar = ({
   zoomLevel,
   undoStackLength,
   redoStackLength,
+  onSelect,
   onCrop,
   onMeasure,
   onErase,
@@ -55,6 +57,14 @@ export const CanvasToolbar = ({
   return (
     <Card className="p-2 sm:p-3 mb-2 sm:mb-3 overflow-x-auto">
       <div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-max">
+        <Button
+          variant={mode === "select" ? "default" : "outline"}
+          size="sm"
+          onClick={onSelect}
+          className="md:hidden"
+        >
+          Select
+        </Button>
         <Button
           variant={mode === "crop" ? "default" : "outline"}
           size="sm"

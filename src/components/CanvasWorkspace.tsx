@@ -479,7 +479,11 @@ export const CanvasWorkspace = ({
       const obj = e.target;
       if (!obj || (obj as any).isPreview) return;
 
-      if (e.e.ctrlKey || e.e.metaKey) {
+      // Check if we should snap: Ctrl/Meta key on desktop OR always on touch devices when grid is shown
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const shouldSnap = isTouchDevice || e.e.ctrlKey || e.e.metaKey;
+
+      if (shouldSnap) {
         const vpt = fabricCanvas.viewportTransform;
         if (!vpt) return;
 
@@ -581,6 +585,13 @@ export const CanvasWorkspace = ({
     }
   };
 
+  const handleSelectMode = () => {
+    setMode("select");
+    if (onSymbolDeselect) {
+      onSymbolDeselect();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <CanvasToolbar
@@ -594,6 +605,7 @@ export const CanvasWorkspace = ({
         zoomLevel={zoom}
         undoStackLength={undoStack.length}
         redoStackLength={redoStack.length}
+        onSelect={handleSelectMode}
         onCrop={() => handleModeChange("crop")}
         onMeasure={() => handleModeChange("measure")}
         onErase={() => handleModeChange("erase")}
