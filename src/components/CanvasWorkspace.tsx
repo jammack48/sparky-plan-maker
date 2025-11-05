@@ -69,7 +69,7 @@ export const CanvasWorkspace = ({
     const canvas = new FabricCanvas(canvasRef.current, {
       width: containerRef.current.clientWidth,
       height: containerRef.current.clientHeight,
-      backgroundColor: "#f5f5f5",
+      backgroundColor: "#ffffff",
       selection: true,
     });
 
@@ -98,7 +98,7 @@ export const CanvasWorkspace = ({
 
     try {
       fabricCanvas.clear();
-      fabricCanvas.backgroundColor = "#f5f5f5";
+      fabricCanvas.backgroundColor = "#ffffff";
     } catch (e) {
       console.error("Canvas clear error:", e);
       return;
@@ -543,7 +543,7 @@ export const CanvasWorkspace = ({
       top: cropRect.top,
       width: cropRect.width! * cropRect.scaleX!,
       height: cropRect.height! * cropRect.scaleY!,
-      multiplier: 1,
+      multiplier: 2,
     });
     onExtract(dataUrl);
     cancelCrop();
