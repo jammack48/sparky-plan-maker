@@ -22,11 +22,12 @@ export const generatePDF = async (
   const margin = (pageSetup.layout.marginSize / 100) * Math.min(pageWidth, pageHeight);
   const titleBarHeightMm = pageSetup.layout.titleBarHeight * 0.264583; // px to mm
   
-  // Calculate available content area
+  // Calculate available content area (title block at bottom)
   const contentX = margin;
-  const contentY = margin + titleBarHeightMm;
+  const contentY = margin;
   const contentWidth = pageWidth - 2 * margin;
   const contentHeight = pageHeight - 2 * margin - titleBarHeightMm;
+  const titleBlockY = pageHeight - margin - titleBarHeightMm;
 
   // Draw border if enabled
   if (pageSetup.border.enabled) {
@@ -43,9 +44,9 @@ export const generatePDF = async (
     }
   }
 
-  // Draw title bar background
+  // Draw title bar background at bottom
   pdf.setFillColor(245, 245, 245);
-  pdf.rect(contentX, margin, contentWidth, titleBarHeightMm, 'F');
+  pdf.rect(contentX, titleBlockY, contentWidth, titleBarHeightMm, 'F');
 
   // Draw logo if provided
   if (pageSetup.logo) {
@@ -59,7 +60,7 @@ export const generatePDF = async (
         logoX = contentX + contentWidth - logoSize - 5;
       }
       
-      const logoY = margin + (titleBarHeightMm - logoSize) / 2;
+      const logoY = titleBlockY + (titleBarHeightMm - logoSize) / 2;
       pdf.addImage(pageSetup.logo, 'PNG', logoX, logoY, logoSize, logoSize);
     } catch (error) {
       console.error('Error adding logo to PDF:', error);
@@ -73,7 +74,7 @@ export const generatePDF = async (
     ? contentX + (pageSetup.layout.logoSize / 100) * titleBarHeightMm + 10
     : contentX + 5;
   
-  const textStartY = margin + titleBarHeightMm / 2;
+  const textStartY = titleBlockY + titleBarHeightMm / 2;
 
   if (pageSetup.title) {
     pdf.setFontSize(16);

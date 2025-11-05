@@ -3,12 +3,14 @@ import { Canvas as FabricCanvas, FabricImage, Point } from "fabric";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { CanvasDialogs } from "./CanvasDialogs";
 import { GridOverlay } from "./GridOverlay";
+import { TitleBlockOverlay } from "./TitleBlockOverlay";
 import { useCropMode } from "@/hooks/useCropMode";
 import { useMeasureMode } from "@/hooks/useMeasureMode";
 import { useEraseMode } from "@/hooks/useEraseMode";
 import { useSymbolPlacement } from "@/hooks/useSymbolPlacement";
 import { useSymbolCreation } from "@/hooks/useSymbolCreation";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { PageSetup } from "@/types/pageSetup";
 import { toast } from "sonner";
 
 export interface CanvasWorkspaceProps {
@@ -17,6 +19,7 @@ export interface CanvasWorkspaceProps {
   onExport: (canvasDataUrl: string, imgWidth: number, imgHeight: number) => void;
   onExtract: (dataUrl: string) => void;
   onPageSetup: () => void;
+  pageSetup: PageSetup;
   selectedSymbol: string | null;
   onSymbolPlaced?: (symbolId: string) => void;
   onSymbolDeselect?: () => void;
@@ -31,6 +34,7 @@ export const CanvasWorkspace = ({
   onExport,
   onExtract,
   onPageSetup,
+  pageSetup,
   selectedSymbol,
   onSymbolPlaced,
   onSymbolDeselect,
@@ -718,6 +722,7 @@ export const CanvasWorkspace = ({
           gridLineThickness={`${gridThickness}px`}
           gridOpacity={gridOpacity}
         />
+        <TitleBlockOverlay pageSetup={pageSetup} />
       </div>
 
       <CanvasDialogs

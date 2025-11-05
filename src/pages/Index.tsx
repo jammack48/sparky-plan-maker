@@ -338,6 +338,7 @@ const Index = () => {
             onExport={handleExport}
             onExtract={handleExtractCrop}
             onPageSetup={() => setShowPageSetupDialog(true)}
+            pageSetup={pageSetup}
             selectedSymbol={selectedSymbol}
             onSymbolPlaced={handleSymbolPlaced}
             onSymbolDeselect={() => setSelectedSymbol(null)}

@@ -30,7 +30,7 @@ export const DEFAULT_PAGE_SETUP: PageSetup = {
   },
   layout: {
     marginSize: 5, // 5%
-    titleBarHeight: 60,
+    titleBarHeight: 80,
     logoPosition: 'left',
     logoSize: 80, // 80% of title bar height
   },
