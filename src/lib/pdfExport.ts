@@ -82,51 +82,57 @@ export const generatePDF = async (
   
   // Draw vertical separator between columns
   pdf.setDrawColor(255, 255, 255);
+  pdf.setLineWidth(0.3);
   pdf.line(tableStartX + col1Width, titleBlockY, tableStartX + col1Width, titleBlockY + titleBarHeightMm);
   
-  // Draw horizontal separators
-  pdf.line(tableStartX, titleBlockY + rowHeight, contentX + contentWidth, titleBlockY + rowHeight);
-  pdf.line(tableStartX, titleBlockY + rowHeight * 2, contentX + contentWidth, titleBlockY + rowHeight * 2);
+  // Draw horizontal separators (only within the table area)
+  pdf.line(tableStartX, titleBlockY + rowHeight, tableStartX + tableWidth, titleBlockY + rowHeight);
+  pdf.line(tableStartX, titleBlockY + rowHeight * 2, tableStartX + tableWidth, titleBlockY + rowHeight * 2);
   
   // Set text color to white
   pdf.setTextColor(255, 255, 255);
   
+  // Helper for vertical centering
+  const getCenteredY = (rowIndex: number) => titleBlockY + (rowIndex * rowHeight) + (rowHeight / 2) + 1;
+  
   // Row 1, Column 1: Client
-  pdf.setFontSize(8);
+  pdf.setFontSize(7);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('CLIENT:', tableStartX + 2, titleBlockY + rowHeight / 2 - 1);
+  pdf.text('CLIENT:', tableStartX + 2, getCenteredY(0));
   pdf.setFont('helvetica', 'normal');
-  pdf.text(pageSetup.title || '', tableStartX + 15, titleBlockY + rowHeight / 2 - 1);
+  pdf.text(pageSetup.title || '', tableStartX + 15, getCenteredY(0));
   
   // Row 2, Column 1: Description
   pdf.setFont('helvetica', 'bold');
-  pdf.text('DESCRIPTION:', tableStartX + 2, titleBlockY + rowHeight * 1.5 - 1);
+  pdf.text('DESCRIPTION:', tableStartX + 2, getCenteredY(1));
   pdf.setFont('helvetica', 'normal');
-  pdf.text(pageSetup.subtitle || 'Floor Plan', tableStartX + 25, titleBlockY + rowHeight * 1.5 - 1);
+  pdf.text(pageSetup.subtitle || 'Floor Plan', tableStartX + 25, getCenteredY(1));
   
   // Row 3, Column 1: Job Address
   pdf.setFont('helvetica', 'bold');
-  pdf.text('JOB ADDRESS:', tableStartX + 2, titleBlockY + rowHeight * 2.5 - 1);
+  pdf.text('JOB ADDRESS:', tableStartX + 2, getCenteredY(2));
   pdf.setFont('helvetica', 'normal');
-  pdf.text(pageSetup.details || '', tableStartX + 25, titleBlockY + rowHeight * 2.5 - 1, { maxWidth: col1Width - 27 });
+  const jobAddress = pageSetup.details || '';
+  pdf.text(jobAddress, tableStartX + 25, getCenteredY(2), { maxWidth: col1Width - 27 });
   
   // Row 1, Column 2: File name
   pdf.setFont('helvetica', 'bold');
-  pdf.text('FILE NAME:', tableStartX + col1Width + 2, titleBlockY + rowHeight / 2 - 1);
+  pdf.text('FILE NAME:', tableStartX + col1Width + 2, getCenteredY(0));
   pdf.setFont('helvetica', 'normal');
-  pdf.text(pageSetup.footer || 'floor_plan.pdf', tableStartX + col1Width + 20, titleBlockY + rowHeight / 2 - 1);
+  const displayFileName = pageSetup.footer || 'floor_plan.pdf';
+  pdf.text(displayFileName, tableStartX + col1Width + 20, getCenteredY(0), { maxWidth: col2Width - 22 });
   
   // Row 2, Column 2: Date
   pdf.setFont('helvetica', 'bold');
-  pdf.text('DATE:', tableStartX + col1Width + 2, titleBlockY + rowHeight * 1.5 - 1);
+  pdf.text('DATE:', tableStartX + col1Width + 2, getCenteredY(1));
   pdf.setFont('helvetica', 'normal');
-  pdf.text(new Date().toLocaleDateString(), tableStartX + col1Width + 12, titleBlockY + rowHeight * 1.5 - 1);
+  pdf.text(new Date().toLocaleDateString(), tableStartX + col1Width + 12, getCenteredY(1));
   
   // Row 3, Column 2: Sheet
   pdf.setFont('helvetica', 'bold');
-  pdf.text('SHEET:', tableStartX + col1Width + 2, titleBlockY + rowHeight * 2.5 - 1);
+  pdf.text('SHEET:', tableStartX + col1Width + 2, getCenteredY(2));
   pdf.setFont('helvetica', 'normal');
-  pdf.text('1 of 1', tableStartX + col1Width + 14, titleBlockY + rowHeight * 2.5 - 1);
+  pdf.text('1 of 1', tableStartX + col1Width + 14, getCenteredY(2));
 
   // Add the canvas image to PDF
   try {
