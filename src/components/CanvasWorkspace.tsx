@@ -8,6 +8,7 @@ import { useMeasureMode } from "@/hooks/useMeasureMode";
 import { useEraseMode } from "@/hooks/useEraseMode";
 import { useSymbolPlacement } from "@/hooks/useSymbolPlacement";
 import { useSymbolCreation } from "@/hooks/useSymbolCreation";
+import { useDrawMode } from "@/hooks/useDrawMode";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { PageSetup } from "@/types/pageSetup";
 import { toast } from "sonner";
@@ -67,9 +68,14 @@ export const CanvasWorkspace = ({
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
+  // Use draw mode hook for shape drawing
+  useDrawMode(fabricCanvas, mode, selectedSymbol, symbolColor, symbolThickness, symbolTransparency, saveCanvasState, onSymbolPlaced);
+
   useEffect(() => {
-    if (selectedSymbol === "freehand") {
+    if (selectedSymbol === "freehand" || selectedSymbol === "line" || selectedSymbol === "rectangle" || selectedSymbol === "circle") {
       setMode("draw");
+    } else if (selectedSymbol === "text-label") {
+      setMode("place-symbol"); // Text uses place-symbol mode
     } else if (selectedSymbol) {
       setMode("place-symbol");
     } else if (mode === "place-symbol" || mode === "draw") {
@@ -110,28 +116,16 @@ export const CanvasWorkspace = ({
     };
   }, []);
 
-  // Enable freehand drawing when 'freehand' tool is selected
+  // Enable freehand drawing when 'freehand' tool is selected  
+  // Note: Shape drawing (line, rectangle, circle) is handled by useDrawMode hook
   useEffect(() => {
     if (!fabricCanvas) return;
-    const isDraw = mode === "draw";
-    fabricCanvas.isDrawingMode = isDraw;
-    if (isDraw) {
-      const brush = (fabricCanvas as any).freeDrawingBrush;
-      if (brush) {
-        brush.color = symbolColor;
-        brush.width = symbolThickness;
-      }
-    }
+    // Drawing mode is managed by useDrawMode hook
   }, [fabricCanvas, mode, symbolColor, symbolThickness]);
 
-  // Count freehand strokes as placements
+  // Remove old path:created handler as it's now in useDrawMode
   useEffect(() => {
-    if (!fabricCanvas) return;
-    const handler = () => onSymbolPlaced && onSymbolPlaced("freehand");
-    fabricCanvas.on("path:created", handler);
-    return () => {
-      fabricCanvas.off("path:created", handler);
-    };
+    // Removed - now handled by useDrawMode
   }, [fabricCanvas, onSymbolPlaced]);
 
   useEffect(() => {
@@ -386,12 +380,10 @@ export const CanvasWorkspace = ({
       fabricCanvas.renderAll();
       setZoom(newZoom);
       setGridUpdateTrigger(prev => prev + 1);
-      console.log("[ZOOM]", { delta, prevZoom, newZoom, offsetX: opt.e.offsetX, offsetY: opt.e.offsetY });
     };
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
-      console.log("[MOUSEDOWN]", { button: e.button, buttons: (e as any).buttons, which: (e as any).which, ctrl: e.ctrlKey, space: isSpacePressed, mode });
       // Disable panning in place-symbol and draw modes
       if (mode === "place-symbol" || mode === "draw") return;
       // Space+Left pans via Fabric events; right-button handled by DOM below
@@ -404,7 +396,6 @@ export const CanvasWorkspace = ({
         setIsPanning(true);
         fabricCanvas.selection = false;
         fabricCanvas.defaultCursor = "grabbing";
-        console.log("[PAN:start]", { clientX: e.clientX, clientY: e.clientY, via: 'space+left (fabric)' });
       }
     };
 
@@ -419,7 +410,6 @@ export const CanvasWorkspace = ({
         fabricCanvas.requestRenderAll();
         panRef.current.lastX = opt.e.clientX;
         panRef.current.lastY = opt.e.clientY;
-        console.log("[PAN:move] (fabric)", { dx, dy, vptTx: vpt[4], vptTy: vpt[5] });
       }
     };
 
@@ -431,7 +421,6 @@ export const CanvasWorkspace = ({
       setIsPanning(false);
       fabricCanvas.selection = true;
       fabricCanvas.defaultCursor = mode === "place-symbol" || mode === "draw" ? "crosshair" : "default";
-      console.log("[PAN:end]");
     };
 
     fabricCanvas.on("mouse:wheel", handleWheel);
@@ -452,7 +441,6 @@ export const CanvasWorkspace = ({
         setIsPanning(true);
         fabricCanvas.selection = false;
         fabricCanvas.defaultCursor = 'grabbing';
-        console.log('[PAN:start] (dom middle/right)', { button: e.button, clientX: e.clientX, clientY: e.clientY });
       }
     };
     const domMove = (e: MouseEvent) => {
@@ -466,7 +454,6 @@ export const CanvasWorkspace = ({
         fabricCanvas.requestRenderAll();
         panRef.current.lastX = e.clientX;
         panRef.current.lastY = e.clientY;
-        console.log('[PAN:move] (dom)', { dx, dy, vptTx: vpt[4], vptTy: vpt[5] });
       }
     };
     const domUp = () => {
@@ -476,7 +463,6 @@ export const CanvasWorkspace = ({
       setIsPanning(false);
       fabricCanvas.selection = true;
       fabricCanvas.defaultCursor = mode === 'place-symbol' || mode === 'draw' ? 'crosshair' : 'default';
-      console.log('[PAN:end] (dom)');
     };
     el?.addEventListener('mousedown', domDown);
     window.addEventListener('mousemove', domMove);
@@ -493,83 +479,6 @@ export const CanvasWorkspace = ({
       window.removeEventListener('mouseup', domUp);
     };
   }, [fabricCanvas, mode, scale, showGrid, gridSize, isSpacePressed]);
-
-  // Debug listeners: DOM and Fabric mouse events to identify which mouse input is sent
-  useEffect(() => {
-    if (!fabricCanvas) return;
-    const el = fabricCanvas.upperCanvasEl as HTMLCanvasElement | null;
-
-    const logDom = (label: string) => (ev: any) => {
-      console.log(`[DOM ${label}]`, {
-        type: ev?.type,
-        button: ev?.button,
-        buttons: ev?.buttons,
-        which: ev?.which,
-        ctrl: !!ev?.ctrlKey,
-        alt: !!ev?.altKey,
-        meta: !!ev?.metaKey,
-        shift: !!ev?.shiftKey,
-        clientX: ev?.clientX,
-        clientY: ev?.clientY,
-      });
-    };
-
-    const domDown = logDom('mousedown');
-    const domUp = logDom('mouseup');
-    const domMove = logDom('mousemove');
-    const domContext = logDom('contextmenu');
-    const ptrDown = logDom('pointerdown');
-    const ptrUp = logDom('pointerup');
-    const ptrMove = logDom('pointermove');
-
-    el?.addEventListener('mousedown', domDown);
-    el?.addEventListener('mouseup', domUp);
-    el?.addEventListener('mousemove', domMove);
-    el?.addEventListener('contextmenu', domContext);
-    el?.addEventListener('pointerdown', ptrDown);
-    el?.addEventListener('pointerup', ptrUp);
-    el?.addEventListener('pointermove', ptrMove);
-
-    const logFabric = (label: string) => (opt: any) => {
-      const e = opt?.e;
-      console.log(`[FABRIC ${label}]`, e ? {
-        type: e.type,
-        button: e.button,
-        buttons: e.buttons,
-        which: e.which,
-        ctrl: e.ctrlKey,
-        alt: e.altKey,
-        meta: e.metaKey,
-        shift: e.shiftKey,
-        clientX: e.clientX,
-        clientY: e.clientY,
-      } : { opt });
-    };
-
-    const fDown = logFabric('mouse:down');
-    const fUp = logFabric('mouse:up');
-    const fMove = logFabric('mouse:move');
-
-    fabricCanvas.on('mouse:down', fDown);
-    fabricCanvas.on('mouse:up', fUp);
-    fabricCanvas.on('mouse:move', fMove);
-
-    return () => {
-      el?.removeEventListener('mousedown', domDown);
-      el?.removeEventListener('mouseup', domUp);
-      el?.removeEventListener('mousemove', domMove);
-      el?.removeEventListener('contextmenu', domContext);
-      el?.removeEventListener('pointerdown', ptrDown);
-      el?.removeEventListener('pointerup', ptrUp);
-      el?.removeEventListener('pointermove', ptrMove);
-      fabricCanvas.off('mouse:down', fDown);
-      fabricCanvas.off('mouse:up', fUp);
-      fabricCanvas.off('mouse:move', fMove);
-    };
-  }, [fabricCanvas]);
-
-  // Grid is screen-anchored; no offset recomputation on pan/zoom
-  // (gridOffset is always {0,0} when rendering)
 
   // Spacebar pan key handling
   useEffect(() => {
@@ -646,7 +555,6 @@ export const CanvasWorkspace = ({
         touchState.initialZoom = fabricCanvas.getZoom();
         touchState.lastCenter = getTouchCenter(t1, t2);
         touchState.touches = [t1, t2];
-        console.log('[TOUCH] start', { distance: touchState.initialDistance, zoom: touchState.initialZoom });
       }
     };
 
@@ -686,13 +594,10 @@ export const CanvasWorkspace = ({
       fabricCanvas.requestRenderAll();
       setZoom(newZoom);
       setGridUpdateTrigger(prev => prev + 1);
-
-      console.log('[TOUCH] move', { scale, newZoom, dx, dy });
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       if (touchState.active) {
-        console.log('[TOUCH] end');
         touchState.active = false;
       }
     };

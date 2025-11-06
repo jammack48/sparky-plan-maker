@@ -225,7 +225,7 @@ export const useSymbolCreation = (
       }
         
       case "text-label": {
-        const text = new FabricText("Text", {
+        const text = new FabricText("Label", {
           left: x,
           top: y,
           originX: "center",
@@ -234,8 +234,11 @@ export const useSymbolCreation = (
           opacity: transparency,
           fontSize: 16 * scale,
           selectable: true,
+          editable: true,
+          fontFamily: "Arial",
         });
         (text as any).symbolType = type;
+        // Text will be made editable in the placement handler
         return text as unknown as FabricObject;
       }
       

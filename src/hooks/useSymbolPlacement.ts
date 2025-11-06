@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Canvas as FabricCanvas, FabricObject } from "fabric";
+import { Canvas as FabricCanvas, FabricObject, FabricText } from "fabric";
 import { toast } from "sonner";
 
 export const useSymbolPlacement = (
@@ -100,6 +100,15 @@ export const useSymbolPlacement = (
       const symbol = createSymbol(selectedSymbol, xWorld, yWorld);
       if (symbol) {
         fabricCanvas.add(symbol);
+        
+        // If it's a text label, enter edit mode immediately
+        if (selectedSymbol === "text-label" && symbol instanceof FabricText) {
+          fabricCanvas.setActiveObject(symbol);
+          // Enter editing mode
+          (symbol as any).enterEditing?.();
+          (symbol as any).selectAll?.();
+        }
+        
         fabricCanvas.renderAll();
         onSaveState();
         onSymbolPlaced?.(selectedSymbol);

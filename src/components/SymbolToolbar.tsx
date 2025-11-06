@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Palette, Minus, Eye, Maximize, Zap, Droplet, Wind, Type, Pencil } from "lucide-react";
+import { ChevronDown, Palette, Minus, Eye, Maximize, Zap, Droplet, Wind, Type, Pencil, Square, Circle as CircleIcon } from "lucide-react";
 import { SymbolIcon } from "./SymbolIcon";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -240,6 +240,9 @@ export const DEFAULT_SYMBOL_CATEGORIES: SymbolCategory[] = [
     icon: <Pencil className="h-4 w-4" />,
     symbols: [
       { id: "freehand", name: "Freehand", icon: <Pencil className="h-4 w-4" />, count: 0, category: "draw" },
+      { id: "line", name: "Line", icon: <Minus className="h-4 w-4" />, count: 0, category: "draw" },
+      { id: "rectangle", name: "Rectangle", icon: <Square className="h-4 w-4" />, count: 0, category: "draw" },
+      { id: "circle", name: "Circle", icon: <CircleIcon className="h-4 w-4" />, count: 0, category: "draw" },
     ]
   },
 ];
