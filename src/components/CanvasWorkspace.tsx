@@ -394,8 +394,8 @@ export const CanvasWorkspace = ({
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
-      // Disable panning in place-symbol and draw modes
-      if (mode === "place-symbol" || mode === "draw") return;
+      // Disable panning in tool modes
+      if (mode === "crop" || mode === "measure" || mode === "erase" || mode === "place-symbol" || mode === "draw") return;
       // Space+Left pans via Fabric events; right-button handled by DOM below
       if (isSpacePressed && e.button === 0) {
         e.preventDefault();
@@ -430,7 +430,8 @@ export const CanvasWorkspace = ({
       panRef.current.dragging = false;
       setIsPanning(false);
       fabricCanvas.selection = true;
-      fabricCanvas.defaultCursor = mode === "place-symbol" || mode === "draw" ? "crosshair" : "default";
+      const toolModes = ["crop", "measure", "erase", "place-symbol", "draw"];
+      fabricCanvas.defaultCursor = toolModes.includes(mode) ? "crosshair" : "default";
     };
 
     fabricCanvas.on("mouse:wheel", handleWheel);
@@ -450,8 +451,8 @@ export const CanvasWorkspace = ({
       };
     }
     const domDown = (e: MouseEvent) => {
-      // Disable panning in place-symbol and draw modes
-      if (mode === "place-symbol" || mode === "draw") return;
+      // Disable panning in tool modes
+      if (mode === "crop" || mode === "measure" || mode === "erase" || mode === "place-symbol" || mode === "draw") return;
       if (e.button === 1 || e.button === 2) {
         e.preventDefault();
         panRef.current.dragging = true;
@@ -481,7 +482,8 @@ export const CanvasWorkspace = ({
       panRef.current.dragging = false;
       setIsPanning(false);
       fabricCanvas.selection = true;
-      fabricCanvas.defaultCursor = mode === 'place-symbol' || mode === 'draw' ? 'crosshair' : 'default';
+      const toolModes = ["crop", "measure", "erase", "place-symbol", "draw"];
+      fabricCanvas.defaultCursor = toolModes.includes(mode) ? 'crosshair' : 'default';
     };
     el.addEventListener('mousedown', domDown);
     window.addEventListener('mousemove', domMove);
@@ -538,11 +540,10 @@ export const CanvasWorkspace = ({
     if ((fabricCanvas as any).isDragging) return;
     
     let cursor = 'default';
+    const toolModes = ["crop", "measure", "erase", "place-symbol", "draw"];
     if (isSpacePressed) {
       cursor = 'grab';
-    } else if (mode === 'place-symbol') {
-      cursor = 'crosshair';
-    } else if (mode === 'draw') {
+    } else if (toolModes.includes(mode)) {
       cursor = 'crosshair';
     }
     
