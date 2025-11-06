@@ -50,7 +50,7 @@ export const CanvasWorkspace = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol">("select");
+  const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw">("select");
   const [showGrid, setShowGrid] = useState(false);
   const [gridSize, setGridSize] = useState("400");
   const [gridColor, setGridColor] = useState("#ff0000");
@@ -68,9 +68,11 @@ export const CanvasWorkspace = ({
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
   useEffect(() => {
-    if (selectedSymbol) {
+    if (selectedSymbol === "freehand") {
+      setMode("draw");
+    } else if (selectedSymbol) {
       setMode("place-symbol");
-    } else if (mode === "place-symbol") {
+    } else if (mode === "place-symbol" || mode === "draw") {
       setMode("select");
     }
   }, [selectedSymbol]);
@@ -107,6 +109,28 @@ export const CanvasWorkspace = ({
       canvas.dispose();
     };
   }, []);
+
+  // Enable freehand drawing when 'freehand' tool is selected
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    const isDraw = selectedSymbol === "freehand";
+    fabricCanvas.isDrawingMode = isDraw;
+    if (isDraw && (fabricCanvas as any).freeDrawingBrush) {
+      const brush = (fabricCanvas as any).freeDrawingBrush as any;
+      brush.color = symbolColor;
+      brush.width = symbolThickness;
+    }
+  }, [fabricCanvas, selectedSymbol, symbolColor, symbolThickness]);
+
+  // Count freehand strokes as placements
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    const handler = () => onSymbolPlaced && onSymbolPlaced("freehand");
+    fabricCanvas.on("path:created", handler);
+    return () => {
+      fabricCanvas.off("path:created", handler);
+    };
+  }, [fabricCanvas, onSymbolPlaced]);
 
   useEffect(() => {
     if (!fabricCanvas || !imageUrl) return;

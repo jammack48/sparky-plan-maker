@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings } from "lucide-react";
 
 interface CanvasToolbarProps {
-  mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol";
+  mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw";
   scale: number | null;
   showGrid: boolean;
   showTitleBlock: boolean;

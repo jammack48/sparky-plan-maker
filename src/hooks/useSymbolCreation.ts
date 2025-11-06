@@ -1,4 +1,4 @@
-import { Circle, Line, Path, Group, FabricObject } from "fabric";
+import { Circle, Line, Path, Group, FabricObject, FabricText } from "fabric";
 
 export const useSymbolCreation = (
   color: string = "#000000",
@@ -224,8 +224,54 @@ export const useSymbolCreation = (
         return group;
       }
         
-      default:
-        return null;
+      case "text-label": {
+        const text = new FabricText("Text", {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+          fill: color,
+          opacity: transparency,
+          fontSize: 16 * scale,
+          selectable: true,
+        });
+        (text as any).symbolType = type;
+        return text as unknown as FabricObject;
+      }
+      
+      default: {
+        // Generic placeholder: circle with a question mark for unimplemented symbols
+        const circle = new Circle({
+          radius: halfSize,
+          left: 0,
+          top: 0,
+          originX: "center",
+          originY: "center",
+          fill: "transparent",
+          stroke: color,
+          strokeWidth: thickness,
+          opacity: transparency,
+        });
+        const qText = new FabricText("?", {
+          left: 0,
+          top: 0,
+          originX: "center",
+          originY: "center",
+          fill: color,
+          opacity: transparency,
+          fontSize: 14 * scale,
+        });
+        const group = new Group([circle, qText], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
+        });
+        (group as any).symbolType = type;
+        return group;
+      }
     }
   };
 
