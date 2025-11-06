@@ -25,6 +25,7 @@ export const useDrawMode = (
       // Enable drawing mode
       fabricCanvas.isDrawingMode = true;
       fabricCanvas.selection = false;
+      fabricCanvas.defaultCursor = 'crosshair';
 
       const brush = (fabricCanvas as any).freeDrawingBrush;
       console.info("[DRAW] brush", { hasBrush: !!brush });
@@ -40,11 +41,21 @@ export const useDrawMode = (
         onSaveState();
       };
 
+      const logDown = (e: any) => console.info('[DRAW] freehand mousedown', { x: e.e?.offsetX, y: e.e?.offsetY });
+      const logMove = (e: any) => console.info('[DRAW] freehand mousemove', { x: e.e?.offsetX, y: e.e?.offsetY });
+      const logUp = () => console.info('[DRAW] freehand mouseup');
+
       fabricCanvas.on("path:created", handlePath);
+      fabricCanvas.on('mouse:down', logDown);
+      fabricCanvas.on('mouse:move', logMove);
+      fabricCanvas.on('mouse:up', logUp);
 
       return () => {
         fabricCanvas.isDrawingMode = false;
         fabricCanvas.off("path:created", handlePath);
+        fabricCanvas.off('mouse:down', logDown);
+        fabricCanvas.off('mouse:move', logMove);
+        fabricCanvas.off('mouse:up', logUp);
         console.info("[DRAW] deactivate freehand");
       };
     }

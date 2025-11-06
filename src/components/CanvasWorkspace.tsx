@@ -804,23 +804,17 @@ export const CanvasWorkspace = ({
   // Control canvas selection and object selectability based on mode
   useEffect(() => {
     if (!fabricCanvas) return;
-    
-    if (mode === "place-symbol" || mode === "draw") {
-      // Disable selection and object events in placement and draw modes
-      fabricCanvas.selection = false;
-      fabricCanvas.getObjects().forEach((obj: any) => {
-        obj.selectable = false;
-        obj.evented = false;
-      });
-    } else {
-      // Enable selection in other modes
-      fabricCanvas.selection = true;
-      fabricCanvas.getObjects().forEach((obj: any) => {
-        obj.selectable = true;
-        obj.evented = true;
-      });
-    }
-    
+
+    const disableInteractivity = mode === "place-symbol" || mode === "draw";
+    fabricCanvas.selection = !disableInteractivity ? true : false;
+    fabricCanvas.skipTargetFind = disableInteractivity; // prevents selection/drag
+
+    fabricCanvas.getObjects().forEach((obj: any) => {
+      obj.selectable = !disableInteractivity;
+      obj.evented = !disableInteractivity;
+    });
+
+    console.info("[MODE]", { mode, selection: fabricCanvas.selection, skipTargetFind: fabricCanvas.skipTargetFind });
     fabricCanvas.requestRenderAll();
   }, [fabricCanvas, mode]);
 
