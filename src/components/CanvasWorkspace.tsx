@@ -429,7 +429,16 @@ export const CanvasWorkspace = ({
     fabricCanvas.on("mouse:up", handleMouseUp);
 
     // DOM listeners for right-button and middle-button pan
-    const el = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
+    const el = fabricCanvas.upperCanvasEl as HTMLCanvasElement | null;
+    if (!el) {
+      return () => {
+        fabricCanvas.upperCanvasEl?.removeEventListener("contextmenu", preventContextMenu);
+        fabricCanvas.off("mouse:wheel", handleWheel);
+        fabricCanvas.off("mouse:down", handleMouseDown);
+        fabricCanvas.off("mouse:move", handleMouseMove);
+        fabricCanvas.off("mouse:up", handleMouseUp);
+      };
+    }
     const domDown = (e: MouseEvent) => {
       // Disable panning in place-symbol and draw modes
       if (mode === "place-symbol" || mode === "draw") return;
@@ -464,7 +473,7 @@ export const CanvasWorkspace = ({
       fabricCanvas.selection = true;
       fabricCanvas.defaultCursor = mode === 'place-symbol' || mode === 'draw' ? 'crosshair' : 'default';
     };
-    el?.addEventListener('mousedown', domDown);
+    el.addEventListener('mousedown', domDown);
     window.addEventListener('mousemove', domMove);
     window.addEventListener('mouseup', domUp);
 
@@ -474,7 +483,7 @@ export const CanvasWorkspace = ({
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:up", handleMouseUp);
-      el?.removeEventListener('mousedown', domDown);
+      el.removeEventListener('mousedown', domDown);
       window.removeEventListener('mousemove', domMove);
       window.removeEventListener('mouseup', domUp);
     };

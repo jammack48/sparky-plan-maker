@@ -1,4 +1,4 @@
-import { Circle, Line, Path, Group, FabricObject, FabricText } from "fabric";
+import { Circle, Line, Path, Group, FabricObject, FabricText, IText } from "fabric";
 
 export const useSymbolCreation = (
   color: string = "#000000",
@@ -225,7 +225,7 @@ export const useSymbolCreation = (
       }
         
       case "text-label": {
-        const text = new FabricText("Label", {
+        const text = new IText("Label", {
           left: x,
           top: y,
           originX: "center",
@@ -236,9 +236,8 @@ export const useSymbolCreation = (
           selectable: true,
           editable: true,
           fontFamily: "Arial",
-        });
+        } as any);
         (text as any).symbolType = type;
-        // Text will be made editable in the placement handler
         return text as unknown as FabricObject;
       }
       

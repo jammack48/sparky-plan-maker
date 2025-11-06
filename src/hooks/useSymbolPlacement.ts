@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Canvas as FabricCanvas, FabricObject, FabricText } from "fabric";
+import { Canvas as FabricCanvas, FabricObject, IText } from "fabric";
 import { toast } from "sonner";
 
 export const useSymbolPlacement = (
@@ -103,15 +103,14 @@ export const useSymbolPlacement = (
         fabricCanvas.renderAll();
         
         // If it's a text label, trigger edit mode with a slight delay
-        if (selectedSymbol === "text-label" && symbol instanceof FabricText) {
+        if (selectedSymbol === "text-label" && symbol instanceof IText) {
           setTimeout(() => {
-            fabricCanvas.setActiveObject(symbol);
-            fabricCanvas.renderAll();
-            // Double-click the text to enter edit mode
-            symbol.set({ editable: true });
-            const event = new MouseEvent('dblclick', { bubbles: true, cancelable: true });
-            fabricCanvas.upperCanvasEl.dispatchEvent(event);
-          }, 50);
+            const iText = symbol as IText;
+            fabricCanvas.setActiveObject(iText);
+            (iText as any).enterEditing?.();
+            (iText as any).selectAll?.();
+            fabricCanvas.requestRenderAll();
+          }, 20);
         }
         
         onSaveState();
