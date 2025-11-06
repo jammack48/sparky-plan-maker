@@ -78,14 +78,17 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
-    const canvas = new FabricCanvas(canvasRef.current, {
-      width: containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight,
-      backgroundColor: "#ffffff",
-      selection: true,
-    });
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight,
+        backgroundColor: "#ffffff",
+        selection: true,
+      });
+      
+      // Keep object stacking order stable (don't auto-bring active object to front)
+      (canvas as any).preserveObjectStacking = true;
 
-    setFabricCanvas(canvas);
+      setFabricCanvas(canvas);
 
     const handleResize = () => {
       if (!containerRef.current) return;
@@ -125,8 +128,9 @@ export const CanvasWorkspace = ({
       const fabricImage = new FabricImage(img, {
         left: 0,
         top: 0,
-        selectable: false,
-        evented: false,
+        selectable: true,
+        evented: true,
+        hasControls: true,
         objectCaching: true,
       });
 
@@ -666,29 +670,9 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas || !scale || !showGrid) return;
 
-    let isFirstMove = false;
-
-    const handleMoveStart = (e: any) => {
-      const obj = e.target;
-      if (!obj || (obj as any).isPreview) return;
-      
-      isFirstMove = true;
-      // Bring moved object to front at start of move
-      fabricCanvas.bringObjectToFront(obj);
-      // Keep title block on top if it exists
-      if (titleBlockGroupRef.current) {
-        fabricCanvas.bringObjectToFront(titleBlockGroupRef.current);
-      }
-    };
-
     const handleObjectMoving = (e: any) => {
       const obj = e.target;
       if (!obj || (obj as any).isPreview) return;
-
-      // Only adjust z-order once at the start
-      if (isFirstMove) {
-        isFirstMove = false;
-      }
 
       // Check if we should snap: Ctrl/Meta key on desktop OR always on touch devices when grid is shown
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -728,11 +712,9 @@ export const CanvasWorkspace = ({
       }
     };
 
-    fabricCanvas.on("mouse:down", handleMoveStart);
     fabricCanvas.on("object:moving", handleObjectMoving);
 
     return () => {
-      fabricCanvas.off("mouse:down", handleMoveStart);
       fabricCanvas.off("object:moving", handleObjectMoving);
     };
   }, [fabricCanvas, scale, showGrid, gridSize, zoom]);
