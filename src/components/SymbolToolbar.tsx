@@ -56,12 +56,18 @@ export const SymbolToolbar = ({
   const [isStyleOpen, setIsStyleOpen] = useState(false);
 
   return (
-    <Card className="p-2 sm:p-3 space-y-2">
+    <Card className="p-2 sm:p-3 space-y-2 relative z-10">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold text-xs sm:text-sm text-foreground">Symbols</h3>
       </div>
       
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion 
+        type="single" 
+        collapsible 
+        className="w-full"
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         {categories.map((category) => (
           <AccordionItem key={category.id} value={category.id} className="border-b-0">
             <AccordionTrigger className="py-2 text-xs sm:text-sm hover:no-underline">

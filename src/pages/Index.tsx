@@ -367,8 +367,8 @@ const Index = () => {
           />
         </main>
 
-        <aside className="w-full md:w-48 lg:w-56 border-t md:border-t-0 md:border-l border-border bg-card shrink-0 overflow-hidden">
-          <div className="h-full overflow-y-auto p-2 sm:p-3 space-y-3">
+        <aside className="w-full md:w-48 lg:w-56 border-t md:border-t-0 md:border-l border-border bg-card shrink-0 overflow-hidden relative z-10">
+          <div className="h-full overflow-y-auto p-2 sm:p-3 space-y-3" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
             <SymbolToolbar
               categories={symbolCategories}
               onSymbolSelect={handleSymbolSelect}

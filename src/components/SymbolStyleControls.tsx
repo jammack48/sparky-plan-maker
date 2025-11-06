@@ -28,7 +28,7 @@ export const SymbolStyleControls = ({
   colorHistory = [],
 }: SymbolStyleControlsProps) => {
   return (
-    <Card className="p-4 space-y-4">
+    <Card className="p-4 space-y-4 relative z-10" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
       <h3 className="font-semibold text-sm">Symbol Style</h3>
       
       <div className="space-y-2">

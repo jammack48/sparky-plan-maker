@@ -64,7 +64,7 @@ export const CanvasToolbar = ({
   onPageSetup,
 }: CanvasToolbarProps) => {
   return (
-    <Card className="p-2 sm:p-3 mb-2 sm:mb-3 overflow-x-auto">
+    <Card className="p-2 sm:p-3 mb-2 sm:mb-3 overflow-x-auto relative z-10" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
       <div className="flex items-center gap-1 sm:gap-2 flex-nowrap min-w-max">
         <Button
           variant={mode === "select" ? "default" : "outline"}
