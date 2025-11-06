@@ -102,15 +102,19 @@ export const useSymbolPlacement = (
         fabricCanvas.add(symbol);
         fabricCanvas.renderAll();
         
-        // If it's a text label, trigger edit mode with a slight delay
+        // If it's a text label, trigger edit mode and switch to select
         if (selectedSymbol === "text-label" && symbol instanceof IText) {
+          const iText = symbol as IText;
+          iText.selectable = true;
+          iText.evented = true;
+          fabricCanvas.selection = true;
+          setMode("select");
           setTimeout(() => {
-            const iText = symbol as IText;
             fabricCanvas.setActiveObject(iText);
             (iText as any).enterEditing?.();
             (iText as any).selectAll?.();
             fabricCanvas.requestRenderAll();
-          }, 20);
+          }, 10);
         }
         
         onSaveState();

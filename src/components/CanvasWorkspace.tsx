@@ -96,6 +96,18 @@ export const CanvasWorkspace = ({
       // Keep object stacking order stable (don't auto-bring active object to front)
       (canvas as any).preserveObjectStacking = true;
 
+      // Initialize free drawing brush
+      if (!(canvas as any).freeDrawingBrush) {
+        try {
+          const PencilBrush = (require('fabric') as any).PencilBrush;
+          (canvas as any).freeDrawingBrush = new PencilBrush(canvas);
+        } catch {}
+      }
+      if ((canvas as any).freeDrawingBrush) {
+        (canvas as any).freeDrawingBrush.color = symbolColor;
+        (canvas as any).freeDrawingBrush.width = symbolThickness;
+      }
+
       setFabricCanvas(canvas);
 
     const handleResize = () => {
@@ -789,17 +801,13 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas) return;
     
-    if (mode === "place-symbol") {
-      // Disable selection in symbol placement mode only
+    if (mode === "place-symbol" || mode === "draw") {
+      // Disable selection and object events in placement and draw modes
       fabricCanvas.selection = false;
       fabricCanvas.getObjects().forEach((obj: any) => {
         obj.selectable = false;
         obj.evented = false;
       });
-    } else if (mode === "draw") {
-      // In draw mode, keep objects non-selectable but don't interfere with drawing
-      fabricCanvas.selection = false;
-      // Don't set evented to false on objects - this allows drawing mode to work
     } else {
       // Enable selection in other modes
       fabricCanvas.selection = true;
