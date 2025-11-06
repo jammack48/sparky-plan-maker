@@ -706,6 +706,21 @@ export const CanvasWorkspace = ({
         });
         obj.setCoords();
       }
+
+      // Maintain z-order: keep symbols above the background image
+      const objects = fabricCanvas.getObjects();
+      const bgImage = objects.find(o => o instanceof FabricImage);
+      if (bgImage) {
+        objects.forEach(o => {
+          if (o !== bgImage && o !== titleBlockGroupRef.current && !(o as any).isPreview) {
+            fabricCanvas.bringObjectToFront(o);
+          }
+        });
+        // Keep title block on top if it exists
+        if (titleBlockGroupRef.current) {
+          fabricCanvas.bringObjectToFront(titleBlockGroupRef.current);
+        }
+      }
     };
 
     fabricCanvas.on("object:moving", handleObjectMoving);
