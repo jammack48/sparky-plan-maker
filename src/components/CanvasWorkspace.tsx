@@ -96,17 +96,11 @@ export const CanvasWorkspace = ({
       // Keep object stacking order stable (don't auto-bring active object to front)
       (canvas as any).preserveObjectStacking = true;
 
-      // Initialize free drawing brush
-      if (!(canvas as any).freeDrawingBrush) {
-        try {
-          const PencilBrush = (require('fabric') as any).PencilBrush;
-          (canvas as any).freeDrawingBrush = new PencilBrush(canvas);
-        } catch {}
-      }
-      if ((canvas as any).freeDrawingBrush) {
-        (canvas as any).freeDrawingBrush.color = symbolColor;
-        (canvas as any).freeDrawingBrush.width = symbolThickness;
-      }
+      // Configure free drawing brush (Fabric v6 provides one by default)
+      try {
+        canvas.freeDrawingBrush.color = symbolColor;
+        canvas.freeDrawingBrush.width = symbolThickness;
+      } catch {}
 
       setFabricCanvas(canvas);
 
@@ -504,6 +498,11 @@ export const CanvasWorkspace = ({
   // Spacebar pan key handling
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // If editing a text object, allow space to type
+      const active = fabricCanvas?.getActiveObject() as any;
+      const isEditingText = active && (active.isEditing || active.type === 'i-text' && active.__charBounds);
+      if (isEditingText) return;
+
       if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
         setIsSpacePressed(true);
         // prevent page scroll
@@ -511,6 +510,11 @@ export const CanvasWorkspace = ({
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
+      // If editing a text object, ignore
+      const active = fabricCanvas?.getActiveObject() as any;
+      const isEditingText = active && (active.isEditing || active.type === 'i-text' && active.__charBounds);
+      if (isEditingText) return;
+
       if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
         setIsSpacePressed(false);
         e.preventDefault();
@@ -522,7 +526,7 @@ export const CanvasWorkspace = ({
       window.removeEventListener('keydown', onKeyDown as any);
       window.removeEventListener('keyup', onKeyUp as any);
     };
-  }, []);
+  }, [fabricCanvas]);
 
   // Update cursor when holding space (not dragging)
   useEffect(() => {

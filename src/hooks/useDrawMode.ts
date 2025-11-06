@@ -18,6 +18,8 @@ export const useDrawMode = (
   useEffect(() => {
     if (!fabricCanvas || mode !== "draw" || !selectedSymbol) return;
 
+    console.info("[DRAW] activate", { selectedSymbol });
+
     // Freehand drawing
     if (selectedSymbol === "freehand") {
       // Enable drawing mode
