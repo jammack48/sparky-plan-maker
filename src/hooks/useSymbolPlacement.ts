@@ -14,7 +14,7 @@ export const useSymbolPlacement = (
   onSymbolPlaced: ((symbolId: string) => void) | undefined,
   onSymbolDeselect: (() => void) | undefined,
   onSaveState: () => void,
-  setMode: (mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol") => void
+  setMode: (mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw") => void
 ) => {
   useEffect(() => {
     if (!fabricCanvas || mode !== "place-symbol" || !selectedSymbol) return;

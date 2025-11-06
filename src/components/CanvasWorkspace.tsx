@@ -113,14 +113,16 @@ export const CanvasWorkspace = ({
   // Enable freehand drawing when 'freehand' tool is selected
   useEffect(() => {
     if (!fabricCanvas) return;
-    const isDraw = selectedSymbol === "freehand";
+    const isDraw = mode === "draw";
     fabricCanvas.isDrawingMode = isDraw;
-    if (isDraw && (fabricCanvas as any).freeDrawingBrush) {
-      const brush = (fabricCanvas as any).freeDrawingBrush as any;
-      brush.color = symbolColor;
-      brush.width = symbolThickness;
+    if (isDraw) {
+      const brush = (fabricCanvas as any).freeDrawingBrush;
+      if (brush) {
+        brush.color = symbolColor;
+        brush.width = symbolThickness;
+      }
     }
-  }, [fabricCanvas, selectedSymbol, symbolColor, symbolThickness]);
+  }, [fabricCanvas, mode, symbolColor, symbolThickness]);
 
   // Count freehand strokes as placements
   useEffect(() => {
@@ -389,7 +391,9 @@ export const CanvasWorkspace = ({
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
-      console.log("[MOUSEDOWN]", { button: e.button, buttons: (e as any).buttons, which: (e as any).which, ctrl: e.ctrlKey, space: isSpacePressed });
+      console.log("[MOUSEDOWN]", { button: e.button, buttons: (e as any).buttons, which: (e as any).which, ctrl: e.ctrlKey, space: isSpacePressed, mode });
+      // Disable panning in place-symbol and draw modes
+      if (mode === "place-symbol" || mode === "draw") return;
       // Space+Left pans via Fabric events; right-button handled by DOM below
       if (isSpacePressed && e.button === 0) {
         e.preventDefault();
@@ -426,7 +430,7 @@ export const CanvasWorkspace = ({
       panRef.current.dragging = false;
       setIsPanning(false);
       fabricCanvas.selection = true;
-      fabricCanvas.defaultCursor = mode === "place-symbol" ? "none" : "default";
+      fabricCanvas.defaultCursor = mode === "place-symbol" || mode === "draw" ? "crosshair" : "default";
       console.log("[PAN:end]");
     };
 
@@ -438,6 +442,8 @@ export const CanvasWorkspace = ({
     // DOM listeners for right-button and middle-button pan
     const el = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
     const domDown = (e: MouseEvent) => {
+      // Disable panning in place-symbol and draw modes
+      if (mode === "place-symbol" || mode === "draw") return;
       if (e.button === 1 || e.button === 2) {
         e.preventDefault();
         panRef.current.dragging = true;
@@ -469,7 +475,7 @@ export const CanvasWorkspace = ({
       panRef.current.dragging = false;
       setIsPanning(false);
       fabricCanvas.selection = true;
-      fabricCanvas.defaultCursor = mode === 'place-symbol' ? 'none' : 'default';
+      fabricCanvas.defaultCursor = mode === 'place-symbol' || mode === 'draw' ? 'crosshair' : 'default';
       console.log('[PAN:end] (dom)');
     };
     el?.addEventListener('mousedown', domDown);
@@ -486,7 +492,7 @@ export const CanvasWorkspace = ({
       window.removeEventListener('mousemove', domMove);
       window.removeEventListener('mouseup', domUp);
     };
-  }, [fabricCanvas, mode, scale, showGrid, gridSize]);
+  }, [fabricCanvas, mode, scale, showGrid, gridSize, isSpacePressed]);
 
   // Debug listeners: DOM and Fabric mouse events to identify which mouse input is sent
   useEffect(() => {
@@ -592,7 +598,17 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas) return;
     if ((fabricCanvas as any).isDragging) return;
-    fabricCanvas.defaultCursor = isSpacePressed ? 'grab' : (mode === 'place-symbol' ? 'none' : 'default');
+    
+    let cursor = 'default';
+    if (isSpacePressed) {
+      cursor = 'grab';
+    } else if (mode === 'place-symbol') {
+      cursor = 'crosshair';
+    } else if (mode === 'draw') {
+      cursor = 'crosshair';
+    }
+    
+    fabricCanvas.defaultCursor = cursor;
   }, [fabricCanvas, isSpacePressed, mode]);
 
   // Touch gesture support for pinch zoom and two-finger pan
@@ -855,6 +871,29 @@ export const CanvasWorkspace = ({
   };
 
   // Handle object selection controls based on mode
+  // Control canvas selection and object selectability based on mode
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    if (mode === "place-symbol" || mode === "draw") {
+      // Disable selection in symbol placement and draw modes
+      fabricCanvas.selection = false;
+      fabricCanvas.getObjects().forEach((obj: any) => {
+        obj.selectable = false;
+        obj.evented = false;
+      });
+    } else {
+      // Enable selection in other modes
+      fabricCanvas.selection = true;
+      fabricCanvas.getObjects().forEach((obj: any) => {
+        obj.selectable = true;
+        obj.evented = true;
+      });
+    }
+    
+    fabricCanvas.requestRenderAll();
+  }, [fabricCanvas, mode]);
+
   useEffect(() => {
     if (!fabricCanvas) return;
 
