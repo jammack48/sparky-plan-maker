@@ -25,23 +25,27 @@ export const useDrawMode = (
       // Enable drawing mode
       fabricCanvas.isDrawingMode = true;
       fabricCanvas.selection = false;
-      
+
       const brush = (fabricCanvas as any).freeDrawingBrush;
+      console.info("[DRAW] brush", { hasBrush: !!brush });
       if (brush) {
         brush.color = symbolColor;
         brush.width = symbolThickness;
+        console.info("[DRAW] brush-config", { color: symbolColor, width: symbolThickness });
       }
-      
+
       const handlePath = () => {
+        console.info("[DRAW] path-created");
         onSymbolPlaced?.("freehand");
         onSaveState();
       };
-      
+
       fabricCanvas.on("path:created", handlePath);
-      
+
       return () => {
         fabricCanvas.isDrawingMode = false;
         fabricCanvas.off("path:created", handlePath);
+        console.info("[DRAW] deactivate freehand");
       };
     }
 
@@ -61,17 +65,17 @@ export const useDrawMode = (
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
       if (e.button !== 0) return;
-
       const pointer = getPointer(e);
+      console.info("[DRAW] mousedown", { pointer });
       setIsDrawing(true);
       setStartPoint(pointer);
     };
 
     const handleMouseMove = (opt: any) => {
       if (!isDrawing || !startPoint) return;
-
       const e = opt.e as MouseEvent;
       const pointer = getPointer(e);
+      console.info("[DRAW] mousemove", { startPoint, pointer });
 
       if (tempObject) {
         fabricCanvas.remove(tempObject);
@@ -132,6 +136,7 @@ export const useDrawMode = (
 
     const handleMouseUp = () => {
       if (!isDrawing) return;
+      console.info("[DRAW] mouseup");
 
       setIsDrawing(false);
       setStartPoint(null);
@@ -198,6 +203,7 @@ export const useDrawMode = (
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
       fabricCanvas.off("mouse:up", handleMouseUp);
+      console.info("[DRAW] deactivate shape");
     };
   }, [
     fabricCanvas,

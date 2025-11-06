@@ -373,7 +373,7 @@ export const CanvasWorkspace = ({
 
     // Prevent right-click context menu
     const preventContextMenu = (e: MouseEvent) => e.preventDefault();
-    fabricCanvas.upperCanvasEl.addEventListener("contextmenu", preventContextMenu);
+    fabricCanvas.upperCanvasEl?.addEventListener("contextmenu", preventContextMenu);
 
     const handleWheel = (opt: any) => {
       const delta = opt.e.deltaY;
