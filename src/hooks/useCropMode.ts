@@ -19,6 +19,9 @@ export const useCropMode = (
 
     fabricCanvas.selection = false;
     fabricCanvas.defaultCursor = "crosshair";
+    (fabricCanvas as any).skipTargetFind = true;
+    fabricCanvas.discardActiveObject?.();
+    fabricCanvas.requestRenderAll();
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e;
@@ -74,6 +77,9 @@ export const useCropMode = (
     return () => {
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
+      (fabricCanvas as any).skipTargetFind = false;
+      fabricCanvas.selection = true;
+      fabricCanvas.requestRenderAll();
     };
   }, [fabricCanvas, mode, cropStart, cropRect, onShowDialog]);
 
