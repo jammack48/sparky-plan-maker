@@ -122,8 +122,16 @@ export const useDrawMode = (
           evented: false,
         });
       } else if (selectedSymbol === "rectangle") {
-        const width = pointer.x - localStartPoint.x;
-        const height = pointer.y - localStartPoint.y;
+        let width = pointer.x - localStartPoint.x;
+        let height = pointer.y - localStartPoint.y;
+        
+        // Make it a square if Ctrl is pressed
+        if (e.ctrlKey) {
+          const size = Math.max(Math.abs(width), Math.abs(height));
+          width = Math.sign(width || 1) * size;
+          height = Math.sign(height || 1) * size;
+        }
+        
         newObject = new Rect({
           left: localStartPoint.x,
           top: localStartPoint.y,
@@ -198,8 +206,16 @@ export const useDrawMode = (
           }
         );
       } else if (selectedSymbol === "rectangle") {
-        const width = pointer.x - localStartPoint.x;
-        const height = pointer.y - localStartPoint.y;
+        let width = pointer.x - localStartPoint.x;
+        let height = pointer.y - localStartPoint.y;
+        
+        // Make it a square if Ctrl is pressed
+        if (e.ctrlKey) {
+          const size = Math.max(Math.abs(width), Math.abs(height));
+          width = Math.sign(width || 1) * size;
+          height = Math.sign(height || 1) * size;
+        }
+        
         const left = width < 0 ? pointer.x : localStartPoint.x;
         const top = height < 0 ? pointer.y : localStartPoint.y;
         finalObject = new Rect({
