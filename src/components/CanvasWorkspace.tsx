@@ -666,9 +666,29 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas || !scale || !showGrid) return;
 
+    let isFirstMove = false;
+
+    const handleMoveStart = (e: any) => {
+      const obj = e.target;
+      if (!obj || (obj as any).isPreview) return;
+      
+      isFirstMove = true;
+      // Bring moved object to front at start of move
+      fabricCanvas.bringObjectToFront(obj);
+      // Keep title block on top if it exists
+      if (titleBlockGroupRef.current) {
+        fabricCanvas.bringObjectToFront(titleBlockGroupRef.current);
+      }
+    };
+
     const handleObjectMoving = (e: any) => {
       const obj = e.target;
       if (!obj || (obj as any).isPreview) return;
+
+      // Only adjust z-order once at the start
+      if (isFirstMove) {
+        isFirstMove = false;
+      }
 
       // Check if we should snap: Ctrl/Meta key on desktop OR always on touch devices when grid is shown
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -706,26 +726,13 @@ export const CanvasWorkspace = ({
         });
         obj.setCoords();
       }
-
-      // Maintain z-order: keep symbols above the background image
-      const objects = fabricCanvas.getObjects();
-      const bgImage = objects.find(o => o instanceof FabricImage);
-      if (bgImage) {
-        objects.forEach(o => {
-          if (o !== bgImage && o !== titleBlockGroupRef.current && !(o as any).isPreview) {
-            fabricCanvas.bringObjectToFront(o);
-          }
-        });
-        // Keep title block on top if it exists
-        if (titleBlockGroupRef.current) {
-          fabricCanvas.bringObjectToFront(titleBlockGroupRef.current);
-        }
-      }
     };
 
+    fabricCanvas.on("mouse:down", handleMoveStart);
     fabricCanvas.on("object:moving", handleObjectMoving);
 
     return () => {
+      fabricCanvas.off("mouse:down", handleMoveStart);
       fabricCanvas.off("object:moving", handleObjectMoving);
     };
   }, [fabricCanvas, scale, showGrid, gridSize, zoom]);
