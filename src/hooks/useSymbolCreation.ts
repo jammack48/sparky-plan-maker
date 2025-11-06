@@ -40,6 +40,8 @@ export const useSymbolCreation = (
           top: y,
           originX: "center",
           originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
         });
         (group as any).symbolType = type;
         return group;
@@ -66,6 +68,8 @@ export const useSymbolCreation = (
           top: y,
           originX: "center",
           originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
         });
         (group as any).symbolType = type;
         return group;
@@ -90,6 +94,8 @@ export const useSymbolCreation = (
           top: y,
           originX: "center",
           originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
         });
         (group as any).symbolType = type;
         return group;
@@ -129,6 +135,8 @@ export const useSymbolCreation = (
           top: y,
           originX: "center",
           originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
         });
         (group as any).symbolType = type;
         return group;
@@ -179,6 +187,8 @@ export const useSymbolCreation = (
           top: y,
           originX: "center",
           originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
         });
         (group as any).symbolType = type;
         return group;
@@ -207,6 +217,8 @@ export const useSymbolCreation = (
           top: y,
           originX: "center",
           originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
         });
         (group as any).symbolType = type;
         return group;

@@ -132,6 +132,8 @@ export const CanvasWorkspace = ({
         evented: true,
         hasControls: true,
         objectCaching: true,
+        hoverCursor: "default",
+        moveCursor: "default",
       });
 
       const canvasWidth = fabricCanvas.getWidth();
@@ -777,16 +779,15 @@ export const CanvasWorkspace = ({
   const handleExportPDF = useCallback(() => {
     if (!fabricCanvas) return;
     
-    // Export at high resolution
-    const multiplier = bgScale ? 1 / bgScale : 2;
+    // Export full canvas including title block at original resolution
     const dataUrl = fabricCanvas.toDataURL({
       format: 'png',
       quality: 1,
-      multiplier: multiplier,
+      multiplier: 1,
     });
     
     onExport(dataUrl, originalImageSize.width, originalImageSize.height);
-  }, [fabricCanvas, bgScale, originalImageSize, onExport]);
+  }, [fabricCanvas, originalImageSize, onExport]);
 
   const gridSpacing = scale && showGrid ? parseFloat(gridSize) * scale * zoom : 0;
 
