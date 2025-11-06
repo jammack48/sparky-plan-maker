@@ -100,16 +100,20 @@ export const useSymbolPlacement = (
       const symbol = createSymbol(selectedSymbol, xWorld, yWorld);
       if (symbol) {
         fabricCanvas.add(symbol);
+        fabricCanvas.renderAll();
         
-        // If it's a text label, enter edit mode immediately
+        // If it's a text label, trigger edit mode with a slight delay
         if (selectedSymbol === "text-label" && symbol instanceof FabricText) {
-          fabricCanvas.setActiveObject(symbol);
-          // Enter editing mode
-          (symbol as any).enterEditing?.();
-          (symbol as any).selectAll?.();
+          setTimeout(() => {
+            fabricCanvas.setActiveObject(symbol);
+            fabricCanvas.renderAll();
+            // Double-click the text to enter edit mode
+            symbol.set({ editable: true });
+            const event = new MouseEvent('dblclick', { bubbles: true, cancelable: true });
+            fabricCanvas.upperCanvasEl.dispatchEvent(event);
+          }, 50);
         }
         
-        fabricCanvas.renderAll();
         onSaveState();
         onSymbolPlaced?.(selectedSymbol);
         const snapStatus = (showGrid && scale && (opt.e.ctrlKey || opt.e.metaKey)) ? " (snapped)" : "";

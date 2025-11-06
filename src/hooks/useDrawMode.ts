@@ -20,7 +20,10 @@ export const useDrawMode = (
 
     // Freehand drawing
     if (selectedSymbol === "freehand") {
+      // Enable drawing mode
       fabricCanvas.isDrawingMode = true;
+      fabricCanvas.selection = false;
+      
       const brush = (fabricCanvas as any).freeDrawingBrush;
       if (brush) {
         brush.color = symbolColor;

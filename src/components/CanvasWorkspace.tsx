@@ -780,13 +780,17 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas) return;
     
-    if (mode === "place-symbol" || mode === "draw") {
-      // Disable selection in symbol placement and draw modes
+    if (mode === "place-symbol") {
+      // Disable selection in symbol placement mode only
       fabricCanvas.selection = false;
       fabricCanvas.getObjects().forEach((obj: any) => {
         obj.selectable = false;
         obj.evented = false;
       });
+    } else if (mode === "draw") {
+      // In draw mode, keep objects non-selectable but don't interfere with drawing
+      fabricCanvas.selection = false;
+      // Don't set evented to false on objects - this allows drawing mode to work
     } else {
       // Enable selection in other modes
       fabricCanvas.selection = true;
