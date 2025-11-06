@@ -709,15 +709,31 @@ export const CanvasWorkspace = ({
     // Remove the crop rectangle before exporting to avoid blue outline
     fabricCanvas.remove(cropRect);
     fabricCanvas.renderAll();
-    
-    const dataUrl = fabricCanvas.toDataURL({
-      left: cropRect.left,
-      top: cropRect.top,
-      width: cropRect.width! * cropRect.scaleX!,
-      height: cropRect.height! * cropRect.scaleY!,
-      multiplier: bgScale ? 1 / bgScale : 1,
-    });
-    onExtract(dataUrl);
+
+    // Export the selected area ignoring current zoom/pan to avoid wrong offsets
+    const prevVpt = fabricCanvas.viewportTransform ? (fabricCanvas.viewportTransform.slice(0) as any) : null;
+    try {
+      // Temporarily reset viewport so left/top/width/height are in canvas world coords
+      fabricCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+      fabricCanvas.requestRenderAll();
+
+      const dataUrl = fabricCanvas.toDataURL({
+        format: 'png',
+        left: cropRect.left,
+        top: cropRect.top,
+        width: (cropRect.width! * cropRect.scaleX!),
+        height: (cropRect.height! * cropRect.scaleY!),
+        // Scale up to original image resolution relative to background scaling
+        multiplier: bgScale ? 1 / bgScale : 1,
+      });
+
+      onExtract(dataUrl);
+    } finally {
+      // Restore viewport transform
+      if (prevVpt) fabricCanvas.setViewportTransform(prevVpt as any);
+      fabricCanvas.requestRenderAll();
+    }
+
     cancelCrop();
     setShowCropDialog(false);
     setMode("select");
@@ -810,7 +826,7 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    const disableInteractivity = mode === "place-symbol" || mode === "draw";
+    const disableInteractivity = ["place-symbol", "draw", "crop", "measure", "erase"].includes(mode);
     fabricCanvas.selection = !disableInteractivity ? true : false;
     fabricCanvas.skipTargetFind = disableInteractivity; // prevents selection/drag
 
