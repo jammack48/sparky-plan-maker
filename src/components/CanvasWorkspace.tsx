@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Canvas as FabricCanvas, FabricImage, Point, Rect as FabricRect, FabricText, Group } from "fabric";
+import { Canvas as FabricCanvas, FabricImage, Point, Rect as FabricRect, FabricText, Group, PencilBrush } from "fabric";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { CanvasDialogs } from "./CanvasDialogs";
 import { GridOverlay } from "./GridOverlay";
@@ -96,11 +96,15 @@ export const CanvasWorkspace = ({
       // Keep object stacking order stable (don't auto-bring active object to front)
       (canvas as any).preserveObjectStacking = true;
 
-      // Configure free drawing brush (Fabric v6 provides one by default)
+      // Ensure a working free drawing brush
       try {
+        canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = symbolColor;
         canvas.freeDrawingBrush.width = symbolThickness;
-      } catch {}
+        console.info('[DRAW:init] brush ready', { color: canvas.freeDrawingBrush.color, width: canvas.freeDrawingBrush.width });
+      } catch (e) {
+        console.warn('[DRAW:init] failed to init brush', e);
+      }
 
       setFabricCanvas(canvas);
 
