@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Palette, Minus, Eye, Maximize } from "lucide-react";
+import { ChevronDown, Palette, Minus, Eye, Maximize, Zap, Droplet, Wind, Type, Pencil } from "lucide-react";
 import { SymbolIcon } from "./SymbolIcon";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,18 @@ export interface SymbolType {
   name: string;
   icon: React.ReactNode;
   count: number;
+  category: "electrical" | "plumbing" | "hvac" | "text" | "draw";
+}
+
+export interface SymbolCategory {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  symbols: SymbolType[];
 }
 
 interface SymbolToolbarProps {
-  symbols: SymbolType[];
+  categories: SymbolCategory[];
   onSymbolSelect: (symbolId: string) => void;
   selectedSymbol: string | null;
   symbolColor: string;
@@ -31,7 +40,7 @@ interface SymbolToolbarProps {
 }
 
 export const SymbolToolbar = ({ 
-  symbols, 
+  categories, 
   onSymbolSelect, 
   selectedSymbol,
   symbolColor,
@@ -48,32 +57,50 @@ export const SymbolToolbar = ({
 
   return (
     <Card className="p-2 sm:p-3 space-y-2">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-xs sm:text-sm text-foreground">Symbols</h3>
+      </div>
+      
+      <Accordion type="single" collapsible className="w-full">
+        {categories.map((category) => (
+          <AccordionItem key={category.id} value={category.id} className="border-b-0">
+            <AccordionTrigger className="py-2 text-xs sm:text-sm hover:no-underline">
+              <span className="flex items-center gap-2">
+                {category.icon}
+                {category.name}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col gap-1 pt-1">
+                {category.symbols.map((symbol) => (
+                  <Button
+                    key={symbol.id}
+                    variant={selectedSymbol === symbol.id ? "default" : "outline"}
+                    className="w-full justify-between text-xs sm:text-sm"
+                    size="sm"
+                    onClick={() => onSymbolSelect(symbol.id)}
+                  >
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      {symbol.icon}
+                      <span>{symbol.name}</span>
+                    </span>
+                    <span className="text-xs">{symbol.count}</span>
+                  </Button>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+
       <Collapsible open={isStyleOpen} onOpenChange={setIsStyleOpen}>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-xs sm:text-sm text-foreground">Symbols</h3>
-          <CollapsibleTrigger asChild className="portrait:flex landscape:hidden md:hidden">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+        <div className="pt-2 border-t">
+          <CollapsibleTrigger asChild className="portrait:flex landscape:hidden md:hidden w-full">
+            <Button variant="ghost" size="sm" className="w-full justify-between">
+              <span className="text-xs sm:text-sm">Style Controls</span>
               <ChevronDown className={`h-4 w-4 transition-transform ${isStyleOpen ? 'rotate-180' : ''}`} />
             </Button>
           </CollapsibleTrigger>
-        </div>
-        
-        <div className="flex flex-row md:flex-col gap-1 sm:gap-2 flex-wrap md:flex-nowrap">
-          {symbols.map((symbol) => (
-            <Button
-              key={symbol.id}
-              variant={selectedSymbol === symbol.id ? "default" : "outline"}
-              className="flex-1 md:w-full justify-between min-w-[80px] text-xs sm:text-sm"
-              size="sm"
-              onClick={() => onSymbolSelect(symbol.id)}
-            >
-              <span className="flex items-center gap-1 sm:gap-2">
-                {symbol.icon}
-                <span className="hidden sm:inline">{symbol.name}</span>
-              </span>
-              <span className="text-xs">{symbol.count}</span>
-            </Button>
-          ))}
         </div>
 
         <CollapsibleContent className="portrait:block landscape:hidden md:hidden mt-3">
@@ -159,11 +186,54 @@ export const SymbolToolbar = ({
   );
 };
 
-export const DEFAULT_SYMBOLS: SymbolType[] = [
-  { id: "downlight", name: "Downlight", icon: <SymbolIcon type="downlight" />, count: 0 },
-  { id: "power-point", name: "Power Point", icon: <SymbolIcon type="power-point" />, count: 0 },
-  { id: "single-switch", name: "Single Switch", icon: <SymbolIcon type="single-switch" />, count: 0 },
-  { id: "double-switch", name: "Double Switch", icon: <SymbolIcon type="double-switch" />, count: 0 },
-  { id: "triple-switch", name: "Triple Switch", icon: <SymbolIcon type="triple-switch" />, count: 0 },
-  { id: "fan", name: "Fan", icon: <SymbolIcon type="fan" />, count: 0 },
+export const DEFAULT_SYMBOL_CATEGORIES: SymbolCategory[] = [
+  {
+    id: "electrical",
+    name: "Electrical",
+    icon: <Zap className="h-4 w-4" />,
+    symbols: [
+      { id: "downlight", name: "Downlight", icon: <SymbolIcon type="downlight" />, count: 0, category: "electrical" },
+      { id: "power-point", name: "Power Point", icon: <SymbolIcon type="power-point" />, count: 0, category: "electrical" },
+      { id: "single-switch", name: "Single Switch", icon: <SymbolIcon type="single-switch" />, count: 0, category: "electrical" },
+      { id: "double-switch", name: "Double Switch", icon: <SymbolIcon type="double-switch" />, count: 0, category: "electrical" },
+      { id: "triple-switch", name: "Triple Switch", icon: <SymbolIcon type="triple-switch" />, count: 0, category: "electrical" },
+      { id: "fan", name: "Fan", icon: <SymbolIcon type="fan" />, count: 0, category: "electrical" },
+    ]
+  },
+  {
+    id: "plumbing",
+    name: "Plumbing",
+    icon: <Droplet className="h-4 w-4" />,
+    symbols: [
+      { id: "sink", name: "Sink", icon: <SymbolIcon type="downlight" />, count: 0, category: "plumbing" },
+      { id: "toilet", name: "Toilet", icon: <SymbolIcon type="power-point" />, count: 0, category: "plumbing" },
+      { id: "shower", name: "Shower", icon: <SymbolIcon type="single-switch" />, count: 0, category: "plumbing" },
+    ]
+  },
+  {
+    id: "hvac",
+    name: "HVAC",
+    icon: <Wind className="h-4 w-4" />,
+    symbols: [
+      { id: "ac-unit", name: "AC Unit", icon: <SymbolIcon type="downlight" />, count: 0, category: "hvac" },
+      { id: "vent", name: "Vent", icon: <SymbolIcon type="power-point" />, count: 0, category: "hvac" },
+      { id: "thermostat", name: "Thermostat", icon: <SymbolIcon type="single-switch" />, count: 0, category: "hvac" },
+    ]
+  },
+  {
+    id: "text",
+    name: "Text",
+    icon: <Type className="h-4 w-4" />,
+    symbols: [
+      { id: "text-label", name: "Text Label", icon: <Type className="h-4 w-4" />, count: 0, category: "text" },
+    ]
+  },
+  {
+    id: "draw",
+    name: "Draw",
+    icon: <Pencil className="h-4 w-4" />,
+    symbols: [
+      { id: "freehand", name: "Freehand", icon: <Pencil className="h-4 w-4" />, count: 0, category: "draw" },
+    ]
+  },
 ];

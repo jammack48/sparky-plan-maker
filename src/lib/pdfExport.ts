@@ -17,10 +17,10 @@ export const generatePDF = async (
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   
-  // Add canvas image (includes title block) at full page size
+  // Add canvas image (includes title block) at full page size with high quality
   try {
-    // Fill entire page with canvas content
-    pdf.addImage(canvasDataUrl, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+    // Fill entire page with canvas content - use SLOW compression for better quality
+    pdf.addImage(canvasDataUrl, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'SLOW');
   } catch (error) {
     console.error('Error adding canvas image to PDF:', error);
   }

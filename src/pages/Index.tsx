@@ -3,7 +3,7 @@ import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
-import { SymbolToolbar, DEFAULT_SYMBOLS } from "@/components/SymbolToolbar";
+import { SymbolToolbar, DEFAULT_SYMBOL_CATEGORIES, SymbolCategory } from "@/components/SymbolToolbar";
 import { SymbolStyleControls } from "@/components/SymbolStyleControls";
 import { Button } from "@/components/ui/button";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
@@ -18,7 +18,7 @@ const Index = () => {
   const [pdfPages, setPdfPages] = useState<string[]>([]);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [symbols, setSymbols] = useState(DEFAULT_SYMBOLS);
+  const [symbolCategories, setSymbolCategories] = useState<SymbolCategory[]>(DEFAULT_SYMBOL_CATEGORIES);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -150,8 +150,13 @@ const Index = () => {
   };
 
   const handleSymbolPlaced = (symbolId: string) => {
-    setSymbols((prev) =>
-      prev.map((s) => (s.id === symbolId ? { ...s, count: s.count + 1 } : s))
+    setSymbolCategories((prev) =>
+      prev.map((category) => ({
+        ...category,
+        symbols: category.symbols.map((s) =>
+          s.id === symbolId ? { ...s, count: s.count + 1 } : s
+        ),
+      }))
     );
     // Keep symbol selected for multiple placements
   };
@@ -365,7 +370,7 @@ const Index = () => {
         <aside className="w-full md:w-48 lg:w-56 border-t md:border-t-0 md:border-l border-border bg-card shrink-0 overflow-hidden">
           <div className="h-full overflow-y-auto p-2 sm:p-3 space-y-3">
             <SymbolToolbar
-              symbols={symbols}
+              categories={symbolCategories}
               onSymbolSelect={handleSymbolSelect}
               selectedSymbol={selectedSymbol}
               symbolColor={symbolColor}
