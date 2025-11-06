@@ -20,7 +20,7 @@ export const useSymbolPlacement = (
     if (!fabricCanvas || mode !== "place-symbol" || !selectedSymbol) return;
 
     fabricCanvas.selection = false;
-    fabricCanvas.defaultCursor = "none";
+    fabricCanvas.defaultCursor = "default";
     
     let previewSymbol: FabricObject | null = null;
 

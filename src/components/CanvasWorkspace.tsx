@@ -52,7 +52,7 @@ export const CanvasWorkspace = ({
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol">("select");
   const [showGrid, setShowGrid] = useState(false);
-  const [gridSize, setGridSize] = useState("1000");
+  const [gridSize, setGridSize] = useState("400");
   const [gridColor, setGridColor] = useState("#ff0000");
   const [gridThickness, setGridThickness] = useState(1);
   const [gridOpacity, setGridOpacity] = useState(0.5);
@@ -187,26 +187,26 @@ export const CanvasWorkspace = ({
 
     const objects: any[] = [];
 
-    // Black background
+    // White background
     const bg = new FabricRect({
       left: 0,
       top: 0,
       width: canvasWidth,
       height: titleBarHeight,
-      fill: 'black',
+      fill: 'white',
       selectable: false,
       evented: false,
     });
     objects.push(bg);
 
-    // White border around title block
+    // Black border around title block
     const border = new FabricRect({
       left: 0,
       top: 0,
       width: canvasWidth,
       height: titleBarHeight,
       fill: 'transparent',
-      stroke: 'white',
+      stroke: 'black',
       strokeWidth: 2,
       selectable: false,
       evented: false,
@@ -236,7 +236,7 @@ export const CanvasWorkspace = ({
           top: 0,
           width: 2,
           height: titleBarHeight,
-          fill: 'white',
+          fill: 'black',
           selectable: false,
           evented: false,
         });
@@ -261,7 +261,7 @@ export const CanvasWorkspace = ({
         top: 0,
         width: 1,
         height: titleBarHeight,
-        fill: 'white',
+        fill: 'black',
         selectable: false,
         evented: false,
       });
@@ -273,7 +273,7 @@ export const CanvasWorkspace = ({
         top: rowHeight,
         width: tableWidth,
         height: 1,
-        fill: 'white',
+        fill: 'black',
         selectable: false,
         evented: false,
       });
@@ -284,15 +284,15 @@ export const CanvasWorkspace = ({
         top: rowHeight * 2,
         width: tableWidth,
         height: 1,
-        fill: 'white',
+        fill: 'black',
         selectable: false,
         evented: false,
       });
       objects.push(row2Sep);
 
       // Text styling
-      const labelStyle = { fontSize: 10, fill: 'white', fontWeight: 'bold', fontFamily: 'Arial' };
-      const valueStyle = { fontSize: 12, fill: 'white', fontFamily: 'Arial' };
+      const labelStyle = { fontSize: 10, fill: 'black', fontWeight: 'bold', fontFamily: 'Arial' };
+      const valueStyle = { fontSize: 12, fill: 'black', fontFamily: 'Arial' };
 
       // Row 1, Column 1: Client
       const clientLabel = new FabricText('CLIENT:', { ...labelStyle, left: tableStartX + 5, top: rowHeight * 0 + rowHeight / 2 - 6, selectable: false, evented: false });

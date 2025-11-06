@@ -7,7 +7,7 @@ export const generatePDF = async (
   originalImageWidth: number,
   originalImageHeight: number
 ): Promise<void> => {
-  // A3 landscape, no scaling
+  // A3 landscape
   const pdf = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -17,16 +17,10 @@ export const generatePDF = async (
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   
-  // Add canvas image at 100% - no scaling, centered on page
+  // Add canvas image (includes title block) at full page size
   try {
-    // Place image centered on A3 page (no margins, no scaling)
-    const imgWidthMm = (originalImageWidth * 25.4) / 96; // px to mm (96 DPI)
-    const imgHeightMm = (originalImageHeight * 25.4) / 96;
-    
-    const imgX = (pageWidth - imgWidthMm) / 2;
-    const imgY = (pageHeight - imgHeightMm) / 2;
-    
-    pdf.addImage(canvasDataUrl, 'PNG', imgX, imgY, imgWidthMm, imgHeightMm);
+    // Fill entire page with canvas content
+    pdf.addImage(canvasDataUrl, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
   } catch (error) {
     console.error('Error adding canvas image to PDF:', error);
   }
