@@ -62,6 +62,7 @@ export const SymbolToolbar = ({
   const [editValue, setEditValue] = useState("");
   const [copiedSymbol, setCopiedSymbol] = useState<{ symbol: SymbolType; sourceCategoryId: string } | null>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const editInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleRenameSymbol = (categoryId: string, symbolId: string, newName: string) => {
     if (!onCategoriesChange || !newName.trim()) return;
@@ -118,6 +119,11 @@ export const SymbolToolbar = ({
   const handleStartEdit = (categoryId: string, symbolId: string, currentName: string) => {
     setEditingSymbol({ categoryId, symbolId });
     setEditValue(currentName);
+    // Focus input after state update
+    setTimeout(() => {
+      editInputRef.current?.focus();
+      editInputRef.current?.select();
+    }, 50);
   };
 
   const handleFinishEdit = () => {
@@ -147,7 +153,7 @@ export const SymbolToolbar = ({
   };
 
   return (
-    <Card className="p-2 sm:p-3 space-y-2 relative z-10">
+    <Card className="p-2 sm:p-3 space-y-2 relative z-10 max-h-[50vh] portrait:max-h-[40vh] flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold text-xs sm:text-sm text-foreground">Symbols</h3>
       </div>
@@ -155,7 +161,7 @@ export const SymbolToolbar = ({
       <Accordion 
         type="single" 
         collapsible 
-        className="w-full"
+        className="w-full overflow-y-auto flex-1"
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
@@ -181,6 +187,7 @@ export const SymbolToolbar = ({
                         {editingSymbol?.categoryId === category.id && editingSymbol?.symbolId === symbol.id ? (
                           <div className="flex items-center gap-1 p-2 border rounded">
                             <Input
+                              ref={editInputRef}
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
                               onBlur={handleFinishEdit}
@@ -190,6 +197,7 @@ export const SymbolToolbar = ({
                               }}
                               className="h-7 text-xs"
                               autoFocus
+                              inputMode="text"
                             />
                           </div>
                         ) : (
