@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Canvas as FabricCanvas, FabricImage, Point, Rect as FabricRect, FabricText, Group, PencilBrush } from "fabric";
+import { Canvas as FabricCanvas, FabricImage, Point, Rect as FabricRect, FabricText, Group, PencilBrush, IText } from "fabric";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { CanvasDialogs } from "./CanvasDialogs";
 import { GridOverlay } from "./GridOverlay";
@@ -559,6 +559,67 @@ export const CanvasWorkspace = ({
     return () => {
       window.removeEventListener('keydown', onKeyDown as any);
       window.removeEventListener('keyup', onKeyUp as any);
+    };
+  }, [fabricCanvas]);
+
+  // Double-click to edit symbol labels
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const handleDoubleClick = (opt: any) => {
+      const target = opt.target;
+      if (!target) return;
+
+      // If it's already an IText (text-label), handle normally
+      if (target.type === 'i-text' || target.type === 'text') {
+        return;
+      }
+
+      // If it's a Group with a label (symbol), edit the label
+      if (target.type === 'group' && (target as any).symbolType && (target as any).labelIndex !== undefined) {
+        const group = target as Group;
+        const labelIndex = (group as any).labelIndex;
+        const items = (group as any)._objects;
+        
+        if (items && items[labelIndex] && items[labelIndex].type === 'i-text') {
+          const label = items[labelIndex] as IText;
+          
+          // Make label temporarily editable
+          label.set({
+            selectable: true,
+            evented: true,
+            editable: true,
+          });
+
+          // Enter editing mode
+          setTimeout(() => {
+            fabricCanvas.setActiveObject(label);
+            (label as any).enterEditing?.();
+            (label as any).selectAll?.();
+            
+            // Focus to trigger mobile keyboard
+            const hiddenInput = document.createElement('input');
+            hiddenInput.style.position = 'absolute';
+            hiddenInput.style.opacity = '0';
+            hiddenInput.style.height = '0';
+            hiddenInput.style.fontSize = '16px'; // Prevents iOS zoom
+            hiddenInput.setAttribute('inputmode', 'text');
+            document.body.appendChild(hiddenInput);
+            hiddenInput.focus();
+            setTimeout(() => {
+              document.body.removeChild(hiddenInput);
+            }, 100);
+
+            fabricCanvas.requestRenderAll();
+          }, 50);
+        }
+      }
+    };
+
+    fabricCanvas.on('mouse:dblclick', handleDoubleClick);
+
+    return () => {
+      fabricCanvas.off('mouse:dblclick', handleDoubleClick);
     };
   }, [fabricCanvas]);
 

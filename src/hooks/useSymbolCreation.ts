@@ -35,7 +35,17 @@ export const useSymbolCreation = (
           strokeWidth: thickness,
           opacity: transparency,
         });
-        const group = new Group([circle, xLine1, xLine2], {
+        const label = new IText("", {
+          left: 0,
+          top: halfSize + 8,
+          originX: "center",
+          originY: "top",
+          fill: color,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([circle, xLine1, xLine2, label], {
           left: x,
           top: y,
           originX: "center",
@@ -44,6 +54,7 @@ export const useSymbolCreation = (
           moveCursor: "default",
         });
         (group as any).symbolType = type;
+        (group as any).labelIndex = 3; // Index of label in group
         return group;
       }
         
@@ -63,7 +74,17 @@ export const useSymbolCreation = (
           strokeWidth: 0.4 * thickness,
           opacity: transparency,
         });
-        const group = new Group([arc, line], {
+        const label = new IText("", {
+          left: 0,
+          top: halfSize + 8,
+          originX: "center",
+          originY: "top",
+          fill: color,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([arc, line, label], {
           left: x,
           top: y,
           originX: "center",
@@ -72,6 +93,7 @@ export const useSymbolCreation = (
           moveCursor: "default",
         });
         (group as any).symbolType = type;
+        (group as any).labelIndex = 2;
         return group;
       }
         
@@ -89,7 +111,17 @@ export const useSymbolCreation = (
           strokeWidth: 0.5 * thickness,
           opacity: transparency,
         });
-        const group = new Group([circle, line], {
+        const label = new IText("", {
+          left: 0,
+          top: halfSize + 8,
+          originX: "center",
+          originY: "top",
+          fill: color,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([circle, line, label], {
           left: x,
           top: y,
           originX: "center",
@@ -98,6 +130,7 @@ export const useSymbolCreation = (
           moveCursor: "default",
         });
         (group as any).symbolType = type;
+        (group as any).labelIndex = 2;
         return group;
       }
         
@@ -130,7 +163,17 @@ export const useSymbolCreation = (
           strokeWidth: 0.5 * thickness,
           opacity: transparency,
         });
-        const group = new Group([circle1, circle2, line], {
+        const label = new IText("", {
+          left: 0,
+          top: halfSize + 8,
+          originX: "center",
+          originY: "top",
+          fill: color,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([circle1, circle2, line, label], {
           left: x,
           top: y,
           originX: "center",
@@ -139,6 +182,7 @@ export const useSymbolCreation = (
           moveCursor: "default",
         });
         (group as any).symbolType = type;
+        (group as any).labelIndex = 3;
         return group;
       }
         
@@ -182,7 +226,17 @@ export const useSymbolCreation = (
           strokeWidth: 0.5 * thickness,
           opacity: transparency,
         });
-        const group = new Group([switch1, switch2, switch3, line], {
+        const label = new IText("", {
+          left: 0,
+          top: halfSize + 8,
+          originX: "center",
+          originY: "top",
+          fill: color,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([switch1, switch2, switch3, line, label], {
           left: x,
           top: y,
           originX: "center",
@@ -191,6 +245,7 @@ export const useSymbolCreation = (
           moveCursor: "default",
         });
         (group as any).symbolType = type;
+        (group as any).labelIndex = 4;
         return group;
       }
         
@@ -212,7 +267,17 @@ export const useSymbolCreation = (
             opacity: transparency,
           }
         );
-        const group = new Group([circle, fPath], {
+        const label = new IText("", {
+          left: 0,
+          top: halfSize + 8,
+          originX: "center",
+          originY: "top",
+          fill: color,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([circle, fPath, label], {
           left: x,
           top: y,
           originX: "center",
@@ -221,6 +286,7 @@ export const useSymbolCreation = (
           moveCursor: "default",
         });
         (group as any).symbolType = type;
+        (group as any).labelIndex = 2;
         return group;
       }
         
@@ -263,7 +329,17 @@ export const useSymbolCreation = (
           opacity: transparency,
           fontSize: 14 * scale,
         });
-        const group = new Group([circle, qText], {
+        const label = new IText("", {
+          left: 0,
+          top: halfSize + 8,
+          originX: "center",
+          originY: "top",
+          fill: color,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([circle, qText, label], {
           left: x,
           top: y,
           originX: "center",
@@ -272,6 +348,7 @@ export const useSymbolCreation = (
           moveCursor: "default",
         });
         (group as any).symbolType = type;
+        (group as any).labelIndex = 2;
         return group;
       }
     }

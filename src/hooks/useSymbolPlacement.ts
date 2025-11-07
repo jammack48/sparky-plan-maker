@@ -119,8 +119,6 @@ export const useSymbolPlacement = (
         
         onSaveState();
         onSymbolPlaced?.(selectedSymbol);
-        const snapStatus = (showGrid && scale && (opt.e.ctrlKey || opt.e.metaKey)) ? " (snapped)" : "";
-        toast.success(`${selectedSymbol} placed${snapStatus}`);
       }
     };
 
@@ -161,7 +159,6 @@ export const useSymbolPlacement = (
         }
         onSymbolDeselect?.();
         setMode("select");
-        toast.info("Symbol placement cancelled");
       }
     };
 
