@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Palette, Minus, Eye, Maximize, Zap, Droplet, Wind, Type, Pencil, Square, Circle as CircleIcon } from "lucide-react";
+import { ChevronDown, Palette, Minus, Eye, Maximize, Zap, Droplet, Wind, Type, Pencil as PencilIcon, Square, Circle as CircleIcon, Copy, Clipboard, Edit3, FolderInput } from "lucide-react";
 import { SymbolIcon } from "./SymbolIcon";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from "@/components/ui/context-menu";
+import { toast } from "sonner";
 
 export interface SymbolType {
   id: string;
@@ -37,6 +39,7 @@ interface SymbolToolbarProps {
   onTransparencyChange: (transparency: number) => void;
   onScaleChange: (scale: number) => void;
   colorHistory: string[];
+  onCategoriesChange?: (categories: SymbolCategory[]) => void;
 }
 
 export const SymbolToolbar = ({ 
@@ -51,9 +54,97 @@ export const SymbolToolbar = ({
   onThicknessChange,
   onTransparencyChange,
   onScaleChange,
-  colorHistory
+  colorHistory,
+  onCategoriesChange
 }: SymbolToolbarProps) => {
   const [isStyleOpen, setIsStyleOpen] = useState(false);
+  const [editingSymbol, setEditingSymbol] = useState<{ categoryId: string; symbolId: string } | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [copiedSymbol, setCopiedSymbol] = useState<{ symbol: SymbolType; sourceCategoryId: string } | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleRenameSymbol = (categoryId: string, symbolId: string, newName: string) => {
+    if (!onCategoriesChange || !newName.trim()) return;
+
+    const updatedCategories = categories.map(cat => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          symbols: cat.symbols.map(sym => 
+            sym.id === symbolId ? { ...sym, name: newName.trim() } : sym
+          )
+        };
+      }
+      return cat;
+    });
+
+    onCategoriesChange(updatedCategories);
+    toast.success("Symbol renamed");
+  };
+
+  const handleCopySymbol = (categoryId: string, symbolId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    const symbol = category?.symbols.find(sym => sym.id === symbolId);
+    
+    if (symbol) {
+      setCopiedSymbol({ symbol, sourceCategoryId: categoryId });
+      toast.success("Symbol copied");
+    }
+  };
+
+  const handlePasteSymbol = (targetCategoryId: string) => {
+    if (!copiedSymbol || !onCategoriesChange) return;
+
+    const updatedCategories = categories.map(cat => {
+      if (cat.id === targetCategoryId) {
+        const symbolExists = cat.symbols.some(sym => sym.id === copiedSymbol.symbol.id);
+        if (symbolExists) {
+          toast.error("Symbol already exists in this category");
+          return cat;
+        }
+
+        return {
+          ...cat,
+          symbols: [...cat.symbols, { ...copiedSymbol.symbol, category: targetCategoryId as any }]
+        };
+      }
+      return cat;
+    });
+
+    onCategoriesChange(updatedCategories);
+    toast.success("Symbol pasted");
+  };
+
+  const handleStartEdit = (categoryId: string, symbolId: string, currentName: string) => {
+    setEditingSymbol({ categoryId, symbolId });
+    setEditValue(currentName);
+  };
+
+  const handleFinishEdit = () => {
+    if (editingSymbol && editValue.trim()) {
+      handleRenameSymbol(editingSymbol.categoryId, editingSymbol.symbolId, editValue);
+    }
+    setEditingSymbol(null);
+    setEditValue("");
+  };
+
+  const handleLongPressStart = (categoryId: string, symbolId: string, e: React.PointerEvent) => {
+    e.preventDefault();
+    longPressTimerRef.current = setTimeout(() => {
+      const category = categories.find(cat => cat.id === categoryId);
+      const symbol = category?.symbols.find(sym => sym.id === symbolId);
+      if (symbol) {
+        handleCopySymbol(categoryId, symbolId);
+      }
+    }, 500); // 500ms for long press
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
 
   return (
     <Card className="p-2 sm:p-3 space-y-2 relative z-10">
@@ -79,19 +170,75 @@ export const SymbolToolbar = ({
             <AccordionContent>
               <div className="flex flex-col gap-1 pt-1">
                 {category.symbols.map((symbol) => (
-                  <Button
-                    key={symbol.id}
-                    variant={selectedSymbol === symbol.id ? "default" : "outline"}
-                    className="w-full justify-between text-xs sm:text-sm"
-                    size="sm"
-                    onClick={() => onSymbolSelect(symbol.id)}
-                  >
-                    <span className="flex items-center gap-1 sm:gap-2">
-                      {symbol.icon}
-                      <span>{symbol.name}</span>
-                    </span>
-                    <span className="text-xs">{symbol.count}</span>
-                  </Button>
+                  <ContextMenu key={symbol.id}>
+                    <ContextMenuTrigger asChild>
+                      <div 
+                        className="relative"
+                        onPointerDown={(e) => handleLongPressStart(category.id, symbol.id, e)}
+                        onPointerUp={handleLongPressEnd}
+                        onPointerLeave={handleLongPressEnd}
+                      >
+                        {editingSymbol?.categoryId === category.id && editingSymbol?.symbolId === symbol.id ? (
+                          <div className="flex items-center gap-1 p-2 border rounded">
+                            <Input
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={handleFinishEdit}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleFinishEdit();
+                                if (e.key === 'Escape') setEditingSymbol(null);
+                              }}
+                              className="h-7 text-xs"
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <Button
+                            variant={selectedSymbol === symbol.id ? "default" : "outline"}
+                            className="w-full justify-between text-xs sm:text-sm"
+                            size="sm"
+                            onClick={() => onSymbolSelect(symbol.id)}
+                            onDoubleClick={() => handleStartEdit(category.id, symbol.id, symbol.name)}
+                          >
+                            <span className="flex items-center gap-1 sm:gap-2">
+                              {symbol.icon}
+                              <span>{symbol.name}</span>
+                            </span>
+                            <span className="text-xs">{symbol.count}</span>
+                          </Button>
+                        )}
+                      </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem onClick={() => handleStartEdit(category.id, symbol.id, symbol.name)}>
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        Rename
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={() => handleCopySymbol(category.id, symbol.id)}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                      <ContextMenuSub>
+                        <ContextMenuSubTrigger>
+                          <FolderInput className="w-4 h-4 mr-2" />
+                          Paste to...
+                        </ContextMenuSubTrigger>
+                        <ContextMenuSubContent>
+                          {categories.map(cat => (
+                            <ContextMenuItem 
+                              key={cat.id}
+                              onClick={() => handlePasteSymbol(cat.id)}
+                              disabled={!copiedSymbol}
+                            >
+                              {cat.icon}
+                              <span className="ml-2">{cat.name}</span>
+                            </ContextMenuItem>
+                          ))}
+                        </ContextMenuSubContent>
+                      </ContextMenuSub>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 ))}
               </div>
             </AccordionContent>
@@ -237,9 +384,9 @@ export const DEFAULT_SYMBOL_CATEGORIES: SymbolCategory[] = [
   {
     id: "draw",
     name: "Draw",
-    icon: <Pencil className="h-4 w-4" />,
+    icon: <PencilIcon className="h-4 w-4" />,
     symbols: [
-      { id: "freehand", name: "Freehand", icon: <Pencil className="h-4 w-4" />, count: 0, category: "draw" },
+      { id: "freehand", name: "Freehand", icon: <PencilIcon className="h-4 w-4" />, count: 0, category: "draw" },
       { id: "line", name: "Line", icon: <Minus className="h-4 w-4" />, count: 0, category: "draw" },
       { id: "rectangle", name: "Rectangle", icon: <Square className="h-4 w-4" />, count: 0, category: "draw" },
       { id: "circle", name: "Circle", icon: <CircleIcon className="h-4 w-4" />, count: 0, category: "draw" },

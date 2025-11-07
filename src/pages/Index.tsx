@@ -382,6 +382,7 @@ const Index = () => {
               onTransparencyChange={handleTransparencyChange}
               onScaleChange={handleScaleChange}
               colorHistory={selectedSymbol ? (symbolSettings[selectedSymbol]?.colorHistory || []) : []}
+              onCategoriesChange={setSymbolCategories}
             />
             <div className="portrait:hidden landscape:block md:block">
               <SymbolStyleControls
