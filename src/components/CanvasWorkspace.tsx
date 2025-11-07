@@ -188,6 +188,34 @@ export const CanvasWorkspace = ({
         top: (canvasHeight - scaledHeight) / 2,
       });
 
+      // Add double-tap detection for selecting all objects
+      let lastTapTime = 0;
+      const doubleTapDelay = 300; // ms
+
+      fabricImage.on('mousedown', (e) => {
+        const now = Date.now();
+        const timeSinceLastTap = now - lastTapTime;
+
+        if (timeSinceLastTap < doubleTapDelay && timeSinceLastTap > 0) {
+          // Double tap detected - select all objects except background
+          const allObjects = fabricCanvas.getObjects().filter(obj => obj !== fabricImage && obj !== titleBlockGroupRef.current);
+          
+          if (allObjects.length > 0) {
+            // Create active selection with all objects
+            const selection = new (fabricCanvas as any).ActiveSelection(allObjects, {
+              canvas: fabricCanvas,
+            });
+            fabricCanvas.setActiveObject(selection);
+            fabricCanvas.requestRenderAll();
+            toast.success("All objects selected");
+          }
+          
+          lastTapTime = 0; // Reset to prevent triple-tap
+        } else {
+          lastTapTime = now;
+        }
+      });
+
       fabricCanvas.add(fabricImage);
       fabricCanvas.sendObjectToBack(fabricImage);
       fabricCanvas.renderAll();
