@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
+import tradeSketchLogo from "@/assets/tradesketch-logo.png";
 import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
@@ -260,8 +261,11 @@ const Index = () => {
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold mb-2 text-foreground">SparkyMate</h1>
-            <p className="text-muted-foreground">Floor Plan Markup Tool for Electricians</p>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-16 h-16" />
+              <h1 className="text-4xl font-bold text-foreground">TradeSketch Pro</h1>
+            </div>
+            <p className="text-muted-foreground">Professional floor plan and technical drawing tool</p>
           </div>
           <FileUpload onFileLoad={handleFileLoad} isLoading={isLoading} />
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -294,8 +298,11 @@ const Index = () => {
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold mb-2 text-foreground">SparkyMate</h1>
-            <p className="text-muted-foreground">Floor Plan Markup Tool for Electricians</p>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-16 h-16" />
+              <h1 className="text-4xl font-bold text-foreground">TradeSketch Pro</h1>
+            </div>
+            <p className="text-muted-foreground">Professional floor plan and technical drawing tool</p>
           </div>
           <PageSelector pages={pdfPages} onSelect={handlePageSelection} />
         </div>
@@ -319,7 +326,10 @@ const Index = () => {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <header className="border-b border-border bg-card px-2 sm:px-4 py-2 shrink-0">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-base sm:text-xl font-bold text-foreground whitespace-nowrap">SparkyMate</h1>
+          <div className="flex items-center gap-2">
+            <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-6 h-6 sm:w-8 sm:h-8" />
+            <h1 className="text-base sm:text-xl font-bold text-foreground whitespace-nowrap">TradeSketch Pro</h1>
+          </div>
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
