@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
+import { Home, RotateCcw } from "lucide-react";
 import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOL_CATEGORIES, SymbolCategory } from "@/components/SymbolToolbar";
+import { MobileSymbolMenu } from "@/components/MobileSymbolMenu";
 import { SymbolStyleControls } from "@/components/SymbolStyleControls";
 import { Button } from "@/components/ui/button";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
@@ -334,6 +336,37 @@ const Index = () => {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => {
+                if (window.confirm("Go back to home? You'll lose any unsaved work.")) {
+                  setSelectedPages([]);
+                  setPdfPages([]);
+                  setCurrentPageIndex(0);
+                }
+              }}
+              className="text-xs px-2 py-1 h-7"
+              title="Home"
+            >
+              <Home className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (window.confirm("Reset current page? You'll lose all changes.")) {
+                  // Force canvas workspace to reload by toggling the page
+                  const current = currentPageIndex;
+                  setCurrentPageIndex(-1);
+                  setTimeout(() => setCurrentPageIndex(current), 10);
+                }
+              }}
+              className="text-xs px-2 py-1 h-7"
+              title="Reset"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handlePreviousPage}
               disabled={currentPageIndex === 0}
               className="text-xs px-2 py-1 h-7"
@@ -357,6 +390,24 @@ const Index = () => {
       </header>
 
       <div className="flex flex-col-reverse md:flex-row flex-1 min-h-0 overflow-hidden">
+        {/* Mobile symbol menu - shown in toolbar area on mobile */}
+        <div className="md:hidden border-t border-border bg-card p-2">
+          <MobileSymbolMenu
+            categories={symbolCategories}
+            onSymbolSelect={handleSymbolSelect}
+            selectedSymbol={selectedSymbol}
+            symbolColor={symbolColor}
+            symbolThickness={symbolThickness}
+            symbolTransparency={symbolTransparency}
+            symbolScale={symbolScale}
+            onColorChange={handleColorChange}
+            onThicknessChange={handleThicknessChange}
+            onTransparencyChange={handleTransparencyChange}
+            onScaleChange={handleScaleChange}
+            colorHistory={selectedSymbol ? (symbolSettings[selectedSymbol]?.colorHistory || []) : []}
+          />
+        </div>
+
         <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
           <CanvasWorkspace
             imageUrl={pdfPages[selectedPages[currentPageIndex]]}
@@ -377,7 +428,7 @@ const Index = () => {
           />
         </main>
 
-        <aside className="w-full md:w-48 lg:w-56 border-t md:border-t-0 md:border-l border-border bg-card shrink-0 overflow-hidden relative z-10 pointer-events-auto">
+        <aside className="hidden md:block w-48 lg:w-56 border-l border-border bg-card shrink-0 overflow-hidden relative z-10 pointer-events-auto">
           <div className="h-full overflow-y-auto p-2 sm:p-3 space-y-3" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
             <SymbolToolbar
               categories={symbolCategories}

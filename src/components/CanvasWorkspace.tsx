@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Canvas as FabricCanvas, FabricImage, Point, Rect as FabricRect, FabricText, Group, PencilBrush, IText } from "fabric";
 import { CanvasToolbar } from "./CanvasToolbar";
+import { MobileToolbar } from "./MobileToolbar";
 import { CanvasDialogs } from "./CanvasDialogs";
 import { GridOverlay } from "./GridOverlay";
 import { useCropMode } from "@/hooks/useCropMode";
@@ -64,6 +65,7 @@ export const CanvasWorkspace = ({
   const [isPanning, setIsPanning] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [originalImageSize, setOriginalImageSize] = useState({ width: 0, height: 0 });
+  const [lockBackground, setLockBackground] = useState(true); // Lock background by default
   const titleBlockGroupRef = useRef<Group | null>(null);
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
@@ -158,13 +160,17 @@ export const CanvasWorkspace = ({
       const fabricImage = new FabricImage(img, {
         left: 0,
         top: 0,
-        selectable: true,
-        evented: true,
-        hasControls: true,
+        selectable: !lockBackground, // Based on lock state
+        evented: !lockBackground,
+        hasControls: !lockBackground,
         objectCaching: true,
-        hoverCursor: "default",
-        moveCursor: "default",
+        hoverCursor: lockBackground ? "default" : "move",
+        moveCursor: lockBackground ? "default" : "move",
+        selectionBackgroundColor: 'rgba(0,0,0,0.1)',
       });
+      
+      // Tag this as background image for special handling
+      (fabricImage as any).isBackgroundImage = true;
 
       const canvasWidth = fabricCanvas.getWidth();
       const canvasHeight = fabricCanvas.getHeight();
@@ -222,7 +228,7 @@ export const CanvasWorkspace = ({
       saveCanvasState();
     };
     img.src = imageUrl;
-  }, [fabricCanvas, imageUrl]);
+  }, [fabricCanvas, imageUrl, lockBackground]); // Add lockBackground to deps
 
   // Create title block as Fabric objects
   useEffect(() => {
@@ -967,34 +973,71 @@ export const CanvasWorkspace = ({
 
   return (
     <div className="flex flex-col h-full">
-      <CanvasToolbar
-        mode={mode}
-        scale={scale}
-        showGrid={showGrid}
-        gridSize={gridSize}
-        gridColor={gridColor}
-        gridThickness={gridThickness}
-        gridOpacity={gridOpacity}
-        zoomLevel={zoom}
-        undoStackLength={undoStack.length}
-        redoStackLength={redoStack.length}
-        onSelect={handleSelectMode}
-        onMove={handleMoveMode}
-        onCrop={() => handleModeChange("crop")}
-        onMeasure={() => handleModeChange("measure")}
-        onErase={() => handleModeChange("erase")}
-        onToggleGrid={() => setShowGrid(!showGrid)}
-        showTitleBlock={showTitleBlock}
-        onToggleTitleBlock={onToggleTitleBlock}
-        onGridSizeChange={setGridSize}
-        onGridColorChange={setGridColor}
-        onGridThicknessChange={setGridThickness}
-        onGridOpacityChange={setGridOpacity}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onExport={handleExportPDF}
-        onPageSetup={onPageSetup}
-      />
+      {/* Desktop toolbar - hidden on mobile */}
+      <div className="hidden md:block">
+        <CanvasToolbar
+          mode={mode}
+          scale={scale}
+          showGrid={showGrid}
+          gridSize={gridSize}
+          gridColor={gridColor}
+          gridThickness={gridThickness}
+          gridOpacity={gridOpacity}
+          zoomLevel={zoom}
+          undoStackLength={undoStack.length}
+          redoStackLength={redoStack.length}
+          onSelect={handleSelectMode}
+          onMove={handleMoveMode}
+          onCrop={() => handleModeChange("crop")}
+          onMeasure={() => handleModeChange("measure")}
+          onErase={() => handleModeChange("erase")}
+          onToggleGrid={() => setShowGrid(!showGrid)}
+          showTitleBlock={showTitleBlock}
+          onToggleTitleBlock={onToggleTitleBlock}
+          onGridSizeChange={setGridSize}
+          onGridColorChange={setGridColor}
+          onGridThicknessChange={setGridThickness}
+          onGridOpacityChange={setGridOpacity}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onExport={handleExportPDF}
+          onPageSetup={onPageSetup}
+        />
+      </div>
+
+      {/* Mobile toolbar - shown only on mobile */}
+      <div className="md:hidden">
+        <MobileToolbar
+          mode={mode}
+          scale={scale}
+          showGrid={showGrid}
+          showTitleBlock={showTitleBlock}
+          lockBackground={lockBackground}
+          gridSize={gridSize}
+          gridColor={gridColor}
+          gridThickness={gridThickness}
+          gridOpacity={gridOpacity}
+          zoomLevel={zoom}
+          undoStackLength={undoStack.length}
+          redoStackLength={redoStack.length}
+          onSelect={handleSelectMode}
+          onMove={handleMoveMode}
+          onCrop={() => handleModeChange("crop")}
+          onMeasure={() => handleModeChange("measure")}
+          onErase={() => handleModeChange("erase")}
+          onToggleGrid={() => setShowGrid(!showGrid)}
+          onToggleTitleBlock={onToggleTitleBlock}
+          onToggleLockBackground={setLockBackground}
+          onGridSizeChange={setGridSize}
+          onGridColorChange={setGridColor}
+          onGridThicknessChange={setGridThickness}
+          onGridOpacityChange={setGridOpacity}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onExport={handleExportPDF}
+          onPageSetup={onPageSetup}
+        />
+      </div>
 
       <div ref={containerRef} className="relative flex-1 bg-muted">
         <canvas ref={canvasRef} />
