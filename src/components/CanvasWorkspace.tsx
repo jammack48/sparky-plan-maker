@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Canvas as FabricCanvas, FabricImage, Point, Rect as FabricRect, FabricText, Group, PencilBrush, IText } from "fabric";
+import { Canvas as FabricCanvas, FabricImage, Point, Rect as FabricRect, FabricText, Group, PencilBrush, IText, ActiveSelection } from "fabric";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { MobileToolbar } from "./MobileToolbar";
 import { CanvasDialogs } from "./CanvasDialogs";
@@ -26,10 +26,12 @@ export interface CanvasWorkspaceProps {
   selectedSymbol: string | null;
   onSymbolPlaced?: (symbolId: string) => void;
   onSymbolDeselect?: () => void;
+  onSymbolSelect?: (symbolId: string) => void;
   symbolColor?: string;
   symbolThickness?: number;
   symbolTransparency?: number;
   symbolScale?: number;
+  symbolCategories?: { name: string; symbols: { id: string; name: string }[] }[];
 }
 
 export const CanvasWorkspace = ({
@@ -43,10 +45,12 @@ export const CanvasWorkspace = ({
   selectedSymbol,
   onSymbolPlaced,
   onSymbolDeselect,
+  onSymbolSelect,
   symbolColor = "#000000",
   symbolThickness = 2,
   symbolTransparency = 1,
   symbolScale = 1,
+  symbolCategories = [],
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -916,6 +920,24 @@ export const CanvasWorkspace = ({
     }
   };
 
+  const handleSelectAll = () => {
+    if (!fabricCanvas) return;
+    
+    const allObjects = fabricCanvas.getObjects().filter(obj => {
+      // Exclude background image (it's the FabricImage)
+      return obj.type !== 'image';
+    });
+    
+    if (allObjects.length > 0) {
+      fabricCanvas.discardActiveObject();
+      const selection = new ActiveSelection(allObjects, {
+        canvas: fabricCanvas,
+      });
+      fabricCanvas.setActiveObject(selection);
+      fabricCanvas.renderAll();
+    }
+  };
+
   // Handle object selection controls based on mode
   // Control canvas selection and object selectability based on mode
   useEffect(() => {
@@ -979,6 +1001,8 @@ export const CanvasWorkspace = ({
           mode={mode}
           scale={scale}
           showGrid={showGrid}
+          lockBackground={lockBackground}
+          showTitleBlock={showTitleBlock}
           gridSize={gridSize}
           gridColor={gridColor}
           gridThickness={gridThickness}
@@ -992,8 +1016,8 @@ export const CanvasWorkspace = ({
           onMeasure={() => handleModeChange("measure")}
           onErase={() => handleModeChange("erase")}
           onToggleGrid={() => setShowGrid(!showGrid)}
-          showTitleBlock={showTitleBlock}
           onToggleTitleBlock={onToggleTitleBlock}
+          onLockBackground={setLockBackground}
           onGridSizeChange={setGridSize}
           onGridColorChange={setGridColor}
           onGridThicknessChange={setGridThickness}
@@ -1002,6 +1026,7 @@ export const CanvasWorkspace = ({
           onRedo={handleRedo}
           onExport={handleExportPDF}
           onPageSetup={onPageSetup}
+          onSelectAll={handleSelectAll}
         />
       </div>
 
@@ -1020,6 +1045,8 @@ export const CanvasWorkspace = ({
           zoomLevel={zoom}
           undoStackLength={undoStack.length}
           redoStackLength={redoStack.length}
+          symbolCategories={symbolCategories}
+          selectedSymbol={selectedSymbol}
           onSelect={handleSelectMode}
           onMove={handleMoveMode}
           onCrop={() => handleModeChange("crop")}
@@ -1027,7 +1054,7 @@ export const CanvasWorkspace = ({
           onErase={() => handleModeChange("erase")}
           onToggleGrid={() => setShowGrid(!showGrid)}
           onToggleTitleBlock={onToggleTitleBlock}
-          onToggleLockBackground={setLockBackground}
+          onLockBackground={setLockBackground}
           onGridSizeChange={setGridSize}
           onGridColorChange={setGridColor}
           onGridThicknessChange={setGridThickness}
@@ -1036,6 +1063,8 @@ export const CanvasWorkspace = ({
           onRedo={handleRedo}
           onExport={handleExportPDF}
           onPageSetup={onPageSetup}
+          onSymbolSelect={onSymbolSelect}
+          onSelectAll={handleSelectAll}
         />
       </div>
 

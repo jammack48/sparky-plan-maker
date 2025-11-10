@@ -4,12 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings } from "lucide-react";
+import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings, Lock, Unlock, Layers } from "lucide-react";
 
 interface CanvasToolbarProps {
   mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw";
   scale: number | null;
   showGrid: boolean;
+  lockBackground: boolean;
   showTitleBlock: boolean;
   gridSize: string;
   gridColor: string;
@@ -25,6 +26,7 @@ interface CanvasToolbarProps {
   onErase: () => void;
   onToggleGrid: () => void;
   onToggleTitleBlock: (show: boolean) => void;
+  onLockBackground: (locked: boolean) => void;
   onGridSizeChange: (value: string) => void;
   onGridColorChange: (value: string) => void;
   onGridThicknessChange: (value: number) => void;
@@ -33,12 +35,14 @@ interface CanvasToolbarProps {
   onRedo: () => void;
   onExport: () => void;
   onPageSetup: () => void;
+  onSelectAll: () => void;
 }
 
 export const CanvasToolbar = ({
   mode,
   scale,
   showGrid,
+  lockBackground,
   showTitleBlock,
   gridSize,
   gridColor,
@@ -54,6 +58,7 @@ export const CanvasToolbar = ({
   onErase,
   onToggleGrid,
   onToggleTitleBlock,
+  onLockBackground,
   onGridSizeChange,
   onGridColorChange,
   onGridThicknessChange,
@@ -62,6 +67,7 @@ export const CanvasToolbar = ({
   onRedo,
   onExport,
   onPageSetup,
+  onSelectAll,
 }: CanvasToolbarProps) => {
   return (
     <Card className="p-2 sm:p-3 mb-2 sm:mb-3 overflow-x-auto relative z-10" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
@@ -171,6 +177,24 @@ export const CanvasToolbar = ({
             />
           </div>
         )}
+        <Button
+          variant={lockBackground ? "outline" : "default"}
+          size="sm"
+          onClick={() => onLockBackground(!lockBackground)}
+          title={lockBackground ? "Background Locked - Click to Unlock" : "Background Unlocked - Click to Lock"}
+        >
+          {lockBackground ? <Lock className="w-4 h-4 mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
+          {lockBackground ? "Locked" : "Unlocked"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onSelectAll}
+          title="Select All Symbols (Ctrl+A)"
+        >
+          <Layers className="w-4 h-4 mr-2" />
+          Select All
+        </Button>
         <Button
           variant="outline"
           size="sm"

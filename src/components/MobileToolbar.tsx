@@ -1,21 +1,25 @@
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { SymbolIcon } from "./SymbolIcon";
 import { 
+  MousePointer2, 
+  Move, 
   Crop, 
   Ruler, 
-  Grid3x3, 
-  Download, 
-  X, 
-  Eraser, 
-  Undo2, 
-  Redo2, 
+  Eraser,
+  Grid3x3,
+  ChevronDown,
   Settings,
+  Download,
+  Undo2,
+  Redo2,
+  X,
   Lock,
   Unlock,
-  Wrench,
   Layers
 } from "lucide-react";
 
@@ -23,8 +27,8 @@ interface MobileToolbarProps {
   mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw";
   scale: number | null;
   showGrid: boolean;
-  showTitleBlock: boolean;
   lockBackground: boolean;
+  showTitleBlock: boolean;
   gridSize: string;
   gridColor: string;
   gridThickness: number;
@@ -32,6 +36,8 @@ interface MobileToolbarProps {
   zoomLevel: number;
   undoStackLength: number;
   redoStackLength: number;
+  symbolCategories: { name: string; symbols: { id: string; name: string }[] }[];
+  selectedSymbol: string | null;
   onSelect: () => void;
   onMove: () => void;
   onCrop: () => void;
@@ -39,7 +45,7 @@ interface MobileToolbarProps {
   onErase: () => void;
   onToggleGrid: () => void;
   onToggleTitleBlock: (show: boolean) => void;
-  onToggleLockBackground: (locked: boolean) => void;
+  onLockBackground: (locked: boolean) => void;
   onGridSizeChange: (value: string) => void;
   onGridColorChange: (value: string) => void;
   onGridThicknessChange: (value: number) => void;
@@ -48,14 +54,16 @@ interface MobileToolbarProps {
   onRedo: () => void;
   onExport: () => void;
   onPageSetup: () => void;
+  onSymbolSelect: (symbolId: string) => void;
+  onSelectAll: () => void;
 }
 
 export const MobileToolbar = ({
   mode,
   scale,
   showGrid,
-  showTitleBlock,
   lockBackground,
+  showTitleBlock,
   gridSize,
   gridColor,
   gridThickness,
@@ -63,6 +71,8 @@ export const MobileToolbar = ({
   zoomLevel,
   undoStackLength,
   redoStackLength,
+  symbolCategories,
+  selectedSymbol,
   onSelect,
   onMove,
   onCrop,
@@ -70,7 +80,7 @@ export const MobileToolbar = ({
   onErase,
   onToggleGrid,
   onToggleTitleBlock,
-  onToggleLockBackground,
+  onLockBackground,
   onGridSizeChange,
   onGridColorChange,
   onGridThicknessChange,
@@ -79,152 +89,166 @@ export const MobileToolbar = ({
   onRedo,
   onExport,
   onPageSetup,
+  onSymbolSelect,
+  onSelectAll,
 }: MobileToolbarProps) => {
   return (
-    <div className="flex gap-2 p-2 bg-card border-b border-border">
-      {/* Left side - Tools dropdown */}
+    <div className="flex items-center gap-1 p-2 bg-background border-b overflow-x-auto" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+      {/* Symbols Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="flex-1">
-            <Wrench className="w-4 h-4 mr-2" />
-            Tools
+          <Button variant={mode === "place-symbol" ? "default" : "outline"} size="sm" className="shrink-0">
+            Symbols <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 z-50">
-          <div className="flex flex-col gap-2 p-2">
-            <Button
-              variant={mode === "select" ? "default" : "outline"}
-              size="sm"
-              onClick={onSelect}
-              className="justify-start"
-            >
-              Select
-            </Button>
-            <Button
-              variant={mode === "move" ? "default" : "outline"}
-              size="sm"
-              onClick={onMove}
-              className="justify-start"
-            >
-              Move
-            </Button>
-            <Button
-              variant={mode === "crop" ? "default" : "outline"}
-              size="sm"
-              onClick={onCrop}
-              className="justify-start"
-            >
-              {mode === "crop" ? <X className="w-4 h-4 mr-2" /> : <Crop className="w-4 h-4 mr-2" />}
-              {mode === "crop" ? "Cancel Crop" : "Crop"}
-            </Button>
-            <Button
-              variant={mode === "measure" ? "default" : "outline"}
-              size="sm"
-              onClick={onMeasure}
-              className="justify-start"
-            >
-              {mode === "measure" ? <X className="w-4 h-4 mr-2" /> : <Ruler className="w-4 h-4 mr-2" />}
-              {mode === "measure" ? "Cancel" : "Measure"}
-            </Button>
-            <Button
-              variant={mode === "erase" ? "default" : "outline"}
-              size="sm"
-              onClick={onErase}
-              className="justify-start"
-            >
-              <Eraser className="w-4 h-4 mr-2" />
-              Erase
-            </Button>
-          </div>
+        <DropdownMenuContent align="start" className="z-50 w-64 max-h-[60vh] overflow-y-auto bg-background">
+          <Accordion type="single" collapsible className="w-full">
+            {symbolCategories.map((category) => (
+              <AccordionItem key={category.name} value={category.name}>
+                <AccordionTrigger className="px-4 py-2 text-sm hover:bg-muted/50">
+                  {category.name}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-3 gap-2 p-2">
+                    {category.symbols.map((symbol) => (
+                      <button
+                        key={symbol.id}
+                        onClick={() => onSymbolSelect(symbol.id)}
+                        className={`flex flex-col items-center gap-1 p-2 rounded hover:bg-muted/50 transition-colors ${
+                          selectedSymbol === symbol.id ? "bg-muted" : ""
+                        }`}
+                      >
+                        <SymbolIcon type={symbol.id} size={24} />
+                        <span className="text-xs text-center break-words">{symbol.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Middle - Quick actions */}
+      {/* Lock/Unlock Background */}
+      <Button
+        variant={lockBackground ? "outline" : "default"}
+        size="sm"
+        onClick={() => onLockBackground(!lockBackground)}
+        className="shrink-0"
+        title={lockBackground ? "Background Locked" : "Background Unlocked"}
+      >
+        {lockBackground ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+      </Button>
+
+      {/* Undo/Redo */}
       <Button
         variant="outline"
         size="sm"
         onClick={onUndo}
         disabled={undoStackLength === 0}
+        className="shrink-0"
       >
-        <Undo2 className="w-4 h-4" />
+        <Undo2 className="h-4 w-4" />
       </Button>
       <Button
         variant="outline"
         size="sm"
         onClick={onRedo}
         disabled={redoStackLength === 0}
+        className="shrink-0"
       >
-        <Redo2 className="w-4 h-4" />
+        <Redo2 className="h-4 w-4" />
       </Button>
 
-      {/* Right side - Settings dropdown */}
+      {/* Tools Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="flex-1">
-            <Layers className="w-4 h-4 mr-2" />
-            Settings
+          <Button variant="outline" size="sm" className="shrink-0">
+            Tools <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64 z-50">
-          <div className="p-3 space-y-4">
-            {/* Lock background toggle */}
-            <div className="flex items-center justify-between gap-2">
-              <Label className="text-sm flex items-center gap-2">
-                {lockBackground ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                Lock Background
-              </Label>
+        <DropdownMenuContent align="end" className="z-50 w-48 bg-background">
+          <DropdownMenuItem onClick={onSelect}>
+            <MousePointer2 className="mr-2 h-4 w-4" />
+            <span>Select</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onMove}>
+            <Move className="mr-2 h-4 w-4" />
+            <span>Move</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onCrop}>
+            {mode === "crop" ? <X className="mr-2 h-4 w-4" /> : <Crop className="mr-2 h-4 w-4" />}
+            <span>{mode === "crop" ? "Cancel Crop" : "Crop"}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onMeasure}>
+            {mode === "measure" ? <X className="mr-2 h-4 w-4" /> : <Ruler className="mr-2 h-4 w-4" />}
+            <span>{mode === "measure" ? "Cancel Measure" : "Measure"}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onErase}>
+            <Eraser className="mr-2 h-4 w-4" />
+            <span>Erase</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onSelectAll}>
+            <Layers className="mr-2 h-4 w-4" />
+            <span>Select All</span>
+          </DropdownMenuItem>
+          <div className="px-2 py-2 border-t mt-2">
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="mobile-lock-bg" className="text-sm">Lock Background</Label>
               <Switch
+                id="mobile-lock-bg"
                 checked={lockBackground}
-                onCheckedChange={onToggleLockBackground}
+                onCheckedChange={onLockBackground}
               />
             </div>
-
-            {/* Grid toggle */}
-            <div className="flex items-center justify-between gap-2">
-              <Label className="text-sm flex items-center gap-2">
-                <Grid3x3 className="w-4 h-4" />
-                Show Grid
-              </Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="mobile-grid" className="text-sm">Show Grid</Label>
               <Switch
+                id="mobile-grid"
                 checked={showGrid}
                 onCheckedChange={onToggleGrid}
                 disabled={!scale}
               />
             </div>
-
             {showGrid && (
-              <div className="space-y-3 pl-6">
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-sm">Grid Size (mm)</Label>
-                  <Input
-                    type="number"
-                    value={gridSize}
-                    onChange={(e) => onGridSizeChange(e.target.value)}
-                    className="w-20"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-sm">Color</Label>
-                  <input
-                    type="color"
-                    value={gridColor}
-                    onChange={(e) => onGridColorChange(e.target.value)}
-                    className="h-8 w-12 border rounded bg-background"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-sm">Thickness</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={8}
-                    value={gridThickness}
-                    onChange={(e) => onGridThicknessChange(Number(e.target.value))}
-                    className="w-16"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <Label className="text-sm">Opacity</Label>
+              <div className="flex items-center gap-2 mt-2">
+                <Label htmlFor="mobile-gridSize" className="text-xs whitespace-nowrap">
+                  Grid (mm):
+                </Label>
+                <Input
+                  id="mobile-gridSize"
+                  type="number"
+                  value={gridSize}
+                  onChange={(e) => onGridSizeChange(e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+            )}
+            <div className="space-y-2 mt-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Grid Color</Label>
+                <input
+                  type="color"
+                  value={gridColor}
+                  onChange={(e) => onGridColorChange(e.target.value)}
+                  className="h-6 w-10 border rounded bg-background"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Thickness</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={8}
+                  value={gridThickness}
+                  onChange={(e) => onGridThicknessChange(Number(e.target.value))}
+                  className="w-16 h-7 text-xs"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Opacity</Label>
+                <div className="flex items-center gap-1">
                   <input
                     type="range"
                     min={0}
@@ -232,60 +256,39 @@ export const MobileToolbar = ({
                     step={0.05}
                     value={gridOpacity}
                     onChange={(e) => onGridOpacityChange(Number(e.target.value))}
-                    className="w-24"
+                    className="w-20"
                   />
-                  <span className="text-xs text-muted-foreground w-8 text-right">
-                    {Math.round(gridOpacity * 100)}%
-                  </span>
+                  <span className="text-xs text-muted-foreground w-8">{Math.round(gridOpacity * 100)}%</span>
                 </div>
               </div>
-            )}
-
-            {/* Title block toggle */}
-            <div className="flex items-center justify-between gap-2">
-              <Label className="text-sm">Title Block</Label>
+            </div>
+            <div className="flex items-center justify-between mt-3">
+              <Label htmlFor="mobile-title" className="text-sm">Title Block</Label>
               <Switch
+                id="mobile-title"
                 checked={showTitleBlock}
                 onCheckedChange={onToggleTitleBlock}
               />
             </div>
-
-            {/* Page setup */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPageSetup}
-              className="w-full justify-start"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Page Setup
-            </Button>
-
-            {/* Export */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onExport}
-              className="w-full justify-start"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
-            </Button>
-
-            {/* Stats */}
-            <div className="pt-2 border-t space-y-1">
-              {scale && (
-                <div className="text-xs text-muted-foreground">
-                  Scale: 1:{(1 / scale).toFixed(1)}
-                </div>
-              )}
-              <div className="text-xs text-muted-foreground">
-                Zoom: {(zoomLevel * 100).toFixed(0)}%
-              </div>
-            </div>
           </div>
+          <DropdownMenuItem onClick={onPageSetup} className="mt-2">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Page Setup</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onExport}>
+            <Download className="mr-2 h-4 w-4" />
+            <span>Export PDF</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Scale and Zoom */}
+      <div className="flex items-center gap-2 ml-auto text-xs text-muted-foreground whitespace-nowrap">
+        {scale && (
+          <span>1:{(1 / scale).toFixed(1)}</span>
+        )}
+        <span>{(zoomLevel * 100).toFixed(0)}%</span>
+      </div>
     </div>
   );
 };
