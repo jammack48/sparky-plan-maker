@@ -42,25 +42,25 @@ const Index = () => {
 
   // Page setup state
   const [pageSetup, setPageSetup] = useState<PageSetup>(() => {
-    const saved = localStorage.getItem('sparkymate-page-setup');
+    const saved = localStorage.getItem('tradesketch-page-setup');
     return saved ? JSON.parse(saved) : DEFAULT_PAGE_SETUP;
   });
   const [showPageSetupDialog, setShowPageSetupDialog] = useState(false);
   
   // Title block visibility state
   const [showTitleBlock, setShowTitleBlock] = useState<boolean>(() => {
-    const saved = localStorage.getItem('sparkymate-show-title-block');
+    const saved = localStorage.getItem('tradesketch-show-title-block');
     return saved ? JSON.parse(saved) : true;
   });
 
   // Save page setup to localStorage when it changes
   useEffect(() => {
-    localStorage.setItem('sparkymate-page-setup', JSON.stringify(pageSetup));
+    localStorage.setItem('tradesketch-page-setup', JSON.stringify(pageSetup));
   }, [pageSetup]);
 
   // Save title block visibility to localStorage when it changes
   useEffect(() => {
-    localStorage.setItem('sparkymate-show-title-block', JSON.stringify(showTitleBlock));
+    localStorage.setItem('tradesketch-show-title-block', JSON.stringify(showTitleBlock));
   }, [showTitleBlock]);
 
   const handleUseTemplate = () => {
