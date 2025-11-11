@@ -25,6 +25,17 @@ export const useSymbolPlacement = (
     let previewSymbol: FabricObject | null = null;
 
     const handleMouseMove = (opt: any) => {
+      // Avoid showing preview while dragging existing selections/objects
+      const isDraggingMouse = (opt.e as any)?.buttons === 1;
+      if (isDraggingMouse) {
+        if (previewSymbol) {
+          fabricCanvas.remove(previewSymbol);
+          previewSymbol = null;
+          fabricCanvas.requestRenderAll();
+        }
+        return;
+      }
+
       const vpt = fabricCanvas.viewportTransform;
       if (!vpt) return;
 
@@ -62,6 +73,10 @@ export const useSymbolPlacement = (
     };
 
     const handleMouseDown = (opt: any) => {
+      // If clicking on an existing object/selection, don't place; let Fabric move/select
+      if (opt.target && !(opt.target as any).isPreview) {
+        return;
+      }
       if (opt.e.button !== 0 && opt.e.type !== 'touchstart') return;
       
       const vpt = fabricCanvas.viewportTransform;
