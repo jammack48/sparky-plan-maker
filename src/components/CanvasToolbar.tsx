@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings, Lock, Unlock, Layers } from "lucide-react";
+import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings, Lock, Unlock, Layers, RotateCcw, RotateCw } from "lucide-react";
 
 interface CanvasToolbarProps {
   mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw";
@@ -36,6 +36,10 @@ interface CanvasToolbarProps {
   onExport: () => void;
   onPageSetup: () => void;
   onSelectAll: () => void;
+  onRotateLeft: () => void;
+  onRotateRight: () => void;
+  onRotateBackgroundLeft: () => void;
+  onRotateBackgroundRight: () => void;
 }
 
 export const CanvasToolbar = ({
@@ -68,6 +72,10 @@ export const CanvasToolbar = ({
   onExport,
   onPageSetup,
   onSelectAll,
+  onRotateLeft,
+  onRotateRight,
+  onRotateBackgroundLeft,
+  onRotateBackgroundRight,
 }: CanvasToolbarProps) => {
   return (
     <Card className="p-2 sm:p-3 mb-2 sm:mb-3 overflow-x-auto relative z-10" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
@@ -190,10 +198,42 @@ export const CanvasToolbar = ({
           variant="outline"
           size="sm"
           onClick={onSelectAll}
-          title="Select All Symbols (Ctrl+A)"
+          title="Select All (excludes background when locked)"
         >
           <Layers className="w-4 h-4 mr-2" />
           Select All
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRotateLeft}
+          title="Rotate selection 90° CCW"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRotateRight}
+          title="Rotate selection 90° CW"
+        >
+          <RotateCw className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRotateBackgroundLeft}
+          title="Rotate background 90° CCW"
+        >
+          <RotateCcw className="w-4 h-4 mr-2" /> BG
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRotateBackgroundRight}
+          title="Rotate background 90° CW"
+        >
+          <RotateCw className="w-4 h-4 mr-2" /> BG
         </Button>
         <Button
           variant="outline"

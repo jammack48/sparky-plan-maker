@@ -207,8 +207,11 @@ export const CanvasWorkspace = ({
         const timeSinceLastTap = now - lastTapTime;
 
         if (timeSinceLastTap < doubleTapDelay && timeSinceLastTap > 0) {
-          // Double tap detected - select all objects except background
-          const allObjects = fabricCanvas.getObjects().filter(obj => obj !== fabricImage && obj !== titleBlockGroupRef.current);
+          // Double tap detected - select all objects (respect background lock)
+          const allObjects = fabricCanvas.getObjects().filter(obj => {
+            if (lockBackground && ((obj as any).isBackgroundImage || obj === fabricImage)) return false;
+            return obj !== titleBlockGroupRef.current;
+          });
           
           if (allObjects.length > 0) {
             // Create active selection with all objects
@@ -924,11 +927,13 @@ export const CanvasWorkspace = ({
     if (!fabricCanvas) return;
     
     const allObjects = fabricCanvas.getObjects().filter(obj => {
+      // Always exclude the title block from selection
+      if (obj === titleBlockGroupRef.current) return false;
       // If background is locked, exclude the background image from selection
       if (lockBackground && (obj as any).isBackgroundImage) {
         return false;
       }
-      // Include all objects (including unlocked background)
+      // Include all other objects (including unlocked background)
       return true;
     });
     
@@ -941,61 +946,51 @@ export const CanvasWorkspace = ({
       fabricCanvas.renderAll();
     }
   };
-
-  // Handle object selection controls based on mode
-  // Control canvas selection and object selectability based on mode
-  useEffect(() => {
+  
+  // Rotation helpers
+  const handleRotateLeft = () => {
     if (!fabricCanvas) return;
-
-    const disableInteractivity = ["place-symbol", "draw", "crop", "measure", "erase"].includes(mode);
-    fabricCanvas.selection = !disableInteractivity ? true : false;
-    fabricCanvas.skipTargetFind = disableInteractivity; // prevents selection/drag
-
-    fabricCanvas.getObjects().forEach((obj: any) => {
-      obj.selectable = !disableInteractivity;
-      obj.evented = !disableInteractivity;
-    });
-
-    console.info("[MODE]", { mode, selection: fabricCanvas.selection, skipTargetFind: fabricCanvas.skipTargetFind });
+    const active = fabricCanvas.getActiveObject() as any;
+    if (!active) return;
+    const angle = (active.angle || 0) - 90;
+    active.rotate(angle);
+    active.setCoords();
     fabricCanvas.requestRenderAll();
-  }, [fabricCanvas, mode]);
+  };
 
-  useEffect(() => {
+  const handleRotateRight = () => {
     if (!fabricCanvas) return;
+    const active = fabricCanvas.getActiveObject() as any;
+    if (!active) return;
+    const angle = (active.angle || 0) + 90;
+    active.rotate(angle);
+    active.setCoords();
+    fabricCanvas.requestRenderAll();
+  };
 
-    const handleSelection = () => {
-      const activeObject = fabricCanvas.getActiveObject();
-      if (activeObject) {
-        if (mode === "move") {
-          // In move mode: hide controls but allow movement
-          activeObject.hasControls = false;
-          activeObject.hasBorders = true;
-          activeObject.lockRotation = true;
-          activeObject.lockScalingX = true;
-          activeObject.lockScalingY = true;
-        } else if (mode === "select") {
-          // In select mode: show all controls
-          activeObject.hasControls = true;
-          activeObject.hasBorders = true;
-          activeObject.lockRotation = false;
-          activeObject.lockScalingX = false;
-          activeObject.lockScalingY = false;
-        }
-        fabricCanvas.requestRenderAll();
-      }
-    };
+  const handleRotateBackgroundLeft = () => {
+    if (!fabricCanvas) return;
+    const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage) as any;
+    if (!bg) return;
+    const center = bg.getCenterPoint();
+    const angle = (bg.angle || 0) - 90;
+    bg.rotate(angle);
+    if (center) bg.setPositionByOrigin(center, 'center', 'center');
+    bg.setCoords();
+    fabricCanvas.requestRenderAll();
+  };
 
-    fabricCanvas.on("selection:created", handleSelection);
-    fabricCanvas.on("selection:updated", handleSelection);
-
-    // Also update currently selected object when mode changes
-    handleSelection();
-
-    return () => {
-      fabricCanvas.off("selection:created", handleSelection);
-      fabricCanvas.off("selection:updated", handleSelection);
-    };
-  }, [fabricCanvas, mode]);
+  const handleRotateBackgroundRight = () => {
+    if (!fabricCanvas) return;
+    const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage) as any;
+    if (!bg) return;
+    const center = bg.getCenterPoint();
+    const angle = (bg.angle || 0) + 90;
+    bg.rotate(angle);
+    if (center) bg.setPositionByOrigin(center, 'center', 'center');
+    bg.setCoords();
+    fabricCanvas.requestRenderAll();
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -1031,6 +1026,10 @@ export const CanvasWorkspace = ({
           onExport={handleExportPDF}
           onPageSetup={onPageSetup}
           onSelectAll={handleSelectAll}
+          onRotateLeft={handleRotateLeft}
+          onRotateRight={handleRotateRight}
+          onRotateBackgroundLeft={handleRotateBackgroundLeft}
+          onRotateBackgroundRight={handleRotateBackgroundRight}
         />
       </div>
 
@@ -1067,8 +1066,12 @@ export const CanvasWorkspace = ({
           onRedo={handleRedo}
           onExport={handleExportPDF}
           onPageSetup={onPageSetup}
-          onSymbolSelect={onSymbolSelect}
+          onSymbolSelect={onSymbolSelect!}
           onSelectAll={handleSelectAll}
+          onRotateLeft={handleRotateLeft}
+          onRotateRight={handleRotateRight}
+          onRotateBackgroundLeft={handleRotateBackgroundLeft}
+          onRotateBackgroundRight={handleRotateBackgroundRight}
         />
       </div>
 

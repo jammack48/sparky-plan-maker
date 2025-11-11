@@ -20,7 +20,9 @@ import {
   X,
   Lock,
   Unlock,
-  Layers
+  Layers,
+  RotateCcw,
+  RotateCw
 } from "lucide-react";
 
 interface MobileToolbarProps {
@@ -56,6 +58,10 @@ interface MobileToolbarProps {
   onPageSetup: () => void;
   onSymbolSelect: (symbolId: string) => void;
   onSelectAll: () => void;
+  onRotateLeft: () => void;
+  onRotateRight: () => void;
+  onRotateBackgroundLeft: () => void;
+  onRotateBackgroundRight: () => void;
 }
 
 export const MobileToolbar = ({
@@ -91,6 +97,10 @@ export const MobileToolbar = ({
   onPageSetup,
   onSymbolSelect,
   onSelectAll,
+  onRotateLeft,
+  onRotateRight,
+  onRotateBackgroundLeft,
+  onRotateBackgroundRight,
 }: MobileToolbarProps) => {
   return (
     <div className="flex items-center gap-1 p-2 bg-background border-b overflow-x-auto" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
@@ -192,6 +202,22 @@ export const MobileToolbar = ({
           <DropdownMenuItem onClick={onSelectAll}>
             <Layers className="mr-2 h-4 w-4" />
             <span>Select All</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onRotateLeft}>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            <span>Rotate Selection CCW</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onRotateRight}>
+            <RotateCw className="mr-2 h-4 w-4" />
+            <span>Rotate Selection CW</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onRotateBackgroundLeft}>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            <span>Rotate Background CCW</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onRotateBackgroundRight}>
+            <RotateCw className="mr-2 h-4 w-4" />
+            <span>Rotate Background CW</span>
           </DropdownMenuItem>
           <div className="px-2 py-2 border-t mt-2">
             <div className="flex items-center justify-between mb-2">
