@@ -924,8 +924,12 @@ export const CanvasWorkspace = ({
     if (!fabricCanvas) return;
     
     const allObjects = fabricCanvas.getObjects().filter(obj => {
-      // Exclude background image (it's the FabricImage)
-      return obj.type !== 'image';
+      // If background is locked, exclude the background image from selection
+      if (lockBackground && (obj as any).isBackgroundImage) {
+        return false;
+      }
+      // Include all objects (including unlocked background)
+      return true;
     });
     
     if (allObjects.length > 0) {
