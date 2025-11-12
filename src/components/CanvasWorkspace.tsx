@@ -235,7 +235,25 @@ export const CanvasWorkspace = ({
       saveCanvasState();
     };
     img.src = imageUrl;
-  }, [fabricCanvas, imageUrl, lockBackground]); // Add lockBackground to deps
+  }, [fabricCanvas, imageUrl]); // Remove lockBackground from deps to prevent clearing canvas
+
+  // Update background lock state without recreating the entire canvas
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const bgImage = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
+    if (!bgImage) return;
+    
+    bgImage.set({
+      selectable: !lockBackground,
+      evented: !lockBackground,
+      hasControls: !lockBackground,
+      hoverCursor: lockBackground ? "default" : "move",
+      moveCursor: lockBackground ? "default" : "move",
+    });
+    
+    fabricCanvas.renderAll();
+  }, [fabricCanvas, lockBackground]);
 
   // Create title block as Fabric objects
   useEffect(() => {
@@ -977,6 +995,7 @@ export const CanvasWorkspace = ({
     bg.rotate(angle);
     if (center) bg.setPositionByOrigin(center, 'center', 'center');
     bg.setCoords();
+    fabricCanvas.sendObjectToBack(bg);
     fabricCanvas.requestRenderAll();
   };
 
@@ -989,6 +1008,7 @@ export const CanvasWorkspace = ({
     bg.rotate(angle);
     if (center) bg.setPositionByOrigin(center, 'center', 'center');
     bg.setCoords();
+    fabricCanvas.sendObjectToBack(bg);
     fabricCanvas.requestRenderAll();
   };
 
