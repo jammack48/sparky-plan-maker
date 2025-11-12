@@ -103,7 +103,7 @@ export const MobileToolbar = ({
   onRotateBackgroundRight,
 }: MobileToolbarProps) => {
   return (
-    <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-1 p-2 bg-background border-l border-y rounded-l-lg shadow-lg max-h-[80vh] overflow-y-auto" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+    <div className="portrait:flex portrait:items-center portrait:gap-1 portrait:p-2 portrait:bg-background portrait:border-b portrait:overflow-x-auto portrait:relative portrait:right-auto portrait:top-auto portrait:translate-y-0 landscape:fixed landscape:right-0 landscape:top-1/2 landscape:-translate-y-1/2 landscape:z-50 landscape:flex-col landscape:gap-1 landscape:p-2 landscape:bg-background landscape:border-l landscape:border-y landscape:rounded-l-lg landscape:shadow-lg landscape:max-h-[80vh] landscape:overflow-y-auto flex" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
       {/* Symbols Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -309,7 +309,7 @@ export const MobileToolbar = ({
       </DropdownMenu>
 
       {/* Scale and Zoom */}
-      <div className="flex flex-col items-center gap-1 pt-2 border-t text-xs text-muted-foreground whitespace-nowrap">
+      <div className="portrait:flex portrait:items-center portrait:gap-2 portrait:ml-auto portrait:flex-row portrait:pt-0 portrait:border-t-0 landscape:flex landscape:flex-col landscape:items-center landscape:gap-1 landscape:pt-2 landscape:border-t text-xs text-muted-foreground whitespace-nowrap">
         {scale && (
           <span>1:{(1 / scale).toFixed(1)}</span>
         )}
