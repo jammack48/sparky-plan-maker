@@ -103,7 +103,7 @@ export const MobileToolbar = ({
   onRotateBackgroundRight,
 }: MobileToolbarProps) => {
   return (
-    <div className="flex items-center gap-1 p-2 bg-background border-b overflow-x-auto" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+    <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-1 p-2 bg-background border-l border-y rounded-l-lg shadow-lg max-h-[80vh] overflow-y-auto" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
       {/* Symbols Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -309,7 +309,7 @@ export const MobileToolbar = ({
       </DropdownMenu>
 
       {/* Scale and Zoom */}
-      <div className="flex items-center gap-2 ml-auto text-xs text-muted-foreground whitespace-nowrap">
+      <div className="flex flex-col items-center gap-1 pt-2 border-t text-xs text-muted-foreground whitespace-nowrap">
         {scale && (
           <span>1:{(1 / scale).toFixed(1)}</span>
         )}

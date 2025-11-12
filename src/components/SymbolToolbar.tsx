@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Palette, Minus, Eye, Maximize, Zap, Droplet, Wind, Type, Pencil as PencilIcon, Square, Circle as CircleIcon, Copy, Clipboard, Edit3, FolderInput } from "lucide-react";
+import { ChevronDown, Palette, Minus, Eye, Maximize, Zap, Droplet, Wind, Type, Pencil as PencilIcon, Square, Circle as CircleIcon, Copy, Clipboard, Edit3, FolderInput, Image } from "lucide-react";
 import { SymbolIcon } from "./SymbolIcon";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ export interface SymbolType {
   name: string;
   icon: React.ReactNode;
   count: number;
-  category: "electrical" | "plumbing" | "hvac" | "text" | "draw";
+  category: "electrical" | "plumbing" | "hvac" | "text" | "draw" | "real-items";
 }
 
 export interface SymbolCategory {
@@ -398,6 +398,15 @@ export const DEFAULT_SYMBOL_CATEGORIES: SymbolCategory[] = [
       { id: "line", name: "Line", icon: <Minus className="h-4 w-4" />, count: 0, category: "draw" },
       { id: "rectangle", name: "Rectangle", icon: <Square className="h-4 w-4" />, count: 0, category: "draw" },
       { id: "circle", name: "Circle", icon: <CircleIcon className="h-4 w-4" />, count: 0, category: "draw" },
+    ]
+  },
+  {
+    id: "real-items",
+    name: "Real Items",
+    icon: <Image className="h-4 w-4" />,
+    symbols: [
+      // Placeholder for future stock images
+      // Users will be able to add realistic product photos here (heat pumps, downlights, etc.)
     ]
   },
 ];
