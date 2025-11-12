@@ -994,8 +994,8 @@ export const CanvasWorkspace = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Desktop toolbar - hidden on mobile */}
-      <div className="hidden md:block">
+      {/* Desktop toolbar - hidden on mobile and tablets */}
+      <div className="hidden lg:block">
         <CanvasToolbar
           mode={mode}
           scale={scale}
@@ -1033,8 +1033,8 @@ export const CanvasWorkspace = ({
         />
       </div>
 
-      {/* Mobile toolbar - shown only on mobile */}
-      <div className="md:hidden">
+      {/* Mobile toolbar - shown on mobile and tablets */}
+      <div className="lg:hidden">
         <MobileToolbar
           mode={mode}
           scale={scale}
