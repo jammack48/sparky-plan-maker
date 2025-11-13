@@ -255,6 +255,43 @@ export const CanvasWorkspace = ({
     fabricCanvas.renderAll();
   }, [fabricCanvas, lockBackground]);
 
+  // Handle move mode - disable scaling and rotation
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const objects = fabricCanvas.getObjects();
+    
+    if (mode === "move") {
+      // In move mode, disable scaling and rotation for all objects
+      objects.forEach((obj: any) => {
+        if (!obj.isBackgroundImage) {
+          obj.set({
+            hasControls: false,
+            lockScalingX: true,
+            lockScalingY: true,
+            lockRotation: true,
+            hasBorders: true,
+          });
+        }
+      });
+    } else if (mode === "select") {
+      // Restore normal controls when exiting move mode
+      objects.forEach((obj: any) => {
+        if (!obj.isBackgroundImage) {
+          obj.set({
+            hasControls: true,
+            lockScalingX: false,
+            lockScalingY: false,
+            lockRotation: false,
+            hasBorders: true,
+          });
+        }
+      });
+    }
+    
+    fabricCanvas.renderAll();
+  }, [fabricCanvas, mode]);
+
   // Create title block as Fabric objects
   useEffect(() => {
     if (!fabricCanvas || !showTitleBlock) {

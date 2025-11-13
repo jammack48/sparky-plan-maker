@@ -102,13 +102,39 @@ export const MobileToolbar = ({
   onRotateBackgroundLeft,
   onRotateBackgroundRight,
 }: MobileToolbarProps) => {
+  // Helper function to get the display name for the selected symbol
+  const getSymbolDisplayName = () => {
+    if (mode === "place-symbol" && selectedSymbol) {
+      for (const category of symbolCategories) {
+        const symbol = category.symbols.find((s: any) => s.id === selectedSymbol);
+        if (symbol) return symbol.name;
+      }
+    }
+    return "Symbols";
+  };
+
+  // Helper function to get the display name for the active tool
+  const getToolDisplayName = () => {
+    const modeNames: Record<string, string> = {
+      "select": "Select",
+      "move": "Move",
+      "crop": "Crop",
+      "measure": "Measure",
+      "erase": "Erase",
+      "draw": "Draw",
+      "place-symbol": "Place Symbol",
+      "none": "Tools"
+    };
+    return modeNames[mode] || "Tools";
+  };
+
   return (
     <div className="portrait:flex portrait:items-center portrait:gap-1 portrait:p-2 portrait:bg-background portrait:border-b portrait:overflow-x-auto portrait:relative portrait:right-auto portrait:top-auto portrait:translate-y-0 landscape:fixed landscape:right-0 landscape:top-1/2 landscape:-translate-y-1/2 landscape:z-50 landscape:flex-col landscape:gap-1 landscape:p-2 landscape:bg-background landscape:border-l landscape:border-y landscape:rounded-l-lg landscape:shadow-lg landscape:max-h-[80vh] landscape:overflow-y-auto flex" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
       {/* Symbols Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={mode === "place-symbol" ? "default" : "outline"} size="sm" className="shrink-0">
-            Symbols <ChevronDown className="ml-1 h-3 w-3" />
+            {getSymbolDisplayName()} <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="z-50 w-64 max-h-[60vh] overflow-y-auto bg-background">
@@ -175,7 +201,7 @@ export const MobileToolbar = ({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="shrink-0">
-            Tools <ChevronDown className="ml-1 h-3 w-3" />
+            {getToolDisplayName()} <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-50 w-48 bg-background">

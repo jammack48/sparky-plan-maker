@@ -70,6 +70,16 @@ export const useEraseMode = (
       // Allow touch and left-click; ignore right/middle clicks
       if (typeof e?.button === "number" && e.button !== 0) return;
 
+      // Check if clicking on a symbol/object (not background)
+      const target = opt.target;
+      if (target && !(target as any).isBackgroundImage) {
+        // Delete the symbol immediately
+        fabricCanvas.remove(target);
+        fabricCanvas.renderAll();
+        onSaveState();
+        return; // Don't start rectangle erase
+      }
+
       const pointer = fabricCanvas.getPointer(opt.e);
       setEraseStart({ x: pointer.x, y: pointer.y });
       
