@@ -241,17 +241,19 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas) return;
     
-    const bgImage = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
-    if (!bgImage) return;
+    const bg = fabricCanvas.backgroundImage as FabricImage;
+    if (!bg) return;
     
-    bgImage.set({
-      selectable: !lockBackground,
-      evented: !lockBackground,
-      hasControls: !lockBackground,
-      hoverCursor: lockBackground ? "default" : "move",
-      moveCursor: lockBackground ? "default" : "move",
-    });
-    
+    bg.selectable = !lockBackground;
+    bg.evented = !lockBackground;
+    bg.hasControls = !lockBackground;
+    bg.lockMovementX = lockBackground;
+    bg.lockMovementY = lockBackground;
+    bg.lockRotation = lockBackground;
+    bg.lockScalingX = lockBackground;
+    bg.lockScalingY = lockBackground;
+    bg.hoverCursor = lockBackground ? "default" : "move";
+    bg.moveCursor = lockBackground ? "default" : "move";
     fabricCanvas.renderAll();
   }, [fabricCanvas, lockBackground]);
 
