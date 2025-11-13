@@ -123,6 +123,16 @@ export const useEraseMode = (
       
       const width = Math.abs((eraseRect.width ?? 0) * (eraseRect.scaleX ?? 1));
       const height = Math.abs((eraseRect.height ?? 0) * (eraseRect.scaleY ?? 1));
+      
+      // If the rectangle is too small (just a click, not a drag), remove it without erasing
+      if (width < 3 || height < 3) {
+        fabricCanvas.remove(eraseRect);
+        setEraseStart(null);
+        setEraseRect(null);
+        fabricCanvas.renderAll();
+        return;
+      }
+      
       const left = Math.round(eraseRect.left ?? 0);
       const top = Math.round(eraseRect.top ?? 0);
       

@@ -241,7 +241,7 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas) return;
     
-    const bg = fabricCanvas.backgroundImage as FabricImage;
+    const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
     if (!bg) return;
     
     bg.selectable = !lockBackground;
