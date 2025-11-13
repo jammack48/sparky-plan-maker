@@ -183,13 +183,16 @@ export const useSymbolPlacement = (
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      if (previewSymbol) {
+      if (previewSymbol && fabricCanvas) {
         fabricCanvas.remove(previewSymbol);
+        previewSymbol = null;
       }
-      fabricCanvas.off("mouse:move", handleMouseMove);
-      fabricCanvas.off("mouse:down", handleMouseDown);
-      fabricCanvas.off("mouse:move", handleTouchMove);
+      if (fabricCanvas) {
+        fabricCanvas.off("mouse:move", handleMouseMove);
+        fabricCanvas.off("mouse:down", handleMouseDown);
+        fabricCanvas.off("mouse:move", handleTouchMove);
+      }
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [fabricCanvas, mode, selectedSymbol, scale, showGrid, gridSize, bgScale, onSymbolPlaced, onSymbolDeselect, createSymbol, onSaveState, setMode]);
+  }, [fabricCanvas, mode, selectedSymbol, scale, showGrid, gridSize, bgScale]);
 };
