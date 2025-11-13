@@ -203,7 +203,7 @@ export const SymbolToolbar = ({
                         ) : (
                           <Button
                             variant={selectedSymbol === symbol.id ? "default" : "outline"}
-                            className="w-full justify-between text-xs sm:text-sm"
+                            className={`w-full justify-between text-xs sm:text-sm ${selectedSymbol === symbol.id ? "ring-2 ring-primary" : ""}`}
                             size="sm"
                             onClick={() => onSymbolSelect(symbol.id)}
                             onDoubleClick={() => handleStartEdit(category.id, symbol.id, symbol.name)}
