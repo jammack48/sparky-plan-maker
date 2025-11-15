@@ -136,13 +136,12 @@ export const useSymbolPlacement = (
             (iText as any).selectAll?.();
             fabricCanvas.requestRenderAll();
           }, 10);
-        } else {
-          // For other symbols, deselect after placement and return to select mode
+          // Only deselect symbol after text is placed
           if (onSymbolDeselect) {
             onSymbolDeselect();
           }
-          setMode("select");
         }
+        // For other symbols, keep them selected for continuous placement
       }
     };
 
