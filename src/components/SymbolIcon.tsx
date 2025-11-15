@@ -1,3 +1,5 @@
+import heatPumpImage from "@/assets/heat-pump.png";
+
 interface SymbolIconProps {
   type: string;
   size?: number;
@@ -157,6 +159,19 @@ export const SymbolIcon = ({ type, size = 16 }: SymbolIconProps) => {
             fill="none"
           />
         </svg>
+      );
+
+    case "heat-pump":
+      return (
+        <img 
+          src={heatPumpImage} 
+          alt="Heat Pump" 
+          style={{ 
+            width: size, 
+            height: size, 
+            objectFit: 'contain' 
+          }} 
+        />
       );
 
     default:
