@@ -66,6 +66,12 @@ const Index = () => {
   }, [showTitleBlock]);
 
   const handleUseTemplate = () => {
+    // Reset symbol counts when starting a new template
+    setSymbolCategories((prev) => prev.map(cat => ({
+      ...cat,
+      symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
+    })));
+
     // Generate a simple sample plan: white background with a black square
     const size = 1600;
     const squareSize = 800;
@@ -98,6 +104,12 @@ const Index = () => {
   const handleFileLoad = async (file: File) => {
     setIsLoading(true);
     try {
+      // Reset counts when loading a new file
+      setSymbolCategories((prev) => prev.map(cat => ({
+        ...cat,
+        symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
+      })));
+
       // Handle image files
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();

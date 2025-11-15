@@ -89,7 +89,7 @@ export const CanvasWorkspace = ({
   const [originalImageSize, setOriginalImageSize] = useState({ width: 0, height: 0 });
   const [lockBackground, setLockBackground] = useState(true); // Lock background by default
   const titleBlockGroupRef = useRef<Group | null>(null);
-  const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale);
+  const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale, scale ?? 1);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
   // Use draw mode hook for shape drawing
