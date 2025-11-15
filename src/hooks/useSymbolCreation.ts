@@ -1,5 +1,4 @@
-import { Circle, Line, Path, Group, FabricObject, FabricText, IText, FabricImage } from "fabric";
-import heatPumpImage from "@/assets/heat-pump.png";
+import { Circle, Line, Path, Group, FabricObject, FabricText, IText } from "fabric";
 
 export const useSymbolCreation = (
   color: string = "#000000",
@@ -309,26 +308,62 @@ export const useSymbolCreation = (
       }
 
       case "heat-pump": {
-        // Load heat pump image and scale to 1000mm (1m) width
-        return FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
-          const targetWidthMm = 1000; // 1000mm = 1m
-          const pixelsPerMm = scale; // Use scale as pixels per mm
-          const targetWidthPixels = targetWidthMm * pixelsPerMm;
-          
-          const scaleRatio = targetWidthPixels / (img.width || 1);
-          
-          img.scale(scaleRatio);
-          img.set({
-            left: x,
-            top: y,
-            originX: "center",
-            originY: "center",
+        // Create a heat pump symbol (1000mm wide rectangle to represent the unit)
+        const targetWidthMm = 1000; // 1000mm = 1m
+        const pixelsPerMm = scale;
+        const width = targetWidthMm * pixelsPerMm;
+        const height = width * 0.25; // Heat pump aspect ratio (4:1)
+        
+        // Main body rectangle
+        const body = new Path(
+          `M ${-width/2} ${-height/2} L ${width/2} ${-height/2} L ${width/2} ${height/2} L ${-width/2} ${height/2} Z`,
+          {
+            fill: "rgba(200, 200, 200, 0.3)",
+            stroke: color,
+            strokeWidth: thickness,
             opacity: transparency,
-          });
-          
-          (img as any).symbolType = type;
-          return img as FabricObject;
-        }) as unknown as FabricObject;
+          }
+        );
+        
+        // Add small details to represent vents
+        const vent1 = new Line([-width/4, -height/4, -width/4, height/4], {
+          stroke: color,
+          strokeWidth: thickness * 0.5,
+          opacity: transparency * 0.7,
+        });
+        const vent2 = new Line([0, -height/4, 0, height/4], {
+          stroke: color,
+          strokeWidth: thickness * 0.5,
+          opacity: transparency * 0.7,
+        });
+        const vent3 = new Line([width/4, -height/4, width/4, height/4], {
+          stroke: color,
+          strokeWidth: thickness * 0.5,
+          opacity: transparency * 0.7,
+        });
+        
+        const label = new IText("Heat Pump", {
+          left: 0,
+          top: height/2 + 8,
+          originX: "center",
+          originY: "top",
+          fill: color,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        
+        const group = new Group([body, vent1, vent2, vent3, label], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
+        });
+        (group as any).symbolType = type;
+        (group as any).labelIndex = 4;
+        return group;
       }
       
       default: {
