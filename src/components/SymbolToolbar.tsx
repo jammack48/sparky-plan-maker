@@ -425,8 +425,7 @@ export const DEFAULT_SYMBOL_CATEGORIES: SymbolCategory[] = [
     name: "Real Items",
     icon: <Image className="h-4 w-4" />,
     symbols: [
-      // Placeholder for future stock images
-      // Users will be able to add realistic product photos here (heat pumps, downlights, etc.)
+      { id: "heat-pump", name: "Heat Pump", icon: <Image className="h-4 w-4" />, count: 0, category: "real-items" },
     ]
   },
 ];

@@ -1,4 +1,5 @@
-import { Circle, Line, Path, Group, FabricObject, FabricText, IText } from "fabric";
+import { Circle, Line, Path, Group, FabricObject, FabricText, IText, FabricImage } from "fabric";
+import heatPumpImage from "@/assets/heat-pump.png";
 
 export const useSymbolCreation = (
   color: string = "#000000",
@@ -305,6 +306,29 @@ export const useSymbolCreation = (
         } as any);
         (text as any).symbolType = type;
         return text as unknown as FabricObject;
+      }
+
+      case "heat-pump": {
+        // Load heat pump image and scale to 1000mm (1m) width
+        return FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
+          const targetWidthMm = 1000; // 1000mm = 1m
+          const pixelsPerMm = scale; // Use scale as pixels per mm
+          const targetWidthPixels = targetWidthMm * pixelsPerMm;
+          
+          const scaleRatio = targetWidthPixels / (img.width || 1);
+          
+          img.scale(scaleRatio);
+          img.set({
+            left: x,
+            top: y,
+            originX: "center",
+            originY: "center",
+            opacity: transparency,
+          });
+          
+          (img as any).symbolType = type;
+          return img as FabricObject;
+        }) as unknown as FabricObject;
       }
       
       default: {
