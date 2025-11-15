@@ -40,6 +40,8 @@ interface SymbolToolbarProps {
   onScaleChange: (scale: number) => void;
   colorHistory: string[];
   onCategoriesChange?: (categories: SymbolCategory[]) => void;
+  scale?: number | null;
+  zoomLevel?: number;
 }
 
 export const SymbolToolbar = ({ 
@@ -55,7 +57,9 @@ export const SymbolToolbar = ({
   onTransparencyChange,
   onScaleChange,
   colorHistory,
-  onCategoriesChange
+  onCategoriesChange,
+  scale,
+  zoomLevel = 1
 }: SymbolToolbarProps) => {
   const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [editingSymbol, setEditingSymbol] = useState<{ categoryId: string; symbolId: string } | null>(null);
@@ -343,6 +347,22 @@ export const SymbolToolbar = ({
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Scale and Zoom display at bottom */}
+      <div className="pt-3 border-t mt-auto">
+        <div className="space-y-2 text-xs text-muted-foreground">
+          {scale && (
+            <div className="flex justify-between items-center">
+              <span>Scale:</span>
+              <span className="font-medium">1:{(1 / scale).toFixed(1)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center">
+            <span>Zoom:</span>
+            <span className="font-medium">{(zoomLevel * 100).toFixed(0)}%</span>
+          </div>
+        </div>
+      </div>
     </Card>
   );
 };

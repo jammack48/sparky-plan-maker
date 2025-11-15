@@ -222,22 +222,6 @@ export const CanvasToolbar = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={onRotateBackgroundLeft}
-          title="Rotate background 90° CCW"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" /> BG
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRotateBackgroundRight}
-          title="Rotate background 90° CW"
-        >
-          <RotateCw className="w-4 h-4 mr-2" /> BG
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
           onClick={onUndo}
           disabled={undoStackLength === 0}
         >
@@ -277,16 +261,6 @@ export const CanvasToolbar = ({
           <Download className="w-4 h-4 mr-2" />
           Export PDF
         </Button>
-        <div className="flex items-center gap-4 ml-auto">
-          {scale && (
-            <span className="text-sm text-muted-foreground">
-              Scale: 1:{(1 / scale).toFixed(1)}
-            </span>
-          )}
-          <span className="text-sm text-muted-foreground">
-            Zoom: {(zoomLevel * 100).toFixed(0)}%
-          </span>
-        </div>
       </div>
     </Card>
   );

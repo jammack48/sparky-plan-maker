@@ -24,6 +24,8 @@ const Index = () => {
   const [symbolCategories, setSymbolCategories] = useState<SymbolCategory[]>(DEFAULT_SYMBOL_CATEGORIES);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [canvasScale, setCanvasScale] = useState<number | null>(null);
+  const [canvasZoom, setCanvasZoom] = useState(1);
   
   // Per-symbol settings storage
   const [symbolSettings, setSymbolSettings] = useState<Record<string, {
@@ -410,6 +412,8 @@ const Index = () => {
             symbolTransparency={symbolTransparency}
             symbolScale={symbolScale}
             symbolCategories={symbolCategories}
+            onScaleChange={setCanvasScale}
+            onZoomChange={setCanvasZoom}
           />
         </main>
 
@@ -429,6 +433,8 @@ const Index = () => {
               onScaleChange={handleScaleChange}
               colorHistory={selectedSymbol ? (symbolSettings[selectedSymbol]?.colorHistory || []) : []}
               onCategoriesChange={setSymbolCategories}
+              scale={canvasScale}
+              zoomLevel={canvasZoom}
             />
             <div className="portrait:hidden landscape:block md:block">
               <SymbolStyleControls
