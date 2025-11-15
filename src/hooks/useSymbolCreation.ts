@@ -309,17 +309,16 @@ export const useSymbolCreation = (
       }
 
       case "heat-pump": {
-        // Create a placeholder group that will be replaced with the image
+        // Create heat pump at 1000mm (1m) width
         const targetWidthMm = 1000; // 1000mm = 1m
-        const pixelsPerMm = scale;
-        const width = targetWidthMm * pixelsPerMm;
-        const height = width * 0.25; // Heat pump aspect ratio
+        const width = targetWidthMm * scale; // Convert mm to pixels using scale
         
-        // Temporary placeholder
+        // Use a loading placeholder that maintains proper dimensions
+        const placeholderHeight = width * 0.3; // Approximate aspect ratio
         const placeholder = new Path(
-          `M ${-width/2} ${-height/2} L ${width/2} ${-height/2} L ${width/2} ${height/2} L ${-width/2} ${height/2} Z`,
+          `M ${-width/2} ${-placeholderHeight/2} L ${width/2} ${-placeholderHeight/2} L ${width/2} ${placeholderHeight/2} L ${-width/2} ${placeholderHeight/2} Z`,
           {
-            fill: "rgba(200, 200, 200, 0.3)",
+            fill: "rgba(200, 200, 200, 0.2)",
             stroke: color,
             strokeWidth: thickness,
             opacity: transparency * 0.5,
@@ -328,7 +327,7 @@ export const useSymbolCreation = (
         
         const label = new IText("Heat Pump", {
           left: 0,
-          top: height/2 + 8,
+          top: placeholderHeight/2 + 8,
           originX: "center",
           originY: "top",
           fill: color,
@@ -350,9 +349,13 @@ export const useSymbolCreation = (
         
         // Load actual image and replace placeholder
         FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
-          const imageScaleRatio = width / (img.width || 1);
-          img.scale(imageScaleRatio);
+          // Calculate scale to make image exactly 1000mm wide
+          const imageScale = width / (img.width || 1);
+          const scaledHeight = (img.height || 1) * imageScale;
+          
           img.set({
+            scaleX: imageScale,
+            scaleY: imageScale,
             left: 0,
             top: 0,
             originX: "center",
@@ -360,8 +363,12 @@ export const useSymbolCreation = (
             opacity: transparency,
           });
           
+          // Update label position based on actual image height
+          label.set({
+            top: scaledHeight/2 + 8
+          });
+          
           // Replace the placeholder in the group
-          const items = group.getObjects();
           group.remove(placeholder);
           group.insertAt(0, img);
           
