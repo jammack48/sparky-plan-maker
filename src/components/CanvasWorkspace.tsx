@@ -32,6 +32,8 @@ export interface CanvasWorkspaceProps {
   symbolTransparency?: number;
   symbolScale?: number;
   symbolCategories?: { name: string; symbols: { id: string; name: string }[] }[];
+  onScaleChange?: (scale: number | null) => void;
+  onZoomChange?: (zoom: number) => void;
 }
 
 export const CanvasWorkspace = ({
@@ -51,6 +53,8 @@ export const CanvasWorkspace = ({
   symbolTransparency = 1,
   symbolScale = 1,
   symbolCategories = [],
+  onScaleChange,
+  onZoomChange,
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,6 +69,20 @@ export const CanvasWorkspace = ({
   const [scale, setScale] = useState<number | null>(null);
   const [bgScale, setBgScale] = useState(1);
   const [zoom, setZoom] = useState(1);
+  
+  // Notify parent of scale changes
+  useEffect(() => {
+    if (onScaleChange) {
+      onScaleChange(scale);
+    }
+  }, [scale, onScaleChange]);
+  
+  // Notify parent of zoom changes
+  useEffect(() => {
+    if (onZoomChange) {
+      onZoomChange(zoom);
+    }
+  }, [zoom, onZoomChange]);
   const [gridUpdateTrigger, setGridUpdateTrigger] = useState(0);
   const [isPanning, setIsPanning] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
@@ -599,12 +617,27 @@ export const CanvasWorkspace = ({
     };
   }, [fabricCanvas, mode, scale, showGrid, gridSize, isSpacePressed]);
 
-  // Spacebar pan key handling
+  // Spacebar pan and Escape key handling
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       // If editing a text object, allow space to type
       const active = fabricCanvas?.getActiveObject() as any;
       const isEditingText = active && (active.isEditing || active.type === 'i-text' && active.__charBounds);
+      
+      // Handle Escape key to exit current mode
+      if (e.key === "Escape" && !isEditingText) {
+        setMode("select");
+        if (onSymbolDeselect) {
+          onSymbolDeselect();
+        }
+        if (fabricCanvas) {
+          fabricCanvas.discardActiveObject();
+          fabricCanvas.requestRenderAll();
+        }
+        e.preventDefault();
+        return;
+      }
+
       if (isEditingText) return;
 
       if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
@@ -630,7 +663,7 @@ export const CanvasWorkspace = ({
       window.removeEventListener('keydown', onKeyDown as any);
       window.removeEventListener('keyup', onKeyUp as any);
     };
-  }, [fabricCanvas]);
+  }, [fabricCanvas, onSymbolDeselect]);
 
   // Double-click to edit symbol labels
   useEffect(() => {

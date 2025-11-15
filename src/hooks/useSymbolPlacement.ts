@@ -112,10 +112,16 @@ export const useSymbolPlacement = (
         previewSymbol = null;
       }
       
+      onSaveState();
+      
       const symbol = createSymbol(selectedSymbol, xWorld, yWorld);
       if (symbol) {
         fabricCanvas.add(symbol);
         fabricCanvas.renderAll();
+        
+        if (onSymbolPlaced) {
+          onSymbolPlaced(selectedSymbol);
+        }
         
         // If it's a text label, trigger edit mode and switch to select
         if (selectedSymbol === "text-label" && symbol instanceof IText) {
@@ -130,10 +136,13 @@ export const useSymbolPlacement = (
             (iText as any).selectAll?.();
             fabricCanvas.requestRenderAll();
           }, 10);
+        } else {
+          // For other symbols, deselect after placement and return to select mode
+          if (onSymbolDeselect) {
+            onSymbolDeselect();
+          }
+          setMode("select");
         }
-        
-        onSaveState();
-        onSymbolPlaced?.(selectedSymbol);
       }
     };
 
@@ -166,21 +175,9 @@ export const useSymbolPlacement = (
       }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (previewSymbol) {
-          fabricCanvas.remove(previewSymbol);
-          previewSymbol = null;
-        }
-        onSymbolDeselect?.();
-        setMode("select");
-      }
-    };
-
     fabricCanvas.on("mouse:move", handleMouseMove);
     fabricCanvas.on("mouse:down", handleMouseDown);
     fabricCanvas.on("mouse:move", handleTouchMove);
-    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       if (previewSymbol && fabricCanvas) {
@@ -192,7 +189,6 @@ export const useSymbolPlacement = (
         fabricCanvas.off("mouse:down", handleMouseDown);
         fabricCanvas.off("mouse:move", handleTouchMove);
       }
-      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [fabricCanvas, mode, selectedSymbol, scale, showGrid, gridSize, bgScale]);
+  }, [fabricCanvas, mode, selectedSymbol, showGrid, scale, bgScale, gridSize, createSymbol, onSymbolPlaced, onSymbolDeselect, onSaveState, setMode]);
 };
