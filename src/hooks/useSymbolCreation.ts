@@ -5,7 +5,8 @@ export const useSymbolCreation = (
   color: string = "#000000",
   thickness: number = 2,
   transparency: number = 1,
-  scale: number = 1
+  scale: number = 1, // symbol visual scale multiplier
+  pxPerMm: number = 1 // canvas scale: pixels per millimeter
 ) => {
   const createSymbol = (type: string, x: number, y: number): FabricObject | null => {
     const baseSize = 12 * scale; // Doubled from 6 to 12
@@ -309,12 +310,11 @@ export const useSymbolCreation = (
       }
 
       case "heat-pump": {
-        // Create heat pump at 1000mm (1m) width
-        const targetWidthMm = 1000; // 1000mm = 1m
-        const width = targetWidthMm * scale; // Convert mm to pixels using scale
-        
-        // Use a loading placeholder that maintains proper dimensions
-        const placeholderHeight = width * 0.3; // Approximate aspect ratio
+        // Create heat pump at 1000mm (1m) width using canvas scale (pxPerMm)
+        const targetWidthMm = 1000;
+        const width = targetWidthMm * (pxPerMm || 1);
+        const placeholderHeight = width * 0.3; // temporary aspect ratio
+
         const placeholder = new Path(
           `M ${-width/2} ${-placeholderHeight/2} L ${width/2} ${-placeholderHeight/2} L ${width/2} ${placeholderHeight/2} L ${-width/2} ${placeholderHeight/2} Z`,
           {
@@ -322,21 +322,12 @@ export const useSymbolCreation = (
             stroke: color,
             strokeWidth: thickness,
             opacity: transparency * 0.5,
+            originX: "center",
+            originY: "center",
           }
         );
-        
-        const label = new IText("Heat Pump", {
-          left: 0,
-          top: placeholderHeight/2 + 8,
-          originX: "center",
-          originY: "top",
-          fill: color,
-          opacity: transparency,
-          fontSize: 10 * scale,
-          fontFamily: "Arial",
-        });
-        
-        const group = new Group([placeholder, label], {
+
+        const group = new Group([placeholder], {
           left: x,
           top: y,
           originX: "center",
@@ -345,14 +336,10 @@ export const useSymbolCreation = (
           moveCursor: "default",
         });
         (group as any).symbolType = type;
-        (group as any).labelIndex = 1;
-        
-        // Load actual image and replace placeholder
+
+        // Load actual image and swap placeholder
         FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
-          // Calculate scale to make image exactly 1000mm wide
           const imageScale = width / (img.width || 1);
-          const scaledHeight = (img.height || 1) * imageScale;
-          
           img.set({
             scaleX: imageScale,
             scaleY: imageScale,
@@ -362,24 +349,16 @@ export const useSymbolCreation = (
             originY: "center",
             opacity: transparency,
           });
-          
-          // Update label position based on actual image height
-          label.set({
-            top: scaledHeight/2 + 8
-          });
-          
-          // Replace the placeholder in the group
+
           group.remove(placeholder);
           group.insertAt(0, img);
-          
+
           const canvas = group.canvas;
-          if (canvas) {
-            canvas.requestRenderAll();
-          }
+          if (canvas) canvas.requestRenderAll();
         }).catch((err) => {
           console.error("Failed to load heat pump image:", err);
         });
-        
+
         return group;
       }
       
