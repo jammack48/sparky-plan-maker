@@ -321,7 +321,7 @@ export const useSymbolCreation = (
             fill: "rgba(200, 200, 200, 0.2)",
             stroke: color,
             strokeWidth: thickness,
-            opacity: transparency * 0.5,
+            opacity: transparency,
             originX: "center",
             originY: "center",
           }
@@ -337,8 +337,9 @@ export const useSymbolCreation = (
         });
         (group as any).symbolType = type;
 
-        // Load actual image for both preview and final placement
-        FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
+        // Only load actual image for final placement, not for preview
+        if (!isPreview) {
+          FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
             // Store the group's center before modifying
             const center = group.getCenterPoint();
             
@@ -373,6 +374,7 @@ export const useSymbolCreation = (
           }).catch((err) => {
             console.error("Failed to load heat pump image:", err);
           });
+        }
 
         return group;
       }

@@ -63,7 +63,6 @@ export const useSymbolPlacement = (
       
       previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld, true);
       if (previewSymbol) {
-        previewSymbol.opacity = 0.5;
         previewSymbol.selectable = false;
         previewSymbol.evented = false;
         (previewSymbol as any).isPreview = true;
