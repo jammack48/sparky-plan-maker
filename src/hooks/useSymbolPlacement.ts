@@ -75,7 +75,7 @@ export const useSymbolPlacement = (
       }
     };
 
-    const handleMouseDown = (opt: any) => {
+    const handleMouseDown = async (opt: any) => {
       // If clicking on an existing object/selection, don't place; let Fabric move/select
       if (opt.target && !(opt.target as any).isPreview) {
         return;
@@ -117,6 +117,10 @@ export const useSymbolPlacement = (
       
       const symbol = createSymbol(selectedSymbol, xWorld, yWorld, false);
       if (symbol) {
+        // Wait for async image attachment if provided to avoid position jump
+        if ((symbol as any).__readyPromise) {
+          try { await (symbol as any).__readyPromise; } catch (e) { console.error('[Symbol Placement] readyPromise failed', e); }
+        }
         onSaveState();
         fabricCanvas.add(symbol);
         fabricCanvas.renderAll();
