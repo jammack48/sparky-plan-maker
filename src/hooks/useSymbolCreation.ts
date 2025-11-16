@@ -337,9 +337,8 @@ export const useSymbolCreation = (
         });
         (group as any).symbolType = type;
 
-        // Only load actual image for final placement, not for previews
-        if (!isPreview) {
-          FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
+        // Load actual image for both preview and final placement
+        FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
             // Store the group's center before modifying
             const center = group.getCenterPoint();
             
@@ -352,7 +351,7 @@ export const useSymbolCreation = (
               top: 0,
               originX: "center",
               originY: "center",
-              opacity: transparency,
+              opacity: isPreview ? transparency * 0.5 : transparency,
             });
 
             group.remove(placeholder);
@@ -374,7 +373,6 @@ export const useSymbolCreation = (
           }).catch((err) => {
             console.error("Failed to load heat pump image:", err);
           });
-        }
 
         return group;
       }
