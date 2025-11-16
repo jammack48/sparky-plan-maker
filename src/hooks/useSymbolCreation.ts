@@ -351,7 +351,7 @@ export const useSymbolCreation = (
               top: 0,
               originX: "center",
               originY: "center",
-              opacity: isPreview ? transparency * 0.5 : transparency,
+              opacity: transparency,
             });
 
             group.remove(placeholder);
