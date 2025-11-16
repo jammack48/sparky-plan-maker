@@ -313,15 +313,16 @@ export const useSymbolCreation = (
         // Create heat pump at 1000mm (1m) width using canvas scale (pxPerMm)
         const targetWidthMm = 1000;
         const width = targetWidthMm * (pxPerMm || 1);
-        const placeholderHeight = width * 0.3; // temporary aspect ratio
 
         const placeholder = new Path(
-          `M ${-width/2} ${-placeholderHeight/2} L ${width/2} ${-placeholderHeight/2} L ${width/2} ${placeholderHeight/2} L ${-width/2} ${placeholderHeight/2} Z`,
+          `M ${-width/2} ${-width/2} L ${width/2} ${-width/2} L ${width/2} ${width/2} L ${-width/2} ${width/2} Z`,
           {
             fill: "rgba(200, 200, 200, 0.2)",
             stroke: color,
             strokeWidth: thickness,
             opacity: transparency * 0.5,
+            originX: "center",
+            originY: "center",
           }
         );
 
@@ -338,21 +339,34 @@ export const useSymbolCreation = (
         // Only load actual image for final placement, not for previews
         if (!isPreview) {
           FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
+            // Store the group's center before modifying
+            const center = group.getCenterPoint();
+            
             const imageScale = width / (img.width || 1);
-            const scaledHeight = (img.height || 1) * imageScale;
             
             img.set({
               scaleX: imageScale,
               scaleY: imageScale,
-              left: -width/2,
-              top: -scaledHeight/2,
-              originX: "left",
-              originY: "top",
+              left: 0,
+              top: 0,
+              originX: "center",
+              originY: "center",
               opacity: transparency,
             });
 
             group.remove(placeholder);
             group.add(img);
+
+            // Recalculate bounds and restore the group's center position
+            (group as any)._calcBounds?.();
+            (group as any)._updateObjectsCoords?.();
+            group.set({
+              left: center.x,
+              top: center.y,
+              originX: "center",
+              originY: "center",
+            });
+            group.setCoords();
 
             const canvas = group.canvas;
             if (canvas) canvas.requestRenderAll();
