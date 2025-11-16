@@ -10,7 +10,7 @@ export const useSymbolPlacement = (
   scale: number | null,
   bgScale: number,
   gridSize: string,
-  createSymbol: (type: string, x: number, y: number) => FabricObject | null,
+  createSymbol: (type: string, x: number, y: number, isPreview?: boolean) => FabricObject | null,
   onSymbolPlaced: ((symbolId: string) => void) | undefined,
   onSymbolDeselect: (() => void) | undefined,
   onSaveState: () => void,
@@ -61,7 +61,7 @@ export const useSymbolPlacement = (
         fabricCanvas.remove(previewSymbol);
       }
       
-      previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld);
+      previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld, true);
       if (previewSymbol) {
         previewSymbol.opacity = 0.5;
         previewSymbol.selectable = false;
@@ -112,13 +112,13 @@ export const useSymbolPlacement = (
         previewSymbol = null;
       }
       
-      onSaveState();
-      
-      const symbol = createSymbol(selectedSymbol, xWorld, yWorld);
+      const symbol = createSymbol(selectedSymbol, xWorld, yWorld, false);
       if (symbol) {
+        onSaveState();
         fabricCanvas.add(symbol);
         fabricCanvas.renderAll();
         
+        // Only increment count after symbol is successfully added
         if (onSymbolPlaced) {
           onSymbolPlaced(selectedSymbol);
         }
@@ -163,7 +163,7 @@ export const useSymbolPlacement = (
         fabricCanvas.remove(previewSymbol);
       }
       
-      previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld);
+      previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld, true);
       if (previewSymbol) {
         previewSymbol.opacity = 0.5;
         previewSymbol.selectable = false;
