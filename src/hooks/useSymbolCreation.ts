@@ -8,7 +8,7 @@ export const useSymbolCreation = (
   scale: number = 1, // symbol visual scale multiplier
   pxPerMm: number = 1 // canvas scale: pixels per millimeter
 ) => {
-  const createSymbol = (type: string, x: number, y: number): FabricObject | null => {
+  const createSymbol = (type: string, x: number, y: number, isPreview: boolean = false): FabricObject | null => {
     const baseSize = 12 * scale; // Doubled from 6 to 12
     const halfSize = baseSize / 2;
     
@@ -337,27 +337,29 @@ export const useSymbolCreation = (
         });
         (group as any).symbolType = type;
 
-        // Load actual image and swap placeholder
-        FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
-          const imageScale = width / (img.width || 1);
-          img.set({
-            scaleX: imageScale,
-            scaleY: imageScale,
-            left: 0,
-            top: 0,
-            originX: "center",
-            originY: "center",
-            opacity: transparency,
+        // Only load actual image for final placement, not for previews
+        if (!isPreview) {
+          FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
+            const imageScale = width / (img.width || 1);
+            img.set({
+              scaleX: imageScale,
+              scaleY: imageScale,
+              left: 0,
+              top: 0,
+              originX: "center",
+              originY: "center",
+              opacity: transparency,
+            });
+
+            group.remove(placeholder);
+            group.insertAt(0, img);
+
+            const canvas = group.canvas;
+            if (canvas) canvas.requestRenderAll();
+          }).catch((err) => {
+            console.error("Failed to load heat pump image:", err);
           });
-
-          group.remove(placeholder);
-          group.insertAt(0, img);
-
-          const canvas = group.canvas;
-          if (canvas) canvas.requestRenderAll();
-        }).catch((err) => {
-          console.error("Failed to load heat pump image:", err);
-        });
+        }
 
         return group;
       }
