@@ -313,9 +313,10 @@ export const useSymbolCreation = (
         // Create heat pump at 1000mm (1m) width using canvas scale (pxPerMm)
         const targetWidthMm = 1000;
         const width = targetWidthMm * (pxPerMm || 1);
+        const height = width * 0.65; // Heat pump typical aspect ratio
 
         const placeholder = new Path(
-          `M ${-width/2} ${-width/2} L ${width/2} ${-width/2} L ${width/2} ${width/2} L ${-width/2} ${width/2} Z`,
+          `M ${-width/2} ${-height/2} L ${width/2} ${-height/2} L ${width/2} ${height/2} L ${-width/2} ${height/2} Z`,
           {
             fill: "rgba(200, 200, 200, 0.2)",
             stroke: color,
