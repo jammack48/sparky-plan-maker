@@ -367,6 +367,12 @@ const Index = () => {
               size="sm"
               onClick={() => {
                 if (window.confirm("Reset current page? You'll lose all changes.")) {
+                  // Reset all symbol counts
+                  setSymbolCategories((prev) => prev.map(cat => ({
+                    ...cat,
+                    symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
+                  })));
+
                   // Force canvas workspace to reload by toggling the page
                   const current = currentPageIndex;
                   setCurrentPageIndex(-1);
