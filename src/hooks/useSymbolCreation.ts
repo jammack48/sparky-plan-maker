@@ -359,8 +359,8 @@ export const useSymbolCreation = (
         const originalX = x;
         const originalY = y;
 
-        // Load the cached image synchronously if available, or asynchronously if not
-        loadHeatPumpEl().then((imgEl) => {
+        // Prepare the image load and attach a readiness promise so callers can await
+        const readyPromise = loadHeatPumpEl().then((imgEl) => {
           const img = new FabricImage(imgEl);
           
           const naturalW = img.width || imgEl.naturalWidth || 1;
@@ -378,7 +378,7 @@ export const useSymbolCreation = (
 
           group.add(img);
           
-          // CRITICAL: Restore the original position after adding the image
+          // Restore the original position after adding the image
           group.set({
             left: originalX,
             top: originalY,
@@ -399,6 +399,9 @@ export const useSymbolCreation = (
         }).catch((err) => {
           console.error("Failed to load heat pump image:", err);
         });
+        
+        // Expose readiness to callers (used to avoid top-left jump on add)
+        (group as any).__readyPromise = readyPromise;
 
         return group;
       }
