@@ -121,9 +121,12 @@ export const useSymbolPlacement = (
         fabricCanvas.add(symbol);
         fabricCanvas.renderAll();
         
+        console.log(`[Symbol Placement] Placed symbol: ${selectedSymbol}, symbolType:`, (symbol as any).symbolType);
+        
         // Only increment count after symbol is successfully added
         if (onSymbolPlaced) {
           onSymbolPlaced(selectedSymbol);
+          console.log(`[Symbol Placement] Count incremented for: ${selectedSymbol}`);
         }
         
         // If it's a text label, trigger edit mode and switch to select
@@ -162,18 +165,21 @@ export const useSymbolPlacement = (
       const xWorld = (finalX - vpt[4]) / vpt[0];
       const yWorld = (finalY - vpt[5]) / vpt[3];
       
+      // Reuse existing preview, just move it instead of recreating
       if (previewSymbol) {
-        fabricCanvas.remove(previewSymbol);
-      }
-      
-      previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld, true);
-      if (previewSymbol) {
-        previewSymbol.opacity = 0.5;
-        previewSymbol.selectable = false;
-        previewSymbol.evented = false;
-        (previewSymbol as any).isPreview = true;
-        fabricCanvas.add(previewSymbol);
-        fabricCanvas.renderAll();
+        previewSymbol.set({ left: xWorld, top: yWorld });
+        previewSymbol.setCoords();
+        fabricCanvas.requestRenderAll();
+      } else {
+        // Create preview only once
+        previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld, true);
+        if (previewSymbol) {
+          previewSymbol.selectable = false;
+          previewSymbol.evented = false;
+          (previewSymbol as any).isPreview = true;
+          fabricCanvas.add(previewSymbol);
+          fabricCanvas.requestRenderAll();
+        }
       }
     };
 

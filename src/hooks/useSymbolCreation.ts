@@ -349,9 +349,15 @@ export const useSymbolCreation = (
         // Only set symbolType for final placement, not preview
         if (!isPreview) {
           (group as any).symbolType = type;
+          console.log(`[Heat Pump] Created FINAL symbol at (${x}, ${y})`);
         } else {
           (group as any).isPreview = true;
+          console.log(`[Heat Pump] Created PREVIEW symbol at (${x}, ${y})`);
         }
+
+        // Store the original position to maintain it after image loads
+        const originalX = x;
+        const originalY = y;
 
         // Load the cached image synchronously if available, or asynchronously if not
         loadHeatPumpEl().then((imgEl) => {
@@ -372,13 +378,24 @@ export const useSymbolCreation = (
 
           group.add(img);
           
+          // CRITICAL: Restore the original position after adding the image
+          group.set({
+            left: originalX,
+            top: originalY,
+            originX: "center",
+            originY: "center",
+          });
+          
           // Update group coordinates
           (group as any)._calcBounds?.();
           (group as any)._updateObjectsCoords?.();
           group.setCoords();
 
           const canvas = group.canvas;
-          if (canvas) canvas.requestRenderAll();
+          if (canvas) {
+            canvas.requestRenderAll();
+            console.log(`[Heat Pump] Image loaded for ${isPreview ? 'PREVIEW' : 'FINAL'} at (${originalX}, ${originalY})`);
+          }
         }).catch((err) => {
           console.error("Failed to load heat pump image:", err);
         });
