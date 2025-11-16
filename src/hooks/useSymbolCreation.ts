@@ -322,8 +322,6 @@ export const useSymbolCreation = (
             stroke: color,
             strokeWidth: thickness,
             opacity: transparency * 0.5,
-            originX: "center",
-            originY: "center",
           }
         );
 
@@ -341,18 +339,20 @@ export const useSymbolCreation = (
         if (!isPreview) {
           FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
             const imageScale = width / (img.width || 1);
+            const scaledHeight = (img.height || 1) * imageScale;
+            
             img.set({
               scaleX: imageScale,
               scaleY: imageScale,
-              left: 0,
-              top: 0,
-              originX: "center",
-              originY: "center",
+              left: -width/2,
+              top: -scaledHeight/2,
+              originX: "left",
+              originY: "top",
               opacity: transparency,
             });
 
             group.remove(placeholder);
-            group.insertAt(0, img);
+            group.add(img);
 
             const canvas = group.canvas;
             if (canvas) canvas.requestRenderAll();
