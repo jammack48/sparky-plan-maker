@@ -1,6 +1,29 @@
 import { Circle, Line, Path, Group, FabricObject, FabricText, IText, FabricImage } from "fabric";
 import heatPumpImage from "@/assets/heat-pump.png";
 
+// Cache for the heat pump image element to avoid re-loading
+let HEAT_PUMP_IMG_EL: HTMLImageElement | null = null;
+let HEAT_PUMP_IMG_PROMISE: Promise<HTMLImageElement> | null = null;
+
+function loadHeatPumpEl(): Promise<HTMLImageElement> {
+  if (HEAT_PUMP_IMG_EL) {
+    return Promise.resolve(HEAT_PUMP_IMG_EL);
+  }
+  if (!HEAT_PUMP_IMG_PROMISE) {
+    HEAT_PUMP_IMG_PROMISE = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        HEAT_PUMP_IMG_EL = img;
+        resolve(img);
+      };
+      img.onerror = reject;
+      img.src = heatPumpImage;
+    });
+  }
+  return HEAT_PUMP_IMG_PROMISE;
+}
+
 export const useSymbolCreation = (
   color: string = "#000000",
   thickness: number = 2,
@@ -313,21 +336,8 @@ export const useSymbolCreation = (
         // Create heat pump at 1000mm (1m) width using canvas scale (pxPerMm)
         const targetWidthMm = 1000;
         const width = targetWidthMm * (pxPerMm || 1);
-        const height = width * 0.65; // Heat pump typical aspect ratio
 
-        const placeholder = new Path(
-          `M ${-width/2} ${-height/2} L ${width/2} ${-height/2} L ${width/2} ${height/2} L ${-width/2} ${height/2} Z`,
-          {
-            fill: "rgba(200, 200, 200, 0.2)",
-            stroke: color,
-            strokeWidth: thickness,
-            opacity: transparency,
-            originX: "center",
-            originY: "center",
-          }
-        );
-
-        const group = new Group([placeholder], {
+        const group = new Group([], {
           left: x,
           top: y,
           originX: "center",
@@ -335,46 +345,43 @@ export const useSymbolCreation = (
           hoverCursor: "default",
           moveCursor: "default",
         });
-        (group as any).symbolType = type;
-
-        // Only load actual image for final placement, not for preview
+        
+        // Only set symbolType for final placement, not preview
         if (!isPreview) {
-          FabricImage.fromURL(heatPumpImage, { crossOrigin: 'anonymous' }).then((img) => {
-            // Store the group's center before modifying
-            const center = group.getCenterPoint();
-            
-            const imageScale = width / (img.width || 1);
-            
-            img.set({
-              scaleX: imageScale,
-              scaleY: imageScale,
-              left: 0,
-              top: 0,
-              originX: "center",
-              originY: "center",
-              opacity: transparency,
-            });
-
-            group.remove(placeholder);
-            group.add(img);
-
-            // Recalculate bounds and restore the group's center position
-            (group as any)._calcBounds?.();
-            (group as any)._updateObjectsCoords?.();
-            group.set({
-              left: center.x,
-              top: center.y,
-              originX: "center",
-              originY: "center",
-            });
-            group.setCoords();
-
-            const canvas = group.canvas;
-            if (canvas) canvas.requestRenderAll();
-          }).catch((err) => {
-            console.error("Failed to load heat pump image:", err);
-          });
+          (group as any).symbolType = type;
+        } else {
+          (group as any).isPreview = true;
         }
+
+        // Load the cached image synchronously if available, or asynchronously if not
+        loadHeatPumpEl().then((imgEl) => {
+          const img = new FabricImage(imgEl);
+          
+          const naturalW = img.width || imgEl.naturalWidth || 1;
+          const imageScale = width / naturalW;
+          
+          img.set({
+            scaleX: imageScale,
+            scaleY: imageScale,
+            left: 0,
+            top: 0,
+            originX: "center",
+            originY: "center",
+            opacity: transparency,
+          });
+
+          group.add(img);
+          
+          // Update group coordinates
+          (group as any)._calcBounds?.();
+          (group as any)._updateObjectsCoords?.();
+          group.setCoords();
+
+          const canvas = group.canvas;
+          if (canvas) canvas.requestRenderAll();
+        }).catch((err) => {
+          console.error("Failed to load heat pump image:", err);
+        });
 
         return group;
       }
