@@ -57,17 +57,21 @@ export const useSymbolPlacement = (
       const xWorld = (finalX - vpt[4]) / vpt[0];
       const yWorld = (finalY - vpt[5]) / vpt[3];
       
+      // Reuse existing preview, just move it instead of recreating
       if (previewSymbol) {
-        fabricCanvas.remove(previewSymbol);
-      }
-      
-      previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld, true);
-      if (previewSymbol) {
-        previewSymbol.selectable = false;
-        previewSymbol.evented = false;
-        (previewSymbol as any).isPreview = true;
-        fabricCanvas.add(previewSymbol);
-        fabricCanvas.renderAll();
+        previewSymbol.set({ left: xWorld, top: yWorld });
+        previewSymbol.setCoords();
+        fabricCanvas.requestRenderAll();
+      } else {
+        // Create preview only once
+        previewSymbol = createSymbol(selectedSymbol, xWorld, yWorld, true);
+        if (previewSymbol) {
+          previewSymbol.selectable = false;
+          previewSymbol.evented = false;
+          (previewSymbol as any).isPreview = true;
+          fabricCanvas.add(previewSymbol);
+          fabricCanvas.requestRenderAll();
+        }
       }
     };
 
