@@ -72,6 +72,9 @@ const Index = () => {
       symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
     })));
 
+    // Turn off title block by default
+    setShowTitleBlock(false);
+
     // Generate a simple sample plan: white background with a black square
     const size = 1600;
     const squareSize = 800;
@@ -100,6 +103,9 @@ const Index = () => {
       ...cat,
       symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
     })));
+
+    // Turn off title block by default
+    setShowTitleBlock(false);
 
     // Load the residential floor plan template
     const img = new Image();
@@ -139,6 +145,9 @@ const Index = () => {
         ...cat,
         symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
       })));
+
+      // Turn off title block by default when loading files
+      setShowTitleBlock(false);
 
       // Handle image files
       if (file.type.startsWith("image/")) {
