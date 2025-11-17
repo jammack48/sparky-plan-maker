@@ -91,7 +91,33 @@ const Index = () => {
     setPdfPages([dataUrl]);
     setSelectedPages([0]);
     setCurrentPageIndex(0);
-    toast.success('Loaded template');
+    toast.success('Loaded Template 1');
+  };
+
+  const handleUseTemplate2 = () => {
+    // Reset symbol counts when starting a new template
+    setSymbolCategories((prev) => prev.map(cat => ({
+      ...cat,
+      symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
+    })));
+
+    // Load the residential floor plan template
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+      }
+      const dataUrl = c.toDataURL('image/png');
+      setPdfPages([dataUrl]);
+      setSelectedPages([0]);
+      setCurrentPageIndex(0);
+      toast.success('Loaded Template 2 - Residential Floor Plan');
+    };
+    img.src = '/images/template-floorplan.png';
   };
 
   const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -289,7 +315,13 @@ const Index = () => {
               variant="secondary"
               onClick={handleUseTemplate}
             >
-              Use Template
+              Template 1 (Blank)
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleUseTemplate2}
+            >
+              Template 2 (Floor Plan)
             </Button>
             <Button variant="outline" asChild>
               <label className="cursor-pointer">
