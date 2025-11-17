@@ -117,6 +117,10 @@ const Index = () => {
       setCurrentPageIndex(0);
       toast.success('Loaded Template 2 - Residential Floor Plan');
     };
+    img.onerror = () => {
+      toast.error('Failed to load template image');
+      console.error('Template image failed to load from /images/template-floorplan.png');
+    };
     img.src = '/images/template-floorplan.png';
   };
 
