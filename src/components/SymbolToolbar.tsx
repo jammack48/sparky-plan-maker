@@ -425,6 +425,7 @@ export const DEFAULT_SYMBOL_CATEGORIES: SymbolCategory[] = [
     name: "Real Items",
     icon: <Image className="h-4 w-4" />,
     symbols: [
+      { id: "downlight-real", name: "Downlight", icon: <SymbolIcon type="downlight-real" />, count: 0, category: "real-items" },
       { id: "heat-pump", name: "Heat Pump", icon: <SymbolIcon type="heat-pump" />, count: 0, category: "real-items" },
     ]
   },
