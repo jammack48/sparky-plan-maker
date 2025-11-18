@@ -4,6 +4,7 @@ import tradeSketchLogo from "@/assets/tradesketch-logo.png";
 import { Home, RotateCcw } from "lucide-react";
 import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
+import { HomeScreen } from "@/components/HomeScreen";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOL_CATEGORIES, SymbolCategory } from "@/components/SymbolToolbar";
 
@@ -18,6 +19,16 @@ import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
 GlobalWorkerOptions.workerPort = new pdfjsWorker();
 
 const Index = () => {
+  // App screen navigation state
+  type AppScreen = 'home' | 'template' | 'pageSelection' | 'canvas';
+  const [appScreen, setAppScreen] = useState<AppScreen>('home');
+  
+  // Project name state with localStorage persistence
+  const [projectName, setProjectName] = useState<string>(() => {
+    const saved = localStorage.getItem('tradesketch-project-name');
+    return saved || 'Untitled Project';
+  });
+
   const [pdfPages, setPdfPages] = useState<string[]>([]);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -65,6 +76,11 @@ const Index = () => {
     localStorage.setItem('tradesketch-show-title-block', JSON.stringify(showTitleBlock));
   }, [showTitleBlock]);
 
+  // Save project name to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('tradesketch-project-name', projectName);
+  }, [projectName]);
+
   const handleUseTemplate = () => {
     // Reset symbol counts when starting a new template
     setSymbolCategories((prev) => prev.map(cat => ({
@@ -94,6 +110,7 @@ const Index = () => {
     setPdfPages([dataUrl]);
     setSelectedPages([0]);
     setCurrentPageIndex(0);
+    setAppScreen('canvas');
     toast.success('Loaded Template 1');
   };
 
@@ -121,6 +138,7 @@ const Index = () => {
       setPdfPages([dataUrl]);
       setSelectedPages([0]);
       setCurrentPageIndex(0);
+      setAppScreen('canvas');
       toast.success('Loaded Template 2 - Residential Floor Plan');
     };
     img.onerror = () => {
@@ -155,6 +173,9 @@ const Index = () => {
         reader.onload = (e) => {
           const dataUrl = e.target?.result as string;
           setPdfPages([dataUrl]);
+          setSelectedPages([0]);
+          setCurrentPageIndex(0);
+          setAppScreen('canvas');
           setIsLoading(false);
           toast.success("Image loaded successfully");
         };
@@ -190,6 +211,7 @@ const Index = () => {
 
         const pages = await Promise.all(pagePromises);
         setPdfPages(pages);
+        setAppScreen('pageSelection');
         setIsLoading(false);
         toast.success(`Loaded ${pages.length} page${pages.length > 1 ? "s" : ""}`);
       }
@@ -203,6 +225,8 @@ const Index = () => {
   const handlePageSelection = (selected: number[]) => {
     setSelectedPages(selected);
     setCurrentPageIndex(0);
+    setAppScreen('canvas');
+    toast.success(`Selected ${selected.length} page${selected.length !== 1 ? 's' : ''}`);
   };
 
   const handleSymbolPlaced = (symbolId: string) => {
@@ -311,7 +335,24 @@ const Index = () => {
     }
   };
 
-  if (pdfPages.length === 0) {
+  // Home screen
+  if (appScreen === 'home') {
+    return (
+      <HomeScreen 
+        onNewProject={(name) => {
+          setProjectName(name);
+          setAppScreen('template');
+        }}
+        onSkip={() => {
+          setProjectName('Untitled Project');
+          setAppScreen('template');
+        }}
+      />
+    );
+  }
+
+  // Template selection screen
+  if (appScreen === 'template' && pdfPages.length === 0) {
     return (
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-4xl mx-auto">
@@ -354,7 +395,8 @@ const Index = () => {
     );
   }
 
-  if (selectedPages.length === 0) {
+  // Page selection screen
+  if (appScreen === 'pageSelection' || (pdfPages.length > 0 && selectedPages.length === 0)) {
     return (
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-6xl mx-auto">
@@ -389,7 +431,12 @@ const Index = () => {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-6 h-6 sm:w-8 sm:h-8" />
-            <h1 className="text-base sm:text-xl font-bold text-foreground whitespace-nowrap">TradeSketch Pro</h1>
+            <h1 className="text-base sm:text-xl font-bold text-foreground whitespace-nowrap">
+              TradeSketch Pro
+              {projectName && projectName !== 'Untitled Project' && (
+                <span className="text-muted-foreground font-normal"> • {projectName}</span>
+              )}
+            </h1>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -397,9 +444,11 @@ const Index = () => {
               size="sm"
               onClick={() => {
                 if (window.confirm("Go back to home? You'll lose any unsaved work.")) {
+                  setAppScreen('home');
                   setSelectedPages([]);
                   setPdfPages([]);
                   setCurrentPageIndex(0);
+                  setSymbolCategories(DEFAULT_SYMBOL_CATEGORIES);
                 }
               }}
               className="text-xs px-2 py-1 h-7"
