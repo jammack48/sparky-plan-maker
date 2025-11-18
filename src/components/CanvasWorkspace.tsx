@@ -73,7 +73,8 @@ export const CanvasWorkspace = ({
   const [zoom, setZoom] = useState(1);
   
   // Area/Volume measurement state
-  const [areaColor, setAreaColor] = useState("#3b82f680");
+  const [areaColor, setAreaColor] = useState("#3b82f6");
+  const [areaOpacity, setAreaOpacity] = useState(0.3);
   const [heightValue, setHeightValue] = useState<number | null>(null);
   const [showHeightDialog, setShowHeightDialog] = useState(false);
   const [colorHistory, setColorHistory] = useState<string[]>([]);
@@ -104,7 +105,7 @@ export const CanvasWorkspace = ({
   useDrawMode(fabricCanvas, mode, selectedSymbol, symbolColor, symbolThickness, symbolTransparency, saveCanvasState, onSymbolPlaced);
   
   // Use area measurement hook
-  useMeasureAreaMode(fabricCanvas, mode, scale, areaColor, heightValue);
+  useMeasureAreaMode(fabricCanvas, mode, scale, areaColor, areaOpacity, heightValue);
 
   useEffect(() => {
     if (selectedSymbol === "freehand" || selectedSymbol === "line" || selectedSymbol === "rectangle" || selectedSymbol === "circle") {
@@ -1154,7 +1155,9 @@ export const CanvasWorkspace = ({
           onMeasureVolume={handleMeasureVolume}
           onErase={() => handleModeChange("erase")}
           areaColor={areaColor}
+          areaOpacity={areaOpacity}
           onAreaColorChange={handleAreaColorChange}
+          onAreaOpacityChange={setAreaOpacity}
           onToggleGrid={() => setShowGrid(!showGrid)}
           onToggleTitleBlock={onToggleTitleBlock}
           onLockBackground={setLockBackground}
@@ -1198,8 +1201,10 @@ export const CanvasWorkspace = ({
           onMeasureArea={handleMeasureArea}
           onMeasureVolume={handleMeasureVolume}
           onErase={() => handleModeChange("erase")}
-          areaColor={areaColor}
-          onAreaColorChange={handleAreaColorChange}
+            areaColor={areaColor}
+            areaOpacity={areaOpacity}
+            onAreaColorChange={handleAreaColorChange}
+            onAreaOpacityChange={setAreaOpacity}
           onToggleGrid={() => setShowGrid(!showGrid)}
           onToggleTitleBlock={onToggleTitleBlock}
           onLockBackground={setLockBackground}

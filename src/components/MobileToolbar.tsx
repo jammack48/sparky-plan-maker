@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SymbolIcon } from "./SymbolIcon";
-import { 
+import { AreaColorPicker } from "./AreaColorPicker";
+import {
   MousePointer2, 
   Move, 
   Crop, 
@@ -52,7 +53,9 @@ interface MobileToolbarProps {
   onMeasureVolume: () => void;
   onErase: () => void;
   areaColor: string;
+  areaOpacity: number;
   onAreaColorChange: (color: string) => void;
+  onAreaOpacityChange: (opacity: number) => void;
   onToggleGrid: () => void;
   onToggleTitleBlock: (show: boolean) => void;
   onLockBackground: (locked: boolean) => void;
@@ -95,7 +98,9 @@ export const MobileToolbar = ({
   onMeasureVolume,
   onErase,
   areaColor,
+  areaOpacity,
   onAreaColorChange,
+  onAreaOpacityChange,
   onToggleGrid,
   onToggleTitleBlock,
   onLockBackground,
@@ -275,12 +280,11 @@ export const MobileToolbar = ({
             
             {/* Color Bar */}
             <div className="mt-3 pt-3 border-t">
-              <Label className="text-xs mb-2 block">Fill Color</Label>
-              <input
-                type="color"
-                value={areaColor}
-                onChange={(e) => onAreaColorChange(e.target.value)}
-                className="w-full h-8 rounded border cursor-pointer bg-background"
+              <AreaColorPicker 
+                color={areaColor}
+                opacity={areaOpacity}
+                onColorChange={onAreaColorChange}
+                onOpacityChange={onAreaOpacityChange}
               />
             </div>
           </div>
