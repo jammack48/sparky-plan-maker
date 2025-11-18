@@ -4,10 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings, Lock, Unlock, Layers, RotateCcw, RotateCw } from "lucide-react";
+import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings, Lock, Unlock, Layers, RotateCcw, RotateCw, Square, Box, Palette } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AreaColorPicker } from "./AreaColorPicker";
 
 interface CanvasToolbarProps {
-  mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw";
+  mode: "none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "erase" | "place-symbol" | "draw";
   scale: number | null;
   showGrid: boolean;
   lockBackground: boolean;
@@ -23,7 +25,11 @@ interface CanvasToolbarProps {
   onMove: () => void;
   onCrop: () => void;
   onMeasure: () => void;
+  onMeasureArea: () => void;
+  onMeasureVolume: () => void;
   onErase: () => void;
+  areaColor: string;
+  onAreaColorChange: (color: string) => void;
   onToggleGrid: () => void;
   onToggleTitleBlock: (show: boolean) => void;
   onLockBackground: (locked: boolean) => void;
@@ -59,7 +65,11 @@ export const CanvasToolbar = ({
   onMove,
   onCrop,
   onMeasure,
+  onMeasureArea,
+  onMeasureVolume,
   onErase,
+  areaColor,
+  onAreaColorChange,
   onToggleGrid,
   onToggleTitleBlock,
   onLockBackground,
@@ -110,6 +120,42 @@ export const CanvasToolbar = ({
           {mode === "measure" ? <X className="w-4 h-4 mr-2" /> : <Ruler className="w-4 h-4 mr-2" />}
           {mode === "measure" ? "Cancel" : "Measure"}
         </Button>
+        <Button
+          variant={mode === "measure-area" ? "default" : "outline"}
+          size="sm"
+          onClick={onMeasureArea}
+          disabled={!scale}
+          title={!scale ? "Set scale first using Measure tool" : "Measure Area"}
+        >
+          <Square className="w-4 h-4 mr-2" />
+          Area
+        </Button>
+        <Button
+          variant={mode === "measure-volume" ? "default" : "outline"}
+          size="sm"
+          onClick={onMeasureVolume}
+          disabled={!scale}
+          title={!scale ? "Set scale first using Measure tool" : "Measure Volume"}
+        >
+          <Box className="w-4 h-4 mr-2" />
+          Volume
+        </Button>
+        {(mode === "measure-area" || mode === "measure-volume") && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Palette className="w-4 h-4 mr-2" />
+                Color
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <AreaColorPicker 
+                color={areaColor}
+                onColorChange={onAreaColorChange}
+              />
+            </PopoverContent>
+          </Popover>
+        )}
         <Button
           variant={mode === "erase" ? "default" : "outline"}
           size="sm"
