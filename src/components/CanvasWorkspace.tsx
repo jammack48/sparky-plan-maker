@@ -6,11 +6,13 @@ import { CanvasDialogs } from "./CanvasDialogs";
 import { GridOverlay } from "./GridOverlay";
 import { useCropMode } from "@/hooks/useCropMode";
 import { useMeasureMode } from "@/hooks/useMeasureMode";
+import { useMeasureAreaMode } from "@/hooks/useMeasureAreaMode";
 import { useEraseMode } from "@/hooks/useEraseMode";
 import { useSymbolPlacement } from "@/hooks/useSymbolPlacement";
 import { useSymbolCreation } from "@/hooks/useSymbolCreation";
 import { useDrawMode } from "@/hooks/useDrawMode";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { VolumeHeightDialog } from "@/components/VolumeHeightDialog";
 import { PageSetup } from "@/types/pageSetup";
 import { toast } from "sonner";
 
@@ -60,7 +62,7 @@ export const CanvasWorkspace = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw">("select");
+  const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "erase" | "place-symbol" | "draw">("select");
   const [showGrid, setShowGrid] = useState(false);
   const [gridSize, setGridSize] = useState("400");
   const [gridColor, setGridColor] = useState("#ff0000");
@@ -69,6 +71,12 @@ export const CanvasWorkspace = ({
   const [scale, setScale] = useState<number | null>(null);
   const [bgScale, setBgScale] = useState(1);
   const [zoom, setZoom] = useState(1);
+  
+  // Area/Volume measurement state
+  const [areaColor, setAreaColor] = useState("#3b82f680");
+  const [heightValue, setHeightValue] = useState<number | null>(null);
+  const [showHeightDialog, setShowHeightDialog] = useState(false);
+  const [colorHistory, setColorHistory] = useState<string[]>([]);
   
   // Notify parent of scale changes
   useEffect(() => {
@@ -94,6 +102,9 @@ export const CanvasWorkspace = ({
 
   // Use draw mode hook for shape drawing
   useDrawMode(fabricCanvas, mode, selectedSymbol, symbolColor, symbolThickness, symbolTransparency, saveCanvasState, onSymbolPlaced);
+  
+  // Use area measurement hook
+  useMeasureAreaMode(fabricCanvas, mode, scale, areaColor, heightValue);
 
   useEffect(() => {
     if (selectedSymbol === "freehand" || selectedSymbol === "line" || selectedSymbol === "rectangle" || selectedSymbol === "circle") {
@@ -982,6 +993,37 @@ export const CanvasWorkspace = ({
     }
   };
 
+  const handleMeasureArea = () => {
+    if (!scale) {
+      toast.error("Please set scale first using the Measure tool");
+      return;
+    }
+    setMode("measure-area");
+    setHeightValue(null);
+  };
+
+  const handleMeasureVolume = () => {
+    if (!scale) {
+      toast.error("Please set scale first using the Measure tool");
+      return;
+    }
+    setShowHeightDialog(true);
+  };
+
+  const handleHeightConfirm = (height: number) => {
+    setHeightValue(height);
+    setMode("measure-volume");
+    setShowHeightDialog(false);
+  };
+
+  const handleAreaColorChange = (color: string) => {
+    setAreaColor(color);
+    // Add to history if not already there
+    if (!colorHistory.includes(color)) {
+      setColorHistory(prev => [color, ...prev].slice(0, 5));
+    }
+  };
+
   const handleSelectMode = () => {
     if (mode === "select") {
       // Toggle off select: clear selection and show no active tool
@@ -1105,7 +1147,11 @@ export const CanvasWorkspace = ({
           onMove={handleMoveMode}
           onCrop={() => handleModeChange("crop")}
           onMeasure={() => handleModeChange("measure")}
+          onMeasureArea={handleMeasureArea}
+          onMeasureVolume={handleMeasureVolume}
           onErase={() => handleModeChange("erase")}
+          areaColor={areaColor}
+          onAreaColorChange={handleAreaColorChange}
           onToggleGrid={() => setShowGrid(!showGrid)}
           onToggleTitleBlock={onToggleTitleBlock}
           onLockBackground={setLockBackground}
@@ -1146,7 +1192,11 @@ export const CanvasWorkspace = ({
           onMove={handleMoveMode}
           onCrop={() => handleModeChange("crop")}
           onMeasure={() => handleModeChange("measure")}
+          onMeasureArea={handleMeasureArea}
+          onMeasureVolume={handleMeasureVolume}
           onErase={() => handleModeChange("erase")}
+          areaColor={areaColor}
+          onAreaColorChange={handleAreaColorChange}
           onToggleGrid={() => setShowGrid(!showGrid)}
           onToggleTitleBlock={onToggleTitleBlock}
           onLockBackground={setLockBackground}
@@ -1202,6 +1252,12 @@ export const CanvasWorkspace = ({
           setShowMeasureDialog(false);
           setMode("select");
         }}
+      />
+      
+      <VolumeHeightDialog
+        open={showHeightDialog}
+        onConfirm={handleHeightConfirm}
+        onCancel={() => setShowHeightDialog(false)}
       />
     </div>
   );

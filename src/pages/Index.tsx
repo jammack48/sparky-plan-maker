@@ -429,14 +429,18 @@ const Index = () => {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <header className="border-b border-border bg-card px-2 sm:px-4 py-2 shrink-0">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-6 h-6 sm:w-8 sm:h-8" />
-            <h1 className="text-base sm:text-xl font-bold text-foreground whitespace-nowrap">
-              TradeSketch Pro
-              {projectName && projectName !== 'Untitled Project' && (
-                <span className="text-muted-foreground font-normal"> • {projectName}</span>
-              )}
-            </h1>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0 sm:gap-2">
+            <div className="flex items-center gap-2">
+              <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-6 h-6 sm:w-8 sm:h-8" />
+              <h1 className="text-base sm:text-xl font-bold text-foreground">
+                TradeSketch Pro
+              </h1>
+            </div>
+            {projectName && projectName !== 'Untitled Project' && (
+              <span className="text-xs sm:text-base text-muted-foreground ml-8 sm:ml-0">
+                • {projectName}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <Button

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,11 +23,14 @@ import {
   Unlock,
   Layers,
   RotateCcw,
-  RotateCw
+  RotateCw,
+  GripVertical,
+  Square,
+  Box
 } from "lucide-react";
 
 interface MobileToolbarProps {
-  mode: "none" | "select" | "move" | "crop" | "measure" | "erase" | "place-symbol" | "draw";
+  mode: "none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "erase" | "place-symbol" | "draw";
   scale: number | null;
   showGrid: boolean;
   lockBackground: boolean;
@@ -44,7 +48,11 @@ interface MobileToolbarProps {
   onMove: () => void;
   onCrop: () => void;
   onMeasure: () => void;
+  onMeasureArea: () => void;
+  onMeasureVolume: () => void;
   onErase: () => void;
+  areaColor: string;
+  onAreaColorChange: (color: string) => void;
   onToggleGrid: () => void;
   onToggleTitleBlock: (show: boolean) => void;
   onLockBackground: (locked: boolean) => void;
@@ -83,7 +91,11 @@ export const MobileToolbar = ({
   onMove,
   onCrop,
   onMeasure,
+  onMeasureArea,
+  onMeasureVolume,
   onErase,
+  areaColor,
+  onAreaColorChange,
   onToggleGrid,
   onToggleTitleBlock,
   onLockBackground,
@@ -102,6 +114,61 @@ export const MobileToolbar = ({
   onRotateBackgroundLeft,
   onRotateBackgroundRight,
 }: MobileToolbarProps) => {
+  // Draggable toolbar state (landscape mode only)
+  const [toolbarPosition, setToolbarPosition] = useState(() => {
+    const saved = localStorage.getItem('toolbar-position');
+    return saved ? JSON.parse(saved) : { x: window.innerWidth - 80, y: 100 };
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  const handleDragStart = (e: React.TouchEvent | React.MouseEvent) => {
+    if (window.innerWidth <= window.innerHeight) return; // Portrait mode - no dragging
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    setIsDragging(true);
+    setDragOffset({
+      x: clientX - toolbarPosition.x,
+      y: clientY - toolbarPosition.y
+    });
+  };
+
+  const handleDragMove = (e: TouchEvent | MouseEvent) => {
+    if (!isDragging) return;
+    
+    const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+    
+    const newX = Math.max(0, Math.min(window.innerWidth - 60, clientX - dragOffset.x));
+    const newY = Math.max(0, Math.min(window.innerHeight - 400, clientY - dragOffset.y));
+    
+    setToolbarPosition({ x: newX, y: newY });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    localStorage.setItem('toolbar-position', JSON.stringify(toolbarPosition));
+  };
+
+  // Set up event listeners for dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchmove', handleDragMove);
+    document.addEventListener('touchend', handleDragEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('touchmove', handleDragMove);
+      document.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [isDragging, dragOffset, toolbarPosition]);
+
   // Helper function to get the display name for the selected symbol
   const getSymbolDisplayName = () => {
     if (mode === "place-symbol" && selectedSymbol) {
@@ -120,6 +187,8 @@ export const MobileToolbar = ({
       "move": "Move",
       "crop": "Crop",
       "measure": "Measure",
+      "measure-area": "Measure Area",
+      "measure-volume": "Measure Volume",
       "erase": "Erase",
       "draw": "Draw",
       "place-symbol": "Place Symbol",
@@ -128,8 +197,36 @@ export const MobileToolbar = ({
     return modeNames[mode] || "Tools";
   };
 
+  const isLandscape = typeof window !== 'undefined' && window.innerWidth > window.innerHeight;
+
   return (
-    <div className="portrait:flex portrait:items-center portrait:gap-1 portrait:p-2 portrait:bg-background portrait:border-b portrait:overflow-x-auto portrait:relative portrait:right-auto portrait:top-auto portrait:translate-y-0 landscape:fixed landscape:right-0 landscape:top-1/2 landscape:-translate-y-1/2 landscape:z-50 landscape:flex-col landscape:gap-1 landscape:p-2 landscape:bg-background landscape:border-l landscape:border-y landscape:rounded-l-lg landscape:shadow-lg landscape:max-h-[80vh] landscape:overflow-y-auto flex" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+    <div 
+      className="portrait:flex portrait:items-center portrait:gap-1 portrait:p-2 portrait:bg-background portrait:border-b portrait:overflow-x-auto portrait:relative portrait:right-auto portrait:top-auto portrait:translate-y-0 landscape:fixed landscape:z-50 landscape:flex-col landscape:gap-1 landscape:p-2 landscape:bg-background landscape:border landscape:rounded-lg landscape:shadow-lg landscape:max-h-[80vh] landscape:overflow-y-auto flex"
+      style={
+        isLandscape
+          ? {
+              position: 'fixed',
+              transform: `translate(${toolbarPosition.x}px, ${toolbarPosition.y}px)`,
+              transition: isDragging ? 'none' : 'transform 0.2s ease',
+              top: 0,
+              left: 0,
+            }
+          : undefined
+      }
+      onMouseDown={(e) => e.stopPropagation()} 
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {/* Drag handle in landscape mode */}
+      {isLandscape && (
+        <div 
+          className="flex justify-center py-2 cursor-move touch-none bg-muted/50 rounded-t-lg"
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+        >
+          <GripVertical className="w-5 h-5 text-muted-foreground" />
+        </div>
+      )}
+      
       {/* Symbols Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -220,6 +317,14 @@ export const MobileToolbar = ({
           <DropdownMenuItem onClick={onMeasure}>
             {mode === "measure" ? <X className="mr-2 h-4 w-4" /> : <Ruler className="mr-2 h-4 w-4" />}
             <span>{mode === "measure" ? "Cancel Measure" : "Measure"}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onMeasureArea} disabled={!scale}>
+            <Square className="mr-2 h-4 w-4" />
+            <span>Measure Area</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onMeasureVolume} disabled={!scale}>
+            <Box className="mr-2 h-4 w-4" />
+            <span>Measure Volume</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onErase}>
             <Eraser className="mr-2 h-4 w-4" />
