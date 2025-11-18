@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings, Lock, Unlock, Layers, RotateCcw, RotateCw, Square, Box, Palette } from "lucide-react";
+import { Crop, Ruler, Grid3x3, Download, X, Eraser, Undo2, Redo2, ChevronDown, Settings, Lock, Unlock, Layers, RotateCcw, RotateCw, Square, Box, Palette, MousePointer2, Move } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AreaColorPicker } from "./AreaColorPicker";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { SymbolIcon } from "./SymbolIcon";
 
 interface CanvasToolbarProps {
   mode: "none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "erase" | "place-symbol" | "draw";
@@ -21,6 +23,9 @@ interface CanvasToolbarProps {
   zoomLevel: number;
   undoStackLength: number;
   redoStackLength: number;
+  symbolCategories: { name: string; symbols: { id: string; name: string }[] }[];
+  selectedSymbol: string | null;
+  onSymbolSelect: (symbolId: string) => void;
   onSelect: () => void;
   onMove: () => void;
   onCrop: () => void;
