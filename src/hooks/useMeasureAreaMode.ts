@@ -21,6 +21,7 @@ export const useMeasureAreaMode = (
   mode: string,
   scale: number | null,
   areaColor: string,
+  areaOpacity: number,
   heightValue: number | null
 ) => {
   const [points, setPoints] = useState<Point[]>([]);
@@ -108,14 +109,20 @@ export const useMeasureAreaMode = (
       const areaM2 = pixelAreaToMeters(pixelArea, scale);
       const volume = heightValue ? calculateVolume(areaM2, heightValue) : null;
 
-      // Create polygon with semi-transparent fill
-      const fillColor = areaColor.includes('rgba') 
-        ? areaColor 
-        : areaColor + '80'; // Add transparency
+      // Create polygon with opacity
+      const hexToRgba = (hex: string, alpha: number) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      };
+
+      const fillColor = hexToRgba(areaColor, areaOpacity);
+      const strokeColor = areaColor;
 
       const polygon = new Polygon(points, {
         fill: fillColor,
-        stroke: areaColor.replace('rgba', 'rgb').replace(/,\s*[\d.]+\)/, ')'),
+        stroke: strokeColor,
         strokeWidth: 2,
         selectable: true,
         hasControls: false,
@@ -175,7 +182,7 @@ export const useMeasureAreaMode = (
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
     };
-  }, [fabricCanvas, mode, points, scale, areaColor, heightValue, previewLine, previewCircles]);
+  }, [fabricCanvas, mode, points, scale, areaColor, areaOpacity, heightValue, previewLine, previewCircles]);
 
   const deleteMeasurement = (id: string) => {
     const measurement = measurements.find(m => m.id === id);

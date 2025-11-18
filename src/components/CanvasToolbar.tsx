@@ -34,7 +34,9 @@ interface CanvasToolbarProps {
   onMeasureVolume: () => void;
   onErase: () => void;
   areaColor: string;
+  areaOpacity: number;
   onAreaColorChange: (color: string) => void;
+  onAreaOpacityChange: (opacity: number) => void;
   onToggleGrid: () => void;
   onToggleTitleBlock: (show: boolean) => void;
   onLockBackground: (locked: boolean) => void;
@@ -74,7 +76,9 @@ export const CanvasToolbar = ({
   onMeasureVolume,
   onErase,
   areaColor,
+  areaOpacity,
   onAreaColorChange,
+  onAreaOpacityChange,
   onToggleGrid,
   onToggleTitleBlock,
   onLockBackground,
@@ -156,7 +160,9 @@ export const CanvasToolbar = ({
             <PopoverContent>
               <AreaColorPicker 
                 color={areaColor}
+                opacity={areaOpacity}
                 onColorChange={onAreaColorChange}
+                onOpacityChange={onAreaOpacityChange}
               />
             </PopoverContent>
           </Popover>
