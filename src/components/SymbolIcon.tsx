@@ -1,4 +1,5 @@
 import heatPumpImage from "@/assets/heat-pump.png";
+import downlightImage from "@/assets/downlight.png";
 
 interface SymbolIconProps {
   type: string;
@@ -159,6 +160,19 @@ export const SymbolIcon = ({ type, size = 16 }: SymbolIconProps) => {
             fill="none"
           />
         </svg>
+      );
+
+    case "downlight-real":
+      return (
+        <img 
+          src={downlightImage} 
+          alt="Downlight" 
+          style={{ 
+            width: size, 
+            height: size, 
+            objectFit: 'contain' 
+          }} 
+        />
       );
 
     case "heat-pump":

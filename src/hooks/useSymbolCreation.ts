@@ -1,5 +1,6 @@
 import { Circle, Line, Path, Group, FabricObject, FabricText, IText, FabricImage } from "fabric";
 import heatPumpImage from "@/assets/heat-pump.png";
+import downlightImage from "@/assets/downlight.png";
 
 // Cache for the heat pump image element to avoid re-loading
 let HEAT_PUMP_IMG_EL: HTMLImageElement | null = null;
@@ -22,6 +23,29 @@ function loadHeatPumpEl(): Promise<HTMLImageElement> {
     });
   }
   return HEAT_PUMP_IMG_PROMISE;
+}
+
+// Cache for the downlight image element to avoid re-loading
+let DOWNLIGHT_IMG_EL: HTMLImageElement | null = null;
+let DOWNLIGHT_IMG_PROMISE: Promise<HTMLImageElement> | null = null;
+
+function loadDownlightEl(): Promise<HTMLImageElement> {
+  if (DOWNLIGHT_IMG_EL) {
+    return Promise.resolve(DOWNLIGHT_IMG_EL);
+  }
+  if (!DOWNLIGHT_IMG_PROMISE) {
+    DOWNLIGHT_IMG_PROMISE = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        DOWNLIGHT_IMG_EL = img;
+        resolve(img);
+      };
+      img.onerror = reject;
+      img.src = downlightImage;
+    });
+  }
+  return DOWNLIGHT_IMG_PROMISE;
 }
 
 export const useSymbolCreation = (
@@ -398,6 +422,80 @@ export const useSymbolCreation = (
           }
         }).catch((err) => {
           console.error("Failed to load heat pump image:", err);
+        });
+        
+        // Expose readiness to callers (used to avoid top-left jump on add)
+        (group as any).__readyPromise = readyPromise;
+
+        return group;
+      }
+
+      case "downlight-real": {
+        // Create downlight at 150mm width using canvas scale (pxPerMm)
+        const targetWidthMm = 150;
+        const width = targetWidthMm * (pxPerMm || 1);
+
+        const group = new Group([], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
+        });
+        
+        // Only set symbolType for final placement, not preview
+        if (!isPreview) {
+          (group as any).symbolType = type;
+          console.log(`[Downlight] Created FINAL symbol at (${x}, ${y})`);
+        } else {
+          (group as any).isPreview = true;
+          console.log(`[Downlight] Created PREVIEW symbol at (${x}, ${y})`);
+        }
+
+        // Store the original position to maintain it after image loads
+        const originalX = x;
+        const originalY = y;
+
+        // Prepare the image load and attach a readiness promise so callers can await
+        const readyPromise = loadDownlightEl().then((imgEl) => {
+          const img = new FabricImage(imgEl);
+          
+          const naturalW = img.width || imgEl.naturalWidth || 1;
+          const imageScale = width / naturalW;
+          
+          img.set({
+            scaleX: imageScale,
+            scaleY: imageScale,
+            left: 0,
+            top: 0,
+            originX: "center",
+            originY: "center",
+            opacity: transparency,
+          });
+
+          group.add(img);
+          
+          // Restore the original position after adding the image
+          group.set({
+            left: originalX,
+            top: originalY,
+            originX: "center",
+            originY: "center",
+          });
+          
+          // Update group coordinates
+          (group as any)._calcBounds?.();
+          (group as any)._updateObjectsCoords?.();
+          group.setCoords();
+
+          const canvas = group.canvas;
+          if (canvas) {
+            canvas.requestRenderAll();
+            console.log(`[Downlight] Image loaded for ${isPreview ? 'PREVIEW' : 'FINAL'} at (${originalX}, ${originalY})`);
+          }
+        }).catch((err) => {
+          console.error("Failed to load downlight image:", err);
         });
         
         // Expose readiness to callers (used to avoid top-left jump on add)
