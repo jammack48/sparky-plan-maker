@@ -227,11 +227,11 @@ export const MobileToolbar = ({
         </div>
       )}
       
-      {/* Symbols Dropdown */}
+      {/* Mark Up Dropdown - Symbols + Area/Volume */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={mode === "place-symbol" ? "default" : "outline"} size="sm" className="shrink-0">
-            {getSymbolDisplayName()} <ChevronDown className="ml-1 h-3 w-3" />
+          <Button variant={mode === "place-symbol" || mode === "measure-area" || mode === "measure-volume" ? "default" : "outline"} size="sm" className="shrink-0">
+            Mark Up <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="z-50 w-64 max-h-[60vh] overflow-y-auto bg-background">
@@ -260,6 +260,30 @@ export const MobileToolbar = ({
               </AccordionItem>
             ))}
           </Accordion>
+          
+          <div className="border-t mt-2 pt-2 px-2">
+            <div className="space-y-2">
+              <DropdownMenuItem onClick={onMeasureArea} disabled={!scale}>
+                <Square className="mr-2 h-4 w-4" />
+                <span>Measure Area</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onMeasureVolume} disabled={!scale}>
+                <Box className="mr-2 h-4 w-4" />
+                <span>Measure Volume</span>
+              </DropdownMenuItem>
+            </div>
+            
+            {/* Color Bar */}
+            <div className="mt-3 pt-3 border-t">
+              <Label className="text-xs mb-2 block">Fill Color</Label>
+              <input
+                type="color"
+                value={areaColor}
+                onChange={(e) => onAreaColorChange(e.target.value)}
+                className="w-full h-8 rounded border cursor-pointer bg-background"
+              />
+            </div>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -294,11 +318,11 @@ export const MobileToolbar = ({
         <Redo2 className="h-4 w-4" />
       </Button>
 
-      {/* Tools Dropdown */}
+      {/* Selections Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="shrink-0">
-            {getToolDisplayName()} <ChevronDown className="ml-1 h-3 w-3" />
+            Selections <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="z-50 w-48 bg-background">
@@ -317,14 +341,6 @@ export const MobileToolbar = ({
           <DropdownMenuItem onClick={onMeasure}>
             {mode === "measure" ? <X className="mr-2 h-4 w-4" /> : <Ruler className="mr-2 h-4 w-4" />}
             <span>{mode === "measure" ? "Cancel Measure" : "Measure"}</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onMeasureArea} disabled={!scale}>
-            <Square className="mr-2 h-4 w-4" />
-            <span>Measure Area</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onMeasureVolume} disabled={!scale}>
-            <Box className="mr-2 h-4 w-4" />
-            <span>Measure Volume</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onErase}>
             <Eraser className="mr-2 h-4 w-4" />

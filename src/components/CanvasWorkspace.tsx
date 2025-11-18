@@ -1143,6 +1143,9 @@ export const CanvasWorkspace = ({
           zoomLevel={zoom}
           undoStackLength={undoStack.length}
           redoStackLength={redoStack.length}
+          symbolCategories={symbolCategories}
+          selectedSymbol={selectedSymbol}
+          onSymbolSelect={onSymbolSelect || (() => {})}
           onSelect={handleSelectMode}
           onMove={handleMoveMode}
           onCrop={() => handleModeChange("crop")}
