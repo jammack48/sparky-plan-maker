@@ -17,8 +17,24 @@ export const useEraseMode = (
   const flattenEraseRect = async (rect: Rect) => {
     if (!fabricCanvas) return;
     
-    const bg = fabricCanvas.backgroundImage as FabricImage;
-    if (!bg) return;
+    // Support both Fabric backgroundImage and our tagged background image object
+    let bg = (fabricCanvas.backgroundImage as FabricImage | null) ?? null;
+
+    if (!bg) {
+      const bgObj = fabricCanvas
+        .getObjects()
+        .find((obj: any) => (obj as any).isBackgroundImage) as FabricImage | undefined;
+      if (bgObj) {
+        bg = bgObj;
+      }
+    }
+
+    if (!bg) {
+      // No background image found - just clean up the rectangle so it doesn't stay on screen
+      fabricCanvas.remove(rect);
+      fabricCanvas.renderAll();
+      return;
+    }
     
     const offCanvas = document.createElement('canvas');
     const bgWidth = bg.width ?? 0;
@@ -46,14 +62,30 @@ export const useEraseMode = (
     
     const newDataUrl = offCanvas.toDataURL('image/png');
     const newImg = await FabricImage.fromURL(newDataUrl);
+
+    // Copy positioning and interaction properties from the existing background image
     newImg.set({
       scaleX: bgScaleX,
       scaleY: bgScaleY,
       left: bgLeft,
       top: bgTop,
+      selectable: (bg as any).selectable,
+      evented: (bg as any).evented,
+      hasControls: (bg as any).hasControls,
+      objectCaching: (bg as any).objectCaching,
+      hoverCursor: (bg as any).hoverCursor,
+      moveCursor: (bg as any).moveCursor,
     });
-    
-    fabricCanvas.backgroundImage = newImg;
+    (newImg as any).isBackgroundImage = (bg as any).isBackgroundImage;
+
+    // Replace the old background image with the new one and keep it at the back
+    if (fabricCanvas.backgroundImage === bg) {
+      fabricCanvas.backgroundImage = newImg;
+    }
+    fabricCanvas.remove(bg);
+    fabricCanvas.add(newImg);
+    (fabricCanvas as any).sendToBack?.(newImg);
+
     fabricCanvas.remove(rect);
     fabricCanvas.renderAll();
     onSaveState();
