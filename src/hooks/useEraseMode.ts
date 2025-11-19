@@ -146,10 +146,13 @@ export const useEraseMode = (
         opacity: 1,
       });
       
-      await flattenEraseRect(eraseRect);
-      
+      // Store reference before clearing state
+      const rectToFlatten = eraseRect;
       setEraseStart(null);
       setEraseRect(null);
+      
+      // Flatten and remove the rectangle
+      await flattenEraseRect(rectToFlatten);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {

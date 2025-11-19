@@ -368,17 +368,19 @@ const Index = () => {
             <Button
               variant="secondary"
               onClick={handleUseTemplate}
+              className="active:scale-95 transition-transform"
             >
               Template 1 (Blank)
             </Button>
             <Button
               variant="secondary"
               onClick={handleUseTemplate2}
+              className="active:scale-95 transition-transform"
             >
               Template 2 (Floor Plan)
             </Button>
             <Button variant="outline" asChild>
-              <label className="cursor-pointer">
+              <label className="cursor-pointer active:scale-95 transition-transform inline-flex items-center justify-center">
                 <input
                   type="file"
                   accept="image/*"
