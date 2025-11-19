@@ -368,14 +368,14 @@ const Index = () => {
             <Button
               variant="secondary"
               onClick={handleUseTemplate}
-              className="active:scale-95 transition-transform"
+              className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
             >
               Template 1 (Blank)
             </Button>
             <Button
               variant="secondary"
               onClick={handleUseTemplate2}
-              className="active:scale-95 transition-transform"
+              className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
             >
               Template 2 (Floor Plan)
             </Button>
