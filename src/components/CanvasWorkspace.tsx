@@ -185,16 +185,9 @@ export const CanvasWorkspace = ({
   useEffect(() => {
     if (!fabricCanvas || !imageUrl) return;
 
-    // Skip loading background if we're restoring from saved data
+    // If we're in the middle of restoring a saved canvas, don't touch the background
     if (isRestoringFromSave) {
-      return;
-    }
-
-    try {
-      fabricCanvas.clear();
-      fabricCanvas.backgroundColor = "#ffffff";
-    } catch (e) {
-      console.error("Canvas clear error:", e);
+      console.info("[CanvasWorkspace] Skipping background load during restore");
       return;
     }
 
