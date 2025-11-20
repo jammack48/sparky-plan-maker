@@ -17,6 +17,7 @@ interface HomeScreenProps {
 
 export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject, onDeleteProject }: HomeScreenProps) => {
   const [showNameDialog, setShowNameDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [projectName, setProjectName] = useState("");
 
   const handleNewProject = () => {
@@ -54,11 +55,9 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
             size="lg" 
             variant="secondary"
             className="w-full h-16 text-lg"
-            disabled
-            title="Coming Soon"
+            onClick={() => setShowLoadDialog(true)}
           >
             Load Project
-            <span className="ml-2 text-xs opacity-70">(Coming Soon)</span>
           </Button>
 
           <Button 
@@ -142,6 +141,57 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
             </Button>
             <Button onClick={handleConfirmName}>
               Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showLoadDialog} onOpenChange={setShowLoadDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Load Project</DialogTitle>
+            <DialogDescription>
+              Select a project to load
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 max-h-96 overflow-y-auto">
+            {savedProjects.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No saved projects</p>
+            ) : (
+              <div className="space-y-2">
+                {savedProjects.map((project) => (
+                  <Card key={project.id} className="p-4 hover:bg-accent transition-colors cursor-pointer">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1" onClick={() => {
+                        setShowLoadDialog(false);
+                        onLoadProject(project.id);
+                      }}>
+                        <h3 className="font-semibold text-foreground">{project.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Updated {new Date(project.updated_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Delete project "${project.name}"?`)) {
+                            onDeleteProject(project.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLoadDialog(false)}>
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

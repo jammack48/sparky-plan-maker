@@ -34,6 +34,7 @@ const Index = () => {
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [savedProjects, setSavedProjects] = useState<ProjectMetadata[]>([]);
   const canvasRef = useRef<FabricCanvas | null>(null);
+  const [pendingCanvasData, setPendingCanvasData] = useState<any>(null);
 
   const [pdfPages, setPdfPages] = useState<string[]>([]);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
@@ -110,7 +111,7 @@ const Index = () => {
     }
 
     try {
-      // Get canvas JSON - Fabric.js v6 uses toObject() for serialization
+      // Get canvas JSON
       const canvasJson = canvasRef.current.toObject();
 
       const { data, error } = await saveProject(
@@ -142,8 +143,9 @@ const Index = () => {
       }
 
       if (data) {
+        const isUpdate = currentProjectId !== null;
         setCurrentProjectId(data.id);
-        toast.success(`Project "${projectName}" saved!`);
+        toast.success(isUpdate ? `Project "${projectName}" updated!` : `Project "${projectName}" saved!`);
         loadSavedProjects();
       }
     } catch (error) {
@@ -181,6 +183,11 @@ const Index = () => {
         setPdfPages([data.background_image_url]);
         setSelectedPages([0]);
         setCurrentPageIndex(0);
+      }
+      
+      // Store canvas data to restore after canvas is ready
+      if (data.canvas_json) {
+        setPendingCanvasData(data.canvas_json);
       }
       
       // Navigate to canvas
@@ -667,7 +674,23 @@ const Index = () => {
             symbolCategories={symbolCategories}
             onScaleChange={setCanvasScale}
             onZoomChange={setCanvasZoom}
-            onCanvasReady={(canvas) => { canvasRef.current = canvas; }}
+            onCanvasReady={(canvas) => { 
+              canvasRef.current = canvas;
+              
+              // Restore pending canvas data if any
+              if (pendingCanvasData) {
+                try {
+                  canvas.loadFromJSON(pendingCanvasData, () => {
+                    canvas.renderAll();
+                    toast.success("Canvas restored");
+                  });
+                  setPendingCanvasData(null);
+                } catch (error) {
+                  console.error("Error restoring canvas:", error);
+                  toast.error("Failed to restore canvas content");
+                }
+              }
+            }}
           />
         </main>
 
