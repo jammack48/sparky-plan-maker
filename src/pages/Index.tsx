@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
-import { Home, RotateCcw } from "lucide-react";
+import { Home, RotateCcw, Save, FolderOpen } from "lucide-react";
 import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { HomeScreen } from "@/components/HomeScreen";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOL_CATEGORIES, SymbolCategory } from "@/components/SymbolToolbar";
-
 import { SymbolStyleControls } from "@/components/SymbolStyleControls";
 import { Button } from "@/components/ui/button";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
 import { PageSetup, DEFAULT_PAGE_SETUP } from "@/types/pageSetup";
 import { toast } from "sonner";
+import { saveProject, loadProject, listProjects, ProjectMetadata } from "@/lib/supabaseService";
+import type { Canvas as FabricCanvas } from "fabric";
 
 // Set worker for PDF.js (Vite)
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
@@ -28,6 +29,11 @@ const Index = () => {
     const saved = localStorage.getItem('tradesketch-project-name');
     return saved || 'Untitled Project';
   });
+
+  // Project state
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [savedProjects, setSavedProjects] = useState<ProjectMetadata[]>([]);
+  const canvasRef = useRef<FabricCanvas | null>(null);
 
   const [pdfPages, setPdfPages] = useState<string[]>([]);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
@@ -80,6 +86,114 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem('tradesketch-project-name', projectName);
   }, [projectName]);
+
+  // Load saved projects on mount
+  useEffect(() => {
+    loadSavedProjects();
+  }, []);
+
+  const loadSavedProjects = async () => {
+    const { data, error } = await listProjects();
+    if (error) {
+      console.error("Error loading projects:", error);
+      return;
+    }
+    if (data) {
+      setSavedProjects(data);
+    }
+  };
+
+  const handleSaveProject = async () => {
+    if (!canvasRef.current) {
+      toast.error("No canvas to save");
+      return;
+    }
+
+    try {
+      // Get canvas JSON - Fabric.js v6 uses toObject() for serialization
+      const canvasJson = canvasRef.current.toObject();
+
+      const { data, error } = await saveProject(
+        {
+          name: projectName,
+          canvas_json: canvasJson,
+          current_page_index: currentPageIndex,
+          scale: canvasScale,
+          grid_size: null,
+          grid_color: null,
+          grid_thickness: null,
+          grid_opacity: null,
+          show_grid: false,
+          page_setup: pageSetup,
+          show_title_block: showTitleBlock,
+          symbol_settings: symbolSettings,
+          symbol_categories: symbolCategories,
+          background_image_url: pdfPages[selectedPages[currentPageIndex]],
+          original_file_name: null,
+          original_file_type: 'image',
+        },
+        currentProjectId || undefined
+      );
+
+      if (error) {
+        toast.error("Failed to save project");
+        console.error(error);
+        return;
+      }
+
+      if (data) {
+        setCurrentProjectId(data.id);
+        toast.success(`Project "${projectName}" saved!`);
+        loadSavedProjects();
+      }
+    } catch (error) {
+      toast.error("Failed to save project");
+      console.error(error);
+    }
+  };
+
+  const handleLoadProject = async (projectId: string) => {
+    const { data, error } = await loadProject(projectId);
+    
+    if (error || !data) {
+      toast.error("Failed to load project");
+      console.error(error);
+      return;
+    }
+
+    try {
+      // Restore project state
+      setProjectName(data.name);
+      setCurrentProjectId(data.id);
+      
+      if (data.page_setup) {
+        setPageSetup(data.page_setup);
+      }
+      setShowTitleBlock(data.show_title_block);
+      
+      if (data.symbol_settings) {
+        setSymbolSettings(data.symbol_settings);
+      }
+      if (data.symbol_categories) {
+        setSymbolCategories(data.symbol_categories);
+      }
+      
+      // Load background image
+      if (data.background_image_url) {
+        setPdfPages([data.background_image_url]);
+        setSelectedPages([0]);
+        setCurrentPageIndex(0);
+      }
+      
+      // Navigate to canvas
+      setAppScreen('canvas');
+      
+      toast.success(`Loaded project "${data.name}"`);
+    } catch (error) {
+      toast.error("Failed to restore project");
+      console.error(error);
+    }
+  };
 
   const handleUseTemplate = () => {
     // Reset symbol counts when starting a new template
@@ -341,11 +455,25 @@ const Index = () => {
       <HomeScreen 
         onNewProject={(name) => {
           setProjectName(name);
+          setCurrentProjectId(null);
           setAppScreen('template');
         }}
         onSkip={() => {
           setProjectName('Untitled Project');
+          setCurrentProjectId(null);
           setAppScreen('template');
+        }}
+        savedProjects={savedProjects}
+        onLoadProject={handleLoadProject}
+        onDeleteProject={async (projectId) => {
+          const { deleteProject } = await import('@/lib/supabaseService');
+          const { error } = await deleteProject(projectId);
+          if (error) {
+            toast.error("Failed to delete project");
+          } else {
+            toast.success("Project deleted");
+            loadSavedProjects();
+          }
         }}
       />
     );
@@ -448,6 +576,15 @@ const Index = () => {
             <Button
               variant="outline"
               size="sm"
+              onClick={handleSaveProject}
+              className="text-xs px-2 py-1 h-7"
+              title="Save Project"
+            >
+              <Save className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 if (window.confirm("Go back to home? You'll lose any unsaved work.")) {
                   setAppScreen('home');
@@ -455,6 +592,7 @@ const Index = () => {
                   setPdfPages([]);
                   setCurrentPageIndex(0);
                   setSymbolCategories(DEFAULT_SYMBOL_CATEGORIES);
+                  setCurrentProjectId(null);
                 }
               }}
               className="text-xs px-2 py-1 h-7"
@@ -532,6 +670,7 @@ const Index = () => {
             symbolCategories={symbolCategories}
             onScaleChange={setCanvasScale}
             onZoomChange={setCanvasZoom}
+            onCanvasReady={(canvas) => { canvasRef.current = canvas; }}
           />
         </main>
 

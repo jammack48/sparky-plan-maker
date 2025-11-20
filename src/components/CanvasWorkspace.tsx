@@ -36,6 +36,7 @@ export interface CanvasWorkspaceProps {
   symbolCategories?: { name: string; symbols: { id: string; name: string }[] }[];
   onScaleChange?: (scale: number | null) => void;
   onZoomChange?: (zoom: number) => void;
+  onCanvasReady?: (canvas: FabricCanvas) => void;
 }
 
 export const CanvasWorkspace = ({
@@ -57,6 +58,7 @@ export const CanvasWorkspace = ({
   symbolCategories = [],
   onScaleChange,
   onZoomChange,
+  onCanvasReady,
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -143,6 +145,11 @@ export const CanvasWorkspace = ({
       }
 
       setFabricCanvas(canvas);
+      
+      // Notify parent that canvas is ready
+      if (onCanvasReady) {
+        onCanvasReady(canvas);
+      }
 
     const handleResize = () => {
       if (!containerRef.current) return;

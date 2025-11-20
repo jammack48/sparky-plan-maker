@@ -14,7 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      projects: {
+        Row: {
+          background_image_url: string | null
+          canvas_json: Json
+          created_at: string | null
+          current_page_index: number | null
+          grid_color: string | null
+          grid_opacity: number | null
+          grid_size: string | null
+          grid_thickness: number | null
+          id: string
+          name: string
+          original_file_name: string | null
+          original_file_type: string | null
+          page_setup: Json | null
+          scale: number | null
+          show_grid: boolean | null
+          show_title_block: boolean | null
+          symbol_categories: Json | null
+          symbol_settings: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          background_image_url?: string | null
+          canvas_json: Json
+          created_at?: string | null
+          current_page_index?: number | null
+          grid_color?: string | null
+          grid_opacity?: number | null
+          grid_size?: string | null
+          grid_thickness?: number | null
+          id?: string
+          name: string
+          original_file_name?: string | null
+          original_file_type?: string | null
+          page_setup?: Json | null
+          scale?: number | null
+          show_grid?: boolean | null
+          show_title_block?: boolean | null
+          symbol_categories?: Json | null
+          symbol_settings?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          background_image_url?: string | null
+          canvas_json?: Json
+          created_at?: string | null
+          current_page_index?: number | null
+          grid_color?: string | null
+          grid_opacity?: number | null
+          grid_size?: string | null
+          grid_thickness?: number | null
+          id?: string
+          name?: string
+          original_file_name?: string | null
+          original_file_type?: string | null
+          page_setup?: Json | null
+          scale?: number | null
+          show_grid?: boolean | null
+          show_title_block?: boolean | null
+          symbol_categories?: Json | null
+          symbol_settings?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

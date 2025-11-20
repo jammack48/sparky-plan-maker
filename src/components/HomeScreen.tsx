@@ -2,14 +2,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
+import { ProjectMetadata } from "@/lib/supabaseService";
+import { toast } from "sonner";
 
 interface HomeScreenProps {
   onNewProject: (projectName: string) => void;
   onSkip: () => void;
+  savedProjects: ProjectMetadata[];
+  onLoadProject: (projectId: string) => void;
+  onDeleteProject: (projectId: string) => void;
 }
 
-export const HomeScreen = ({ onNewProject, onSkip }: HomeScreenProps) => {
+export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject, onDeleteProject }: HomeScreenProps) => {
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [projectName, setProjectName] = useState("");
 
@@ -68,6 +75,45 @@ export const HomeScreen = ({ onNewProject, onSkip }: HomeScreenProps) => {
         <p className="text-center text-sm text-muted-foreground mt-8">
           Create precise technical drawings and floor plans with professional tools
         </p>
+
+        {savedProjects.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-foreground mb-4">Recent Projects</h2>
+            <div className="grid gap-3">
+              {savedProjects.map((project) => (
+                <Card key={project.id} className="p-4 hover:bg-accent transition-colors">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">{project.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Updated {new Date(project.updated_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => onLoadProject(project.id)}
+                      >
+                        Load
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (window.confirm(`Delete project "${project.name}"?`)) {
+                            onDeleteProject(project.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <Dialog open={showNameDialog} onOpenChange={setShowNameDialog}>
