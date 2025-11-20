@@ -278,7 +278,7 @@ export const CanvasWorkspace = ({
       saveCanvasState();
     };
     img.src = imageUrl;
-  }, [fabricCanvas, imageUrl, isRestoringFromSave]); // Remove lockBackground from deps to prevent clearing canvas
+  }, [fabricCanvas, imageUrl]); // Remove lockBackground from deps to prevent clearing canvas
 
   // Update background lock state without recreating the entire canvas
   useEffect(() => {
