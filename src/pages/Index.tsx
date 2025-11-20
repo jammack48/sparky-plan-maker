@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
 import { PageSetup, DEFAULT_PAGE_SETUP } from "@/types/pageSetup";
 import { toast } from "sonner";
-import { saveProject, loadProject, listProjects, ProjectMetadata } from "@/lib/supabaseService";
+import { saveProject, loadProject, listProjects, deleteProject, ProjectMetadata } from "@/lib/supabaseService";
 import type { Canvas as FabricCanvas } from "fabric";
 
 // Set worker for PDF.js (Vite)
@@ -127,7 +127,7 @@ const Index = () => {
           page_setup: pageSetup,
           show_title_block: showTitleBlock,
           symbol_settings: symbolSettings,
-          symbol_categories: symbolCategories,
+          symbol_categories: null, // Don't save React elements
           background_image_url: pdfPages[selectedPages[currentPageIndex]],
           original_file_name: null,
           original_file_type: 'image',
@@ -174,9 +174,7 @@ const Index = () => {
       if (data.symbol_settings) {
         setSymbolSettings(data.symbol_settings);
       }
-      if (data.symbol_categories) {
-        setSymbolCategories(data.symbol_categories);
-      }
+      // Don't load symbol_categories - use default categories and update counts from symbol_settings
       
       // Load background image
       if (data.background_image_url) {
@@ -466,7 +464,6 @@ const Index = () => {
         savedProjects={savedProjects}
         onLoadProject={handleLoadProject}
         onDeleteProject={async (projectId) => {
-          const { deleteProject } = await import('@/lib/supabaseService');
           const { error } = await deleteProject(projectId);
           if (error) {
             toast.error("Failed to delete project");
