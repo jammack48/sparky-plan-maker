@@ -112,7 +112,7 @@ const Index = () => {
 
     try {
       // Get canvas JSON
-      const canvasJson = canvasRef.current.toObject();
+      const canvasJson = canvasRef.current.toJSON();
 
       const { data, error } = await saveProject(
         {
