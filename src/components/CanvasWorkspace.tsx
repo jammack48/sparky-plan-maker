@@ -37,7 +37,6 @@ export interface CanvasWorkspaceProps {
   onScaleChange?: (scale: number | null) => void;
   onZoomChange?: (zoom: number) => void;
   onCanvasReady?: (canvas: FabricCanvas, setIsRestoring: (val: boolean) => void) => void;
-  skipInitialBackground?: boolean;
 }
 
 export const CanvasWorkspace = ({
@@ -995,22 +994,9 @@ export const CanvasWorkspace = ({
 
   const handleModeChange = (newMode: "crop" | "measure" | "erase") => {
     if (mode === newMode) {
-      // Toggle off - return to select mode
       setMode("select");
-      if (fabricCanvas) {
-        fabricCanvas.discardActiveObject();
-        fabricCanvas.renderAll();
-      }
     } else {
-      // Switch to new mode - clear any selections
       setMode(newMode);
-      if (fabricCanvas) {
-        fabricCanvas.discardActiveObject();
-        fabricCanvas.renderAll();
-      }
-      if (onSymbolDeselect) {
-        onSymbolDeselect();
-      }
     }
   };
 
