@@ -131,15 +131,16 @@ export const useEraseMode = (
         const areaRatio = targetArea / canvasArea;
         
         if (areaRatio > 0.5) {
-          console.log("[Erase] Ignoring large object (likely background):", areaRatio);
-          return; // Don't delete large objects
+          // Treat very large objects as background: don't delete, but allow
+          // the rectangle erase to start so the user can erase a region
+          console.info("[Erase] Treating large object as background for rectangle erase:", areaRatio);
+        } else {
+          // Delete the symbol immediately
+          fabricCanvas.remove(target);
+          fabricCanvas.renderAll();
+          onSaveState();
+          return; // Don't start rectangle erase
         }
-        
-        // Delete the symbol immediately
-        fabricCanvas.remove(target);
-        fabricCanvas.renderAll();
-        onSaveState();
-        return; // Don't start rectangle erase
       }
 
       const pointer = fabricCanvas.getPointer(opt.e);
