@@ -37,6 +37,7 @@ export interface CanvasWorkspaceProps {
   onScaleChange?: (scale: number | null) => void;
   onZoomChange?: (zoom: number) => void;
   onCanvasReady?: (canvas: FabricCanvas, setIsRestoring: (val: boolean) => void) => void;
+  skipInitialBackground?: boolean;
 }
 
 export const CanvasWorkspace = ({
