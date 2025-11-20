@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
 import { ProjectMetadata } from "@/lib/supabaseService";
-import { toast } from "sonner";
 
 interface HomeScreenProps {
   onNewProject: (projectName: string) => void;
