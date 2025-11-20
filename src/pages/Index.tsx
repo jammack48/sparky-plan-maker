@@ -178,16 +178,19 @@ const Index = () => {
       }
       // Don't load symbol_categories - use default categories and update counts from symbol_settings
       
-      // Load background image
-      if (data.background_image_url) {
+      // Prepare background / pages
+      if (data.canvas_json) {
+        // When we have a full saved canvas, don't reload the background image separately
+        // Just provide an empty page so imageUrl is blank and the restored JSON is the source of truth
+        setPdfPages([""]);
+        setSelectedPages([0]);
+        setCurrentPageIndex(data.current_page_index ?? 0);
+        setPendingCanvasData(data.canvas_json);
+      } else if (data.background_image_url) {
+        // Legacy / fallback case: no canvas JSON yet, use the raw background image
         setPdfPages([data.background_image_url]);
         setSelectedPages([0]);
         setCurrentPageIndex(0);
-      }
-      
-      // Store canvas data to restore after canvas is ready
-      if (data.canvas_json) {
-        setPendingCanvasData(data.canvas_json);
       }
       
       // Navigate to canvas
@@ -199,7 +202,6 @@ const Index = () => {
       console.error(error);
     }
   };
-
   const handleUseTemplate = () => {
     // Reset symbol counts when starting a new template
     setSymbolCategories((prev) => prev.map(cat => ({
