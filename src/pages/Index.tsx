@@ -674,20 +674,23 @@ const Index = () => {
             symbolCategories={symbolCategories}
             onScaleChange={setCanvasScale}
             onZoomChange={setCanvasZoom}
-            onCanvasReady={(canvas) => { 
+            onCanvasReady={(canvas, setIsRestoring) => { 
               canvasRef.current = canvas;
               
               // Restore pending canvas data if any
               if (pendingCanvasData) {
                 try {
+                  setIsRestoring(true);
                   canvas.loadFromJSON(pendingCanvasData, () => {
                     canvas.renderAll();
+                    setIsRestoring(false);
                     toast.success("Canvas restored");
                   });
                   setPendingCanvasData(null);
                 } catch (error) {
                   console.error("Error restoring canvas:", error);
                   toast.error("Failed to restore canvas content");
+                  setIsRestoring(false);
                 }
               }
             }}

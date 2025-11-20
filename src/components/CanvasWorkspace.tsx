@@ -36,7 +36,7 @@ export interface CanvasWorkspaceProps {
   symbolCategories?: { name: string; symbols: { id: string; name: string }[] }[];
   onScaleChange?: (scale: number | null) => void;
   onZoomChange?: (zoom: number) => void;
-  onCanvasReady?: (canvas: FabricCanvas) => void;
+  onCanvasReady?: (canvas: FabricCanvas, setIsRestoring: (val: boolean) => void) => void;
 }
 
 export const CanvasWorkspace = ({
@@ -99,6 +99,7 @@ export const CanvasWorkspace = ({
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [originalImageSize, setOriginalImageSize] = useState({ width: 0, height: 0 });
   const [lockBackground, setLockBackground] = useState(true); // Lock background by default
+  const [isRestoringFromSave, setIsRestoringFromSave] = useState(false);
   const titleBlockGroupRef = useRef<Group | null>(null);
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale, scale ?? 1);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
@@ -148,7 +149,7 @@ export const CanvasWorkspace = ({
       
       // Notify parent that canvas is ready
       if (onCanvasReady) {
-        onCanvasReady(canvas);
+        onCanvasReady(canvas, setIsRestoringFromSave);
       }
 
     const handleResize = () => {
@@ -183,6 +184,11 @@ export const CanvasWorkspace = ({
 
   useEffect(() => {
     if (!fabricCanvas || !imageUrl) return;
+
+    // Skip loading background if we're restoring from saved data
+    if (isRestoringFromSave) {
+      return;
+    }
 
     try {
       fabricCanvas.clear();
@@ -272,7 +278,7 @@ export const CanvasWorkspace = ({
       saveCanvasState();
     };
     img.src = imageUrl;
-  }, [fabricCanvas, imageUrl]); // Remove lockBackground from deps to prevent clearing canvas
+  }, [fabricCanvas, imageUrl, isRestoringFromSave]); // Remove lockBackground from deps to prevent clearing canvas
 
   // Update background lock state without recreating the entire canvas
   useEffect(() => {
