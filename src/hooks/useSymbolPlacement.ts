@@ -76,8 +76,8 @@ export const useSymbolPlacement = (
     };
 
     const handleMouseDown = async (opt: any) => {
-      // If clicking on an existing object/selection, don't place; let Fabric move/select
-      if (opt.target && !(opt.target as any).isPreview) {
+      // If clicking on an existing non-background object/selection, don't place; let Fabric move/select
+      if (opt.target && !(opt.target as any).isPreview && !(opt.target as any).isBackgroundImage) {
         return;
       }
       if (opt.e.button !== 0 && opt.e.type !== 'touchstart') return;
@@ -200,6 +200,9 @@ export const useSymbolPlacement = (
         fabricCanvas.off("mouse:move", handleMouseMove);
         fabricCanvas.off("mouse:down", handleMouseDown);
         fabricCanvas.off("mouse:move", handleTouchMove);
+        // Restore normal selection when leaving symbol placement mode
+        fabricCanvas.selection = true;
+        fabricCanvas.requestRenderAll();
       }
     };
   }, [fabricCanvas, mode, selectedSymbol, showGrid, scale, bgScale, gridSize, createSymbol, onSymbolPlaced, onSymbolDeselect, onSaveState, setMode]);
