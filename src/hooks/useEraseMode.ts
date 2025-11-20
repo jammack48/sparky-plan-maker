@@ -92,10 +92,21 @@ export const useEraseMode = (
   };
 
   useEffect(() => {
-    if (!fabricCanvas || mode !== "erase") return;
+    if (!fabricCanvas || mode !== "erase") {
+      // When leaving erase mode, restore normal selection
+      if (fabricCanvas && mode !== "erase") {
+        fabricCanvas.selection = true;
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.renderAll();
+      }
+      return;
+    }
 
+    // Clear any active selections when entering erase mode
+    fabricCanvas.discardActiveObject();
     fabricCanvas.selection = false;
     fabricCanvas.defaultCursor = "crosshair";
+    fabricCanvas.renderAll();
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e;
@@ -104,7 +115,26 @@ export const useEraseMode = (
 
       // Check if clicking on a symbol/object (not background)
       const target = opt.target;
+      
+      // Don't delete background images or very large objects (likely the floorplan)
       if (target && !(target as any).isBackgroundImage) {
+        // Additional safety: Don't delete objects that are very large relative to canvas
+        // (they're likely the background floorplan)
+        const canvasWidth = fabricCanvas.getWidth();
+        const canvasHeight = fabricCanvas.getHeight();
+        const targetWidth = (target.width ?? 0) * (target.scaleX ?? 1);
+        const targetHeight = (target.height ?? 0) * (target.scaleY ?? 1);
+        
+        // If object takes up more than 50% of canvas area, treat it as background
+        const canvasArea = canvasWidth * canvasHeight;
+        const targetArea = targetWidth * targetHeight;
+        const areaRatio = targetArea / canvasArea;
+        
+        if (areaRatio > 0.5) {
+          console.log("[Erase] Ignoring large object (likely background):", areaRatio);
+          return; // Don't delete large objects
+        }
+        
         // Delete the symbol immediately
         fabricCanvas.remove(target);
         fabricCanvas.renderAll();
