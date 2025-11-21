@@ -10,6 +10,7 @@ import { SymbolToolbar, DEFAULT_SYMBOL_CATEGORIES, SymbolCategory } from "@/comp
 import { SymbolStyleControls } from "@/components/SymbolStyleControls";
 import { Button } from "@/components/ui/button";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
+import { ProjectNameDialog } from "@/components/ProjectNameDialog";
 import { PageSetup, DEFAULT_PAGE_SETUP } from "@/types/pageSetup";
 import { toast } from "sonner";
 import { saveProject, loadProject, listProjects, deleteProject, ProjectMetadata } from "@/lib/supabaseService";
@@ -72,6 +73,9 @@ const Index = () => {
     const saved = localStorage.getItem('tradesketch-show-title-block');
     return saved ? JSON.parse(saved) : true;
   });
+  
+  // Project naming dialog state
+  const [isProjectNameDialogOpen, setIsProjectNameDialogOpen] = useState(false);
 
   // Save page setup to localStorage when it changes
   useEffect(() => {
@@ -109,6 +113,18 @@ const Index = () => {
       toast.error("No canvas to save");
       return;
     }
+
+    // Check if project needs a name
+    if (projectName === 'Untitled Project' || !projectName.trim()) {
+      setIsProjectNameDialogOpen(true);
+      return;
+    }
+
+    await performSave();
+  };
+
+  const performSave = async () => {
+    if (!canvasRef.current) return;
 
     try {
       // Get canvas JSON
@@ -152,6 +168,13 @@ const Index = () => {
       toast.error("Failed to save project");
       console.error(error);
     }
+  };
+
+  const handleProjectNameSave = (name: string) => {
+    setProjectName(name);
+    localStorage.setItem('tradesketch-project-name', name);
+    // Save will happen after state update
+    setTimeout(() => performSave(), 100);
   };
 
   const handleLoadProject = async (projectId: string) => {
@@ -734,6 +757,13 @@ const Index = () => {
         onOpenChange={setShowPageSetupDialog}
         pageSetup={pageSetup}
         onSave={handlePageSetupSave}
+      />
+      
+      <ProjectNameDialog
+        open={isProjectNameDialogOpen}
+        onOpenChange={setIsProjectNameDialogOpen}
+        currentName={projectName}
+        onSave={handleProjectNameSave}
       />
     </div>
   );
