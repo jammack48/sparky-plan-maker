@@ -17,7 +17,9 @@ export const useEraseMode = (
   const flattenEraseRect = async (rect: Rect) => {
     if (!fabricCanvas) return;
     
-    // Support both Fabric backgroundImage and our tagged background image object
+    console.info('[Erase] flattenEraseRect called');
+    
+    // Find the background image object
     let bg = (fabricCanvas.backgroundImage as FabricImage | null) ?? null;
 
     if (!bg) {
@@ -30,15 +32,43 @@ export const useEraseMode = (
     }
 
     if (!bg) {
-      // No background image found - just clean up the rectangle so it doesn't stay on screen
+      console.warn('[Erase] No background image found');
       fabricCanvas.remove(rect);
       fabricCanvas.renderAll();
       return;
     }
-    
-    const offCanvas = document.createElement('canvas');
+
+    // Guard: check for invalid dimensions
     const bgWidth = bg.width ?? 0;
     const bgHeight = bg.height ?? 0;
+    const bgScaledWidth = bg.getScaledWidth();
+    const bgScaledHeight = bg.getScaledHeight();
+
+    if (bgWidth <= 0 || bgHeight <= 0 || bgScaledWidth <= 0 || bgScaledHeight <= 0) {
+      console.error('[Erase] Invalid background dimensions', {
+        bgWidth,
+        bgHeight,
+        bgScaledWidth,
+        bgScaledHeight
+      });
+      fabricCanvas.remove(rect);
+      fabricCanvas.renderAll();
+      return;
+    }
+
+    console.info('[Erase] Background dimensions OK', {
+      bgWidth,
+      bgHeight,
+      bgScaledWidth,
+      bgScaledHeight,
+      rectLeft: rect.left,
+      rectTop: rect.top,
+      rectWidth: rect.width,
+      rectHeight: rect.height
+    });
+    
+    // Create offscreen canvas with the background image
+    const offCanvas = document.createElement('canvas');
     offCanvas.width = bgWidth;
     offCanvas.height = bgHeight;
     const ctx = offCanvas.getContext('2d');
@@ -52,43 +82,36 @@ export const useEraseMode = (
     const bgScaleX = bg.scaleX ?? 1;
     const bgScaleY = bg.scaleY ?? 1;
     
+    // Calculate erase region in background image coordinates
     const x = Math.max(0, Math.round((rect.left! - bgLeft) / bgScaleX));
     const y = Math.max(0, Math.round((rect.top! - bgTop) / bgScaleY));
     const w = Math.max(0, Math.round((rect.width! * (rect.scaleX ?? 1)) / bgScaleX));
     const h = Math.max(0, Math.round((rect.height! * (rect.scaleY ?? 1)) / bgScaleY));
     
+    // Fill erase region with white
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(x, y, w, h);
     
+    // Generate new image data and update the existing background IN-PLACE
     const newDataUrl = offCanvas.toDataURL('image/png');
-    const newImg = await FabricImage.fromURL(newDataUrl);
+    const element = bg.getElement() as HTMLImageElement;
+    
+    element.onload = () => {
+      console.info('[Erase] Background image updated in-place');
+      bg.set({ dirty: true });
+      fabricCanvas.renderAll();
+      onSaveState();
+    };
+    
+    element.onerror = (err) => {
+      console.error('[Erase] Failed to load new image data', err);
+    };
+    
+    element.src = newDataUrl;
 
-    // Copy positioning and interaction properties from the existing background image
-    newImg.set({
-      scaleX: bgScaleX,
-      scaleY: bgScaleY,
-      left: bgLeft,
-      top: bgTop,
-      selectable: (bg as any).selectable,
-      evented: (bg as any).evented,
-      hasControls: (bg as any).hasControls,
-      objectCaching: (bg as any).objectCaching,
-      hoverCursor: (bg as any).hoverCursor,
-      moveCursor: (bg as any).moveCursor,
-    });
-    (newImg as any).isBackgroundImage = (bg as any).isBackgroundImage;
-
-    // Replace the old background image with the new one and keep it at the back
-    if (fabricCanvas.backgroundImage === bg) {
-      fabricCanvas.backgroundImage = newImg;
-    }
-    fabricCanvas.remove(bg);
-    fabricCanvas.add(newImg);
-    (fabricCanvas as any).sendToBack?.(newImg);
-
+    // Remove the erase rectangle
     fabricCanvas.remove(rect);
-    fabricCanvas.renderAll();
-    onSaveState();
+    fabricCanvas.requestRenderAll();
   };
 
   useEffect(() => {

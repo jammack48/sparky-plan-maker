@@ -76,8 +76,9 @@ export const useSymbolPlacement = (
     };
 
     const handleMouseDown = async (opt: any) => {
-      // If clicking on an existing object/selection, don't place; let Fabric move/select
-      if (opt.target && !(opt.target as any).isPreview) {
+      // If clicking on an existing object/selection (but not background or preview), don't place
+      const target = opt.target;
+      if (target && !(target as any).isPreview && !(target as any).isBackgroundImage) {
         return;
       }
       if (opt.e.button !== 0 && opt.e.type !== 'touchstart') return;
