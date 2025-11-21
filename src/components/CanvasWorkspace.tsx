@@ -280,17 +280,35 @@ export const CanvasWorkspace = ({
     const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
     if (!bg) return;
     
-    // In place-symbol and erase modes, make background non-interactive
     if (mode === "place-symbol" || mode === "erase") {
+      // Make background completely non-interactive in placement/erase modes
       bg.selectable = false;
       bg.evented = false;
       bg.hasControls = false;
+      bg.lockMovementX = true;
+      bg.lockMovementY = true;
+      bg.lockRotation = true;
+      bg.lockScalingX = true;
+      bg.lockScalingY = true;
+
+      // If background was previously selected, clear selection so handles disappear
+      const active = fabricCanvas.getActiveObject();
+      if (active === bg) {
+        fabricCanvas.discardActiveObject();
+      }
+
       fabricCanvas.renderAll();
-    } else if (mode === "select" || mode === "move") {
-      // In select/move modes, respect lock state
-      bg.selectable = !lockBackground;
-      bg.evented = !lockBackground;
-      bg.hasControls = !lockBackground;
+    } else {
+      // In other modes, respect lock state
+      const locked = lockBackground;
+      bg.selectable = !locked;
+      bg.evented = !locked;
+      bg.hasControls = !locked;
+      bg.lockMovementX = locked;
+      bg.lockMovementY = locked;
+      bg.lockRotation = locked;
+      bg.lockScalingX = locked;
+      bg.lockScalingY = locked;
       fabricCanvas.renderAll();
     }
   }, [fabricCanvas, mode, lockBackground]);

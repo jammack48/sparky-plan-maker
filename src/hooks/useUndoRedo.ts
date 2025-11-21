@@ -15,28 +15,32 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
   };
 
   const handleUndo = () => {
-    if (!fabricCanvas || undoStack.length === 0) return;
-    
-    const currentState = JSON.stringify(fabricCanvas.toJSON());
-    const previousState = undoStack[undoStack.length - 1];
-    
+    if (!fabricCanvas) return;
+    if (undoStack.length <= 1) return; // nothing to undo
+
+    const currentState = undoStack[undoStack.length - 1];
+    const previousState = undoStack[undoStack.length - 2];
+
+    // Move current state to redo stack
     setRedoStack(prev => [...prev, currentState]);
+    // Remove current state from undo stack
     setUndoStack(prev => prev.slice(0, -1));
-    
+
     fabricCanvas.loadFromJSON(previousState).then(() => {
       fabricCanvas.renderAll();
     });
   };
 
   const handleRedo = () => {
-    if (!fabricCanvas || redoStack.length === 0) return;
-    
-    const currentState = JSON.stringify(fabricCanvas.toJSON());
+    if (!fabricCanvas) return;
+    if (redoStack.length === 0) return;
+
     const nextState = redoStack[redoStack.length - 1];
-    
-    setUndoStack(prev => [...prev, currentState]);
+
+    // Move next state back to undo stack
+    setUndoStack(prev => [...prev, nextState]);
     setRedoStack(prev => prev.slice(0, -1));
-    
+
     fabricCanvas.loadFromJSON(nextState).then(() => {
       fabricCanvas.renderAll();
     });
