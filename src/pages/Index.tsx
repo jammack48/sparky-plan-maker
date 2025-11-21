@@ -178,12 +178,8 @@ const Index = () => {
       }
       // Don't load symbol_categories - use default categories and update counts from symbol_settings
       
-      // Load background image
-      if (data.background_image_url) {
-        setPdfPages([data.background_image_url]);
-        setSelectedPages([0]);
-        setCurrentPageIndex(0);
-      }
+      // Don't load background image from background_image_url when restoring
+      // The canvas_json already contains the complete canvas state including background
       
       // Store canvas data to restore after canvas is ready
       if (data.canvas_json) {
