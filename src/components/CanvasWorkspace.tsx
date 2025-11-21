@@ -291,14 +291,22 @@ export const CanvasWorkspace = ({
       bg.lockScalingX = true;
       bg.lockScalingY = true;
 
-      // If background was previously selected, clear selection so handles disappear
+      // Clear ANY active selection when entering erase/placement modes
       const active = fabricCanvas.getActiveObject();
-      if (active === bg) {
+      if (active) {
         fabricCanvas.discardActiveObject();
+      }
+
+      // Disable selection in erase mode to prevent accidental selections
+      if (mode === "erase") {
+        fabricCanvas.selection = false;
       }
 
       fabricCanvas.renderAll();
     } else {
+      // Re-enable selection in non-erase modes
+      fabricCanvas.selection = true;
+      
       // In other modes, respect lock state
       const locked = lockBackground;
       bg.selectable = !locked;

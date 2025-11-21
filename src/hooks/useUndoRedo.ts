@@ -18,6 +18,11 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
     if (!fabricCanvas) return;
     if (undoStack.length <= 1) return; // nothing to undo
 
+    console.info('[Undo] Before:', {
+      undoStackLength: undoStack.length,
+      redoStackLength: redoStack.length
+    });
+
     const currentState = undoStack[undoStack.length - 1];
     const previousState = undoStack[undoStack.length - 2];
 
@@ -25,6 +30,11 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
     setRedoStack(prev => [...prev, currentState]);
     // Remove current state from undo stack
     setUndoStack(prev => prev.slice(0, -1));
+
+    console.info('[Undo] After:', {
+      undoStackLength: undoStack.length - 1,
+      redoStackLength: redoStack.length + 1
+    });
 
     fabricCanvas.loadFromJSON(previousState).then(() => {
       fabricCanvas.renderAll();
@@ -35,11 +45,21 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
     if (!fabricCanvas) return;
     if (redoStack.length === 0) return;
 
+    console.info('[Redo] Before:', {
+      undoStackLength: undoStack.length,
+      redoStackLength: redoStack.length
+    });
+
     const nextState = redoStack[redoStack.length - 1];
 
     // Move next state back to undo stack
     setUndoStack(prev => [...prev, nextState]);
     setRedoStack(prev => prev.slice(0, -1));
+
+    console.info('[Redo] After:', {
+      undoStackLength: undoStack.length + 1,
+      redoStackLength: redoStack.length - 1
+    });
 
     fabricCanvas.loadFromJSON(nextState).then(() => {
       fabricCanvas.renderAll();
