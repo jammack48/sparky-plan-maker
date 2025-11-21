@@ -273,25 +273,27 @@ export const CanvasWorkspace = ({
     img.src = imageUrl;
   }, [fabricCanvas, imageUrl]); // Remove lockBackground from deps to prevent clearing canvas
 
-  // Update background lock state without recreating the entire canvas
+  // Disable background interaction in place-symbol and erase modes
   useEffect(() => {
-    if (!fabricCanvas) return;
+    if (!fabricCanvas || !mode) return;
     
     const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
     if (!bg) return;
     
-    bg.selectable = !lockBackground;
-    bg.evented = !lockBackground;
-    bg.hasControls = !lockBackground;
-    bg.lockMovementX = lockBackground;
-    bg.lockMovementY = lockBackground;
-    bg.lockRotation = lockBackground;
-    bg.lockScalingX = lockBackground;
-    bg.lockScalingY = lockBackground;
-    bg.hoverCursor = lockBackground ? "default" : "move";
-    bg.moveCursor = lockBackground ? "default" : "move";
-    fabricCanvas.renderAll();
-  }, [fabricCanvas, lockBackground]);
+    // In place-symbol and erase modes, make background non-interactive
+    if (mode === "place-symbol" || mode === "erase") {
+      bg.selectable = false;
+      bg.evented = false;
+      bg.hasControls = false;
+      fabricCanvas.renderAll();
+    } else if (mode === "select" || mode === "move") {
+      // In select/move modes, respect lock state
+      bg.selectable = !lockBackground;
+      bg.evented = !lockBackground;
+      bg.hasControls = !lockBackground;
+      fabricCanvas.renderAll();
+    }
+  }, [fabricCanvas, mode, lockBackground]);
 
   // Handle move mode - disable scaling and rotation
   useEffect(() => {
