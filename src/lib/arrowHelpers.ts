@@ -38,10 +38,11 @@ export function createArrowLine(options: ArrowOptions): Group {
   const vy = ux;
 
   // Start arrowhead (pointing OUTWARD from the measured span)
-  const startTipX = x1 - ux * arrowLength;
-  const startTipY = y1 - uy * arrowLength;
-  const startBaseCenterX = x1 + ux * (arrowLength * 0.2);
-  const startBaseCenterY = y1 + uy * (arrowLength * 0.2);
+  // Tip sits exactly at the first click (x1, y1)
+  const startTipX = x1;
+  const startTipY = y1;
+  const startBaseCenterX = x1 + ux * arrowLength;
+  const startBaseCenterY = y1 + uy * arrowLength;
 
   const startArrow = new Polygon(
     [
@@ -65,10 +66,11 @@ export function createArrowLine(options: ArrowOptions): Group {
   );
 
   // End arrowhead (pointing OUTWARD from the measured span)
-  const endTipX = x2 + ux * arrowLength;
-  const endTipY = y2 + uy * arrowLength;
-  const endBaseCenterX = x2 - ux * (arrowLength * 0.2);
-  const endBaseCenterY = y2 - uy * (arrowLength * 0.2);
+  // Tip sits exactly at the second click (x2, y2)
+  const endTipX = x2;
+  const endTipY = y2;
+  const endBaseCenterX = x2 - ux * arrowLength;
+  const endBaseCenterY = y2 - uy * arrowLength;
 
   const endArrow = new Polygon(
     [
