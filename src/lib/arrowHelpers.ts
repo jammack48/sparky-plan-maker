@@ -40,28 +40,28 @@ export function createArrowLine(options: ArrowOptions): Group {
   const endArrowX = x2 - dx * offsetRatio;
   const endArrowY = y2 - dy * offsetRatio;
 
-  // Start arrowhead (pointing outward from start point)
+  // Start arrowhead (pointing outward from start point, aligned with line)
   const startArrow = new Triangle({
     left: startArrowX,
     top: startArrowY,
     width: arrowSize,
     height: arrowSize,
     fill: color,
-    angle: angle + 180,
+    angle: angle - 90,
     originX: 'center',
     originY: 'center',
     selectable: false,
     evented: false,
   });
 
-  // End arrowhead (pointing outward from end point)
+  // End arrowhead (pointing outward from end point, aligned with line)
   const endArrow = new Triangle({
     left: endArrowX,
     top: endArrowY,
     width: arrowSize,
     height: arrowSize,
     fill: color,
-    angle: angle,
+    angle: angle + 90,
     originX: 'center',
     originY: 'center',
     selectable: false,
