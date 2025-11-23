@@ -8,6 +8,7 @@ import { HomeScreen } from "@/components/HomeScreen";
 import { CanvasWorkspace } from "@/components/CanvasWorkspace";
 import { SymbolToolbar, DEFAULT_SYMBOL_CATEGORIES, SymbolCategory } from "@/components/SymbolToolbar";
 import { SymbolStyleControls } from "@/components/SymbolStyleControls";
+import { DistanceStyleControls } from "@/components/DistanceStyleControls";
 import { Button } from "@/components/ui/button";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
 import { ProjectNameDialog } from "@/components/ProjectNameDialog";
@@ -60,6 +61,12 @@ const Index = () => {
   const [symbolThickness, setSymbolThickness] = useState(2);
   const [symbolTransparency, setSymbolTransparency] = useState(1);
   const [symbolScale, setSymbolScale] = useState(1);
+
+  // Distance measurement style state
+  const [canvasMode, setCanvasMode] = useState<string>("select");
+  const [distanceColor, setDistanceColor] = useState("#ef4444");
+  const [distanceStrokeWidth, setDistanceStrokeWidth] = useState(2);
+  const [distanceFontSize, setDistanceFontSize] = useState(16);
 
   // Page setup state
   const [pageSetup, setPageSetup] = useState<PageSetup>(() => {
@@ -694,7 +701,14 @@ const Index = () => {
             symbolCategories={symbolCategories}
             onScaleChange={setCanvasScale}
             onZoomChange={setCanvasZoom}
-            onCanvasReady={(canvas, setIsRestoring) => { 
+            onModeChange={setCanvasMode}
+            distanceColor={distanceColor}
+            distanceStrokeWidth={distanceStrokeWidth}
+            distanceFontSize={distanceFontSize}
+            onDistanceColorChange={setDistanceColor}
+            onDistanceStrokeWidthChange={setDistanceStrokeWidth}
+            onDistanceFontSizeChange={setDistanceFontSize}
+            onCanvasReady={(canvas, setIsRestoring) => {
               canvasRef.current = canvas;
               
               // Restore pending canvas data if any
@@ -737,17 +751,28 @@ const Index = () => {
               zoomLevel={canvasZoom}
             />
             <div className="portrait:hidden landscape:block md:block">
-              <SymbolStyleControls
-                color={symbolColor}
-                thickness={symbolThickness}
-                transparency={symbolTransparency}
-                scale={symbolScale}
-                onColorChange={handleColorChange}
-                onThicknessChange={handleThicknessChange}
-                onTransparencyChange={handleTransparencyChange}
-                onScaleChange={handleScaleChange}
-                colorHistory={selectedSymbol ? (symbolSettings[selectedSymbol]?.colorHistory || []) : []}
-              />
+              {canvasMode === "measure-distance" ? (
+                <DistanceStyleControls
+                  color={distanceColor}
+                  strokeWidth={distanceStrokeWidth}
+                  fontSize={distanceFontSize}
+                  onColorChange={setDistanceColor}
+                  onStrokeWidthChange={setDistanceStrokeWidth}
+                  onFontSizeChange={setDistanceFontSize}
+                />
+              ) : (
+                <SymbolStyleControls
+                  color={symbolColor}
+                  thickness={symbolThickness}
+                  transparency={symbolTransparency}
+                  scale={symbolScale}
+                  onColorChange={handleColorChange}
+                  onThicknessChange={handleThicknessChange}
+                  onTransparencyChange={handleTransparencyChange}
+                  onScaleChange={handleScaleChange}
+                  colorHistory={selectedSymbol ? (symbolSettings[selectedSymbol]?.colorHistory || []) : []}
+                />
+              )}
             </div>
           </div>
         </aside>

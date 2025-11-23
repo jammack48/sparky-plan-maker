@@ -12,7 +12,10 @@ export const useMeasureDistanceMode = (
   mode: string,
   scale: number | null,
   distanceColor: string,
-  distanceStrokeWidth: number
+  distanceStrokeWidth: number,
+  distanceFontSize: number,
+  showGrid: boolean,
+  gridSize: string
 ) => {
   const [startPoint, setStartPoint] = useState<Position | null>(null);
   const [previewLine, setPreviewLine] = useState<Line | null>(null);
@@ -42,15 +45,24 @@ export const useMeasureDistanceMode = (
       if (typeof e?.button === "number" && e.button !== 0) return;
 
       const pointer = fabricCanvas.getPointer(e);
+      let x = pointer.x;
+      let y = pointer.y;
+
+      // Snap first point to grid if Control is pressed
+      if (e.ctrlKey && showGrid && gridSize) {
+        const gridSizePx = parseFloat(gridSize);
+        x = Math.round(x / gridSizePx) * gridSizePx;
+        y = Math.round(y / gridSizePx) * gridSizePx;
+      }
 
       if (!startPoint) {
         // First click - set start point
-        setStartPoint({ x: pointer.x, y: pointer.y });
+        setStartPoint({ x, y });
 
         // Create preview circle at start
         const circle = new Circle({
-          left: pointer.x - 5,
-          top: pointer.y - 5,
+          left: x - 5,
+          top: y - 5,
           radius: 5,
           fill: distanceColor,
           selectable: false,
@@ -62,7 +74,7 @@ export const useMeasureDistanceMode = (
         setStartCircle(circle);
 
         // Create preview line
-        const line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+        const line = new Line([x, y, x, y], {
           stroke: distanceColor,
           strokeWidth: distanceStrokeWidth,
           selectable: false,
@@ -74,9 +86,19 @@ export const useMeasureDistanceMode = (
         setPreviewLine(line);
       } else {
         // Second click - create permanent arrow measurement
+        let x2 = pointer.x;
+        let y2 = pointer.y;
+
+        // Snap second point if Control is pressed
+        if (e.ctrlKey && showGrid && gridSize) {
+          const gridSizePx = parseFloat(gridSize);
+          x2 = Math.round(x2 / gridSizePx) * gridSizePx;
+          y2 = Math.round(y2 / gridSizePx) * gridSizePx;
+        }
+
         const pixelDistance = Math.sqrt(
-          Math.pow(pointer.x - startPoint.x, 2) +
-          Math.pow(pointer.y - startPoint.y, 2)
+          Math.pow(x2 - startPoint.x, 2) +
+          Math.pow(y2 - startPoint.y, 2)
         );
 
         const distanceText = formatDistance(pixelDistance, scale);
@@ -84,11 +106,12 @@ export const useMeasureDistanceMode = (
         const arrowGroup = createArrowLine({
           x1: startPoint.x,
           y1: startPoint.y,
-          x2: pointer.x,
-          y2: pointer.y,
+          x2: x2,
+          y2: y2,
           color: distanceColor,
           strokeWidth: distanceStrokeWidth,
           distanceText: distanceText,
+          fontSize: distanceFontSize,
         });
 
         fabricCanvas.add(arrowGroup);
@@ -111,16 +134,24 @@ export const useMeasureDistanceMode = (
       let x2 = pointer.x;
       let y2 = pointer.y;
 
-      // Snap to horizontal or vertical when Control key is pressed
+      // Snap to grid or horizontal/vertical when Control key is pressed
       if (opt.e.ctrlKey) {
-        const dx = Math.abs(x2 - startPoint.x);
-        const dy = Math.abs(y2 - startPoint.y);
-
-        // Snap to whichever axis has greater distance
-        if (dx > dy) {
-          y2 = startPoint.y; // Snap to horizontal
+        if (showGrid && gridSize) {
+          // Snap to grid
+          const gridSizePx = parseFloat(gridSize);
+          x2 = Math.round(x2 / gridSizePx) * gridSizePx;
+          y2 = Math.round(y2 / gridSizePx) * gridSizePx;
         } else {
-          x2 = startPoint.x; // Snap to vertical
+          // Snap to horizontal or vertical
+          const dx = Math.abs(x2 - startPoint.x);
+          const dy = Math.abs(y2 - startPoint.y);
+
+          // Snap to whichever axis has greater distance
+          if (dx > dy) {
+            y2 = startPoint.y; // Snap to horizontal
+          } else {
+            x2 = startPoint.x; // Snap to vertical
+          }
         }
       }
 
@@ -139,7 +170,7 @@ export const useMeasureDistanceMode = (
       fabricCanvas.off("mouse:down", handleMouseDown);
       fabricCanvas.off("mouse:move", handleMouseMove);
     };
-  }, [fabricCanvas, mode, startPoint, scale, distanceColor, distanceStrokeWidth, previewLine, startCircle]);
+  }, [fabricCanvas, mode, startPoint, scale, distanceColor, distanceStrokeWidth, distanceFontSize, showGrid, gridSize, previewLine, startCircle]);
 
   const cancelDistance = () => {
     if (previewLine && fabricCanvas) {

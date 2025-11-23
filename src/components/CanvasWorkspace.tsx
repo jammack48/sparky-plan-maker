@@ -38,6 +38,13 @@ export interface CanvasWorkspaceProps {
   onScaleChange?: (scale: number | null) => void;
   onZoomChange?: (zoom: number) => void;
   onCanvasReady?: (canvas: FabricCanvas, setIsRestoring: (val: boolean) => void) => void;
+  onModeChange?: (mode: string) => void;
+  distanceColor?: string;
+  distanceStrokeWidth?: number;
+  distanceFontSize?: number;
+  onDistanceColorChange?: (color: string) => void;
+  onDistanceStrokeWidthChange?: (width: number) => void;
+  onDistanceFontSizeChange?: (size: number) => void;
 }
 
 export const CanvasWorkspace = ({
@@ -60,6 +67,13 @@ export const CanvasWorkspace = ({
   onScaleChange,
   onZoomChange,
   onCanvasReady,
+  onModeChange,
+  distanceColor: propDistanceColor,
+  distanceStrokeWidth: propDistanceStrokeWidth,
+  distanceFontSize: propDistanceFontSize,
+  onDistanceColorChange,
+  onDistanceStrokeWidthChange,
+  onDistanceFontSizeChange,
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,9 +96,23 @@ export const CanvasWorkspace = ({
   const [showHeightDialog, setShowHeightDialog] = useState(false);
   const [colorHistory, setColorHistory] = useState<string[]>([]);
   
-  // Distance measurement state
-  const [distanceColor, setDistanceColor] = useState("#ef4444");
-  const [distanceStrokeWidth, setDistanceStrokeWidth] = useState(2);
+  // Distance measurement state - use props if provided, otherwise internal state
+  const [distanceColor, setDistanceColor] = useState(propDistanceColor || "#ef4444");
+  const [distanceStrokeWidth, setDistanceStrokeWidth] = useState(propDistanceStrokeWidth || 2);
+  const [distanceFontSize, setDistanceFontSize] = useState(propDistanceFontSize || 16);
+
+  // Update internal state when props change
+  useEffect(() => {
+    if (propDistanceColor) setDistanceColor(propDistanceColor);
+  }, [propDistanceColor]);
+  
+  useEffect(() => {
+    if (propDistanceStrokeWidth !== undefined) setDistanceStrokeWidth(propDistanceStrokeWidth);
+  }, [propDistanceStrokeWidth]);
+  
+  useEffect(() => {
+    if (propDistanceFontSize !== undefined) setDistanceFontSize(propDistanceFontSize);
+  }, [propDistanceFontSize]);
   
   // Notify parent of scale changes
   useEffect(() => {
@@ -950,7 +978,7 @@ export const CanvasWorkspace = ({
 
   const { cropRect, cancelCrop } = useCropMode(fabricCanvas, mode, () => setShowCropDialog(true));
   const { measureDistance, measureLine, cancelMeasure } = useMeasureMode(fabricCanvas, mode, () => setShowMeasureDialog(true));
-  const { isDrawing: isDrawingDistance, cancelDistance } = useMeasureDistanceMode(fabricCanvas, mode, scale, distanceColor, distanceStrokeWidth);
+  const { isDrawing: isDrawingDistance, cancelDistance } = useMeasureDistanceMode(fabricCanvas, mode, scale, distanceColor, distanceStrokeWidth, distanceFontSize, showGrid, gridSize);
   useEraseMode(fabricCanvas, mode, saveCanvasState);
 
   const handleCropExtract = useCallback(() => {
@@ -1076,11 +1104,14 @@ export const CanvasWorkspace = ({
       toast.error("Please set scale first using the Measure tool");
       return;
     }
-    setMode("measure-distance");
+    const newMode = mode === "measure-distance" ? "select" : "measure-distance";
+    setMode(newMode);
+    onModeChange?.(newMode);
   };
 
   const handleDistanceColorChange = (color: string) => {
     setDistanceColor(color);
+    onDistanceColorChange?.(color);
   };
 
   const handleSelectMode = () => {
