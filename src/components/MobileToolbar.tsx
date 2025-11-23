@@ -36,6 +36,7 @@ interface MobileToolbarProps {
   showGrid: boolean;
   lockBackground: boolean;
   showTitleBlock: boolean;
+  hasSelection?: boolean;
   gridSize: string;
   gridColor: string;
   gridThickness: number;

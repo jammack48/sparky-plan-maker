@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 
 export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
@@ -37,6 +37,12 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
     });
 
     fabricCanvas.loadFromJSON(previousState).then(() => {
+      // Re-tag background image after loading from JSON
+      const objects = fabricCanvas.getObjects();
+      const bgImage = objects.find((obj: any) => obj.type === 'image' && !obj.isBackgroundImage);
+      if (bgImage && objects.indexOf(bgImage) === 0) {
+        (bgImage as any).isBackgroundImage = true;
+      }
       fabricCanvas.renderAll();
     });
   };
@@ -62,24 +68,51 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
     });
 
     fabricCanvas.loadFromJSON(nextState).then(() => {
+      // Re-tag background image after loading from JSON
+      const objects = fabricCanvas.getObjects();
+      const bgImage = objects.find((obj: any) => obj.type === 'image' && !obj.isBackgroundImage);
+      if (bgImage && objects.indexOf(bgImage) === 0) {
+        (bgImage as any).isBackgroundImage = true;
+      }
       fabricCanvas.renderAll();
     });
   };
 
+  // Use refs to avoid stale closures in keyboard event handlers
+  const undoStackRef = useRef(undoStack);
+  const redoStackRef = useRef(redoStack);
+  const fabricCanvasRef = useRef(fabricCanvas);
+
+  useEffect(() => {
+    undoStackRef.current = undoStack;
+    redoStackRef.current = redoStack;
+    fabricCanvasRef.current = fabricCanvas;
+  }, [undoStack, redoStack, fabricCanvas]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
         e.preventDefault();
-        handleUndo();
+        if (fabricCanvasRef.current && undoStackRef.current.length > 1) {
+          handleUndo();
+        }
       } else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
         e.preventDefault();
-        handleRedo();
+        if (fabricCanvasRef.current && redoStackRef.current.length > 0) {
+          handleRedo();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fabricCanvas, undoStack, redoStack]);
+  }, []); // Empty deps - using refs instead
 
   return {
     undoStack,

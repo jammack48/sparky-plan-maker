@@ -133,6 +133,8 @@ export const CanvasWorkspace = ({
   const [originalImageSize, setOriginalImageSize] = useState({ width: 0, height: 0 });
   const [lockBackground, setLockBackground] = useState(true); // Lock background by default
   const [isRestoringFromSave, setIsRestoringFromSave] = useState(false);
+  const [hasSelection, setHasSelection] = useState(false);
+  
   const titleBlockGroupRef = useRef<Group | null>(null);
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale, scale ?? 1);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
@@ -209,6 +211,26 @@ export const CanvasWorkspace = ({
     if (!fabricCanvas) return;
     // Drawing mode is managed by useDrawMode hook
   }, [fabricCanvas, mode, symbolColor, symbolThickness]);
+
+  // Track selection changes
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    const updateSelection = () => {
+      const activeObject = fabricCanvas.getActiveObject();
+      setHasSelection(!!activeObject);
+    };
+
+    fabricCanvas.on('selection:created', updateSelection);
+    fabricCanvas.on('selection:updated', updateSelection);
+    fabricCanvas.on('selection:cleared', updateSelection);
+
+    return () => {
+      fabricCanvas.off('selection:created', updateSelection);
+      fabricCanvas.off('selection:updated', updateSelection);
+      fabricCanvas.off('selection:cleared', updateSelection);
+    };
+  }, [fabricCanvas]);
 
   // Remove old path:created handler as it's now in useDrawMode
   useEffect(() => {
@@ -1262,6 +1284,7 @@ export const CanvasWorkspace = ({
           onExport={handleExportPDF}
           onPageSetup={onPageSetup}
           onSelectAll={handleSelectAll}
+          hasSelection={hasSelection}
           onRotateLeft={handleRotateLeft}
           onRotateRight={handleRotateRight}
           onRotateBackgroundLeft={handleRotateBackgroundLeft}
@@ -1313,6 +1336,7 @@ export const CanvasWorkspace = ({
           onPageSetup={onPageSetup}
           onSymbolSelect={onSymbolSelect!}
           onSelectAll={handleSelectAll}
+          hasSelection={hasSelection}
           onRotateLeft={handleRotateLeft}
           onRotateRight={handleRotateRight}
           onRotateBackgroundLeft={handleRotateBackgroundLeft}
