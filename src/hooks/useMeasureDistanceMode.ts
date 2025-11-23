@@ -49,8 +49,8 @@ export const useMeasureDistanceMode = (
       let y = pointer.y;
 
       // Snap first point to grid if Shift is pressed
-      if (e.shiftKey && showGrid && gridSize) {
-        const gridSizePx = parseFloat(gridSize);
+      if (e.shiftKey && showGrid && gridSize && scale) {
+        const gridSizePx = parseFloat(gridSize) * scale;
         x = Math.round(x / gridSizePx) * gridSizePx;
         y = Math.round(y / gridSizePx) * gridSizePx;
       }
@@ -90,8 +90,8 @@ export const useMeasureDistanceMode = (
         let y2 = pointer.y;
 
         // Snap second point if Shift is pressed
-        if (e.shiftKey && showGrid && gridSize) {
-          const gridSizePx = parseFloat(gridSize);
+        if (e.shiftKey && showGrid && gridSize && scale) {
+          const gridSizePx = parseFloat(gridSize) * scale;
           x2 = Math.round(x2 / gridSizePx) * gridSizePx;
           y2 = Math.round(y2 / gridSizePx) * gridSizePx;
         }
@@ -135,8 +135,8 @@ export const useMeasureDistanceMode = (
       let y2 = pointer.y;
 
       // Snap to grid if Shift is pressed
-      if (opt.e.shiftKey && showGrid && gridSize) {
-        const gridSizePx = parseFloat(gridSize);
+      if (opt.e.shiftKey && showGrid && gridSize && scale) {
+        const gridSizePx = parseFloat(gridSize) * scale;
         x2 = Math.round(x2 / gridSizePx) * gridSizePx;
         y2 = Math.round(y2 / gridSizePx) * gridSizePx;
       } else if (opt.e.ctrlKey) {
