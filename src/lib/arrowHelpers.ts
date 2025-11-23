@@ -22,32 +22,46 @@ export function createArrowLine(options: ArrowOptions): Group {
     evented: false,
   });
 
-  // Calculate angle
+  // Calculate angle and distance
   const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
   const arrowSize = 10 + strokeWidth;
+  const lineLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+  
+  // Calculate offset to position arrow tips at exact endpoints
+  const offsetDistance = arrowSize / 2;
+  const offsetRatio = offsetDistance / lineLength;
+  
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  
+  // Position arrows so their tips are at exact endpoints
+  const startArrowX = x1 + dx * offsetRatio;
+  const startArrowY = y1 + dy * offsetRatio;
+  const endArrowX = x2 - dx * offsetRatio;
+  const endArrowY = y2 - dy * offsetRatio;
 
-  // Start arrowhead (pointing outward/left)
+  // Start arrowhead (pointing outward from start point)
   const startArrow = new Triangle({
-    left: x1,
-    top: y1,
+    left: startArrowX,
+    top: startArrowY,
     width: arrowSize,
     height: arrowSize,
     fill: color,
-    angle: angle - 90,
+    angle: angle + 180,
     originX: 'center',
     originY: 'center',
     selectable: false,
     evented: false,
   });
 
-  // End arrowhead (pointing outward/right)
+  // End arrowhead (pointing outward from end point)
   const endArrow = new Triangle({
-    left: x2,
-    top: y2,
+    left: endArrowX,
+    top: endArrowY,
     width: arrowSize,
     height: arrowSize,
     fill: color,
-    angle: angle + 90,
+    angle: angle,
     originX: 'center',
     originY: 'center',
     selectable: false,
