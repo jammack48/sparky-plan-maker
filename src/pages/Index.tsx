@@ -716,6 +716,12 @@ const Index = () => {
                 try {
                   setIsRestoring(true);
                   canvas.loadFromJSON(pendingCanvasData, () => {
+                    // Re-tag background image after loading
+                    const objects = canvas.getObjects();
+                    const bgImage = objects.find((obj: any) => obj.type === 'image' && !obj.isBackgroundImage);
+                    if (bgImage && objects.indexOf(bgImage) === 0) {
+                      (bgImage as any).isBackgroundImage = true;
+                    }
                     canvas.renderAll();
                     setIsRestoring(false);
                     toast.success("Canvas restored");

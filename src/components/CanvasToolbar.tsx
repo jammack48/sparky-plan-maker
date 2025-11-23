@@ -16,6 +16,7 @@ interface CanvasToolbarProps {
   showGrid: boolean;
   lockBackground: boolean;
   showTitleBlock: boolean;
+  hasSelection?: boolean;
   gridSize: string;
   gridColor: string;
   gridThickness: number;
@@ -64,6 +65,7 @@ export const CanvasToolbar = ({
   showGrid,
   lockBackground,
   showTitleBlock,
+  hasSelection = false,
   gridSize,
   gridColor,
   gridThickness,
@@ -279,7 +281,7 @@ export const CanvasToolbar = ({
           {lockBackground ? "Locked" : "Unlocked"}
         </Button>
         <Button
-          variant="outline"
+          variant={hasSelection ? "default" : "outline"}
           size="sm"
           onClick={onSelectAll}
           title="Select All (excludes background when locked)"
