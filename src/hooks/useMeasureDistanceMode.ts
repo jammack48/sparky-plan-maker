@@ -39,6 +39,28 @@ export const useMeasureDistanceMode = (
     fabricCanvas.selection = false;
     fabricCanvas.defaultCursor = "crosshair";
 
+    const snapToGrid = (x: number, y: number) => {
+      if (!showGrid || !gridSize || !scale || !fabricCanvas) return { x, y };
+
+      const zoom = fabricCanvas.getZoom();
+      const vpt = fabricCanvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+
+      const worldSpacing = parseFloat(gridSize) * scale;
+      const screenSpacing = worldSpacing * zoom;
+      if (screenSpacing <= 0) return { x, y };
+
+      const xScreen = x * zoom + vpt[4];
+      const yScreen = y * zoom + vpt[5];
+
+      const snappedScreenX = Math.round(xScreen / screenSpacing) * screenSpacing;
+      const snappedScreenY = Math.round(yScreen / screenSpacing) * screenSpacing;
+
+      const snappedX = (snappedScreenX - vpt[4]) / zoom;
+      const snappedY = (snappedScreenY - vpt[5]) / zoom;
+
+      return { x: snappedX, y: snappedY };
+    };
+
     const handleMouseDown = (opt: any) => {
       const e = opt.e;
       // Allow touch and left-click; ignore right/middle clicks
@@ -48,11 +70,11 @@ export const useMeasureDistanceMode = (
       let x = pointer.x;
       let y = pointer.y;
 
-      // Snap first point to grid if Shift is pressed
-      if (e.shiftKey && showGrid && gridSize && scale) {
-        const gridSizePx = parseFloat(gridSize) * scale;
-        x = Math.round(x / gridSizePx) * gridSizePx;
-        y = Math.round(y / gridSizePx) * gridSizePx;
+      // Snap first point to grid intersections (visual grid) if Shift is pressed
+      if (e.shiftKey) {
+        const snapped = snapToGrid(x, y);
+        x = snapped.x;
+        y = snapped.y;
       }
 
       if (!startPoint) {
@@ -89,11 +111,21 @@ export const useMeasureDistanceMode = (
         let x2 = pointer.x;
         let y2 = pointer.y;
 
-        // Snap second point if Shift is pressed
-        if (e.shiftKey && showGrid && gridSize && scale) {
-          const gridSizePx = parseFloat(gridSize) * scale;
-          x2 = Math.round(x2 / gridSizePx) * gridSizePx;
-          y2 = Math.round(y2 / gridSizePx) * gridSizePx;
+        if (e.shiftKey) {
+          const snapped = snapToGrid(x2, y2);
+          x2 = snapped.x;
+          y2 = snapped.y;
+        } else if (e.ctrlKey) {
+          // Snap to horizontal or vertical if Control key is pressed
+          const dx = Math.abs(x2 - startPoint.x);
+          const dy = Math.abs(y2 - startPoint.y);
+
+          // Snap to whichever axis has greater distance
+          if (dx > dy) {
+            y2 = startPoint.y; // Snap to horizontal
+          } else {
+            x2 = startPoint.x; // Snap to vertical
+          }
         }
 
         const pixelDistance = Math.sqrt(
@@ -134,11 +166,10 @@ export const useMeasureDistanceMode = (
       let x2 = pointer.x;
       let y2 = pointer.y;
 
-      // Snap to grid if Shift is pressed
-      if (opt.e.shiftKey && showGrid && gridSize && scale) {
-        const gridSizePx = parseFloat(gridSize) * scale;
-        x2 = Math.round(x2 / gridSizePx) * gridSizePx;
-        y2 = Math.round(y2 / gridSizePx) * gridSizePx;
+      if (opt.e.shiftKey) {
+        const snapped = snapToGrid(x2, y2);
+        x2 = snapped.x;
+        y2 = snapped.y;
       } else if (opt.e.ctrlKey) {
         // Snap to horizontal or vertical if Control key is pressed
         const dx = Math.abs(x2 - startPoint.x);
