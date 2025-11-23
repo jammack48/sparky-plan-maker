@@ -330,7 +330,7 @@ const Index = () => {
         for (let i = 1; i <= pdf.numPages; i++) {
           pagePromises.push(
             pdf.getPage(i).then(async (page) => {
-              const viewport = page.getViewport({ scale: 1 });
+              const viewport = page.getViewport({ scale: 3 });
               const canvas = document.createElement("canvas");
               const context = canvas.getContext("2d");
               canvas.width = viewport.width;
