@@ -24,29 +24,41 @@ export function createArrowLine(options: ArrowOptions): Group {
   // Calculate angle
   const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
   const arrowSize = 10 + strokeWidth;
+  
+  // Calculate offset to position arrow tip at endpoint
+  const arrowOffset = arrowSize / 2;
+  const radians = Math.atan2(y2 - y1, x2 - x1);
+  
+  // Offset start point inward along the line
+  const startX = x1 + Math.cos(radians) * arrowOffset;
+  const startY = y1 + Math.sin(radians) * arrowOffset;
+  
+  // Offset end point inward along the line
+  const endX = x2 - Math.cos(radians) * arrowOffset;
+  const endY = y2 - Math.sin(radians) * arrowOffset;
 
-  // Start arrowhead
+  // Start arrowhead (tip points toward line)
   const startArrow = new Triangle({
-    left: x1,
-    top: y1,
+    left: startX,
+    top: startY,
     width: arrowSize,
     height: arrowSize,
     fill: color,
-    angle: angle - 90,
+    angle: angle + 90,
     originX: 'center',
     originY: 'center',
     selectable: false,
     evented: false,
   });
 
-  // End arrowhead
+  // End arrowhead (tip points toward line)
   const endArrow = new Triangle({
-    left: x2,
-    top: y2,
+    left: endX,
+    top: endY,
     width: arrowSize,
     height: arrowSize,
     fill: color,
-    angle: angle + 90,
+    angle: angle - 90,
     originX: 'center',
     originY: 'center',
     selectable: false,
