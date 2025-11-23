@@ -191,6 +191,12 @@ export const CanvasWorkspace = ({
       return;
     }
 
+    // Remove any existing background image before loading new one
+    const existingBg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
+    if (existingBg) {
+      fabricCanvas.remove(existingBg);
+    }
+
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
