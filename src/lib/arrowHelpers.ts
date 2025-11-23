@@ -1,4 +1,4 @@
-import { Line, Triangle, Group, FabricText } from "fabric";
+import { Line, Polygon, Group, FabricText } from "fabric";
 
 interface ArrowOptions {
   x1: number;
@@ -22,51 +22,74 @@ export function createArrowLine(options: ArrowOptions): Group {
     evented: false,
   });
 
-  // Calculate angle and distance
-  const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
-  const arrowSize = 10 + strokeWidth;
-  const lineLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-  
-  // Calculate offset to position arrow tips at exact endpoints
-  const offsetDistance = arrowSize / 2;
-  const offsetRatio = offsetDistance / lineLength;
-  
+  // Calculate unit direction vector from start to end
   const dx = x2 - x1;
   const dy = y2 - y1;
-  
-  // Position arrows so their tips are at exact endpoints
-  const startArrowX = x1 + dx * offsetRatio;
-  const startArrowY = y1 + dy * offsetRatio;
-  const endArrowX = x2 - dx * offsetRatio;
-  const endArrowY = y2 - dy * offsetRatio;
+  const lineLength = Math.sqrt(dx * dx + dy * dy) || 1;
+  const ux = dx / lineLength;
+  const uy = dy / lineLength;
 
-  // Start arrowhead (pointing outward from start point, aligned with line)
-  const startArrow = new Triangle({
-    left: startArrowX,
-    top: startArrowY,
-    width: arrowSize,
-    height: arrowSize,
-    fill: color,
-    angle: angle - 90,
-    originX: 'center',
-    originY: 'center',
-    selectable: false,
-    evented: false,
-  });
+  const arrowSize = 10 + strokeWidth;
+  const arrowLength = arrowSize;
+  const baseWidth = arrowSize * 0.8;
 
-  // End arrowhead (pointing outward from end point, aligned with line)
-  const endArrow = new Triangle({
-    left: endArrowX,
-    top: endArrowY,
-    width: arrowSize,
-    height: arrowSize,
-    fill: color,
-    angle: angle + 90,
-    originX: 'center',
-    originY: 'center',
-    selectable: false,
-    evented: false,
-  });
+  // Perpendicular vector for arrow base
+  const vx = -uy;
+  const vy = ux;
+
+  // Start arrowhead (pointing OUTWARD from the measured span)
+  const startTipX = x1 - ux * arrowLength;
+  const startTipY = y1 - uy * arrowLength;
+  const startBaseCenterX = x1 + ux * (arrowLength * 0.2);
+  const startBaseCenterY = y1 + uy * (arrowLength * 0.2);
+
+  const startArrow = new Polygon(
+    [
+      { x: startTipX, y: startTipY },
+      {
+        x: startBaseCenterX + vx * (baseWidth / 2),
+        y: startBaseCenterY + vy * (baseWidth / 2),
+      },
+      {
+        x: startBaseCenterX - vx * (baseWidth / 2),
+        y: startBaseCenterY - vy * (baseWidth / 2),
+      },
+    ],
+    {
+      fill: color,
+      selectable: false,
+      evented: false,
+      originX: "center",
+      originY: "center",
+    }
+  );
+
+  // End arrowhead (pointing OUTWARD from the measured span)
+  const endTipX = x2 + ux * arrowLength;
+  const endTipY = y2 + uy * arrowLength;
+  const endBaseCenterX = x2 - ux * (arrowLength * 0.2);
+  const endBaseCenterY = y2 - uy * (arrowLength * 0.2);
+
+  const endArrow = new Polygon(
+    [
+      { x: endTipX, y: endTipY },
+      {
+        x: endBaseCenterX + vx * (baseWidth / 2),
+        y: endBaseCenterY + vy * (baseWidth / 2),
+      },
+      {
+        x: endBaseCenterX - vx * (baseWidth / 2),
+        y: endBaseCenterY - vy * (baseWidth / 2),
+      },
+    ],
+    {
+      fill: color,
+      selectable: false,
+      evented: false,
+      originX: "center",
+      originY: "center",
+    }
+  );
 
   // Distance label at midpoint
   const midX = (x1 + x2) / 2;
