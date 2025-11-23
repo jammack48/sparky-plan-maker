@@ -8,10 +8,11 @@ interface ArrowOptions {
   color: string;
   strokeWidth: number;
   distanceText: string;
+  fontSize?: number;
 }
 
 export function createArrowLine(options: ArrowOptions): Group {
-  const { x1, y1, x2, y2, color, strokeWidth, distanceText } = options;
+  const { x1, y1, x2, y2, color, strokeWidth, distanceText, fontSize = 16 } = options;
 
   // Main line
   const line = new Line([x1, y1, x2, y2], {
@@ -24,41 +25,29 @@ export function createArrowLine(options: ArrowOptions): Group {
   // Calculate angle
   const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
   const arrowSize = 10 + strokeWidth;
-  
-  // Calculate offset to position arrow tip at endpoint
-  const arrowOffset = arrowSize / 2;
-  const radians = Math.atan2(y2 - y1, x2 - x1);
-  
-  // Offset start point inward along the line
-  const startX = x1 + Math.cos(radians) * arrowOffset;
-  const startY = y1 + Math.sin(radians) * arrowOffset;
-  
-  // Offset end point inward along the line
-  const endX = x2 - Math.cos(radians) * arrowOffset;
-  const endY = y2 - Math.sin(radians) * arrowOffset;
 
-  // Start arrowhead (tip points toward line)
+  // Start arrowhead (pointing outward/left)
   const startArrow = new Triangle({
-    left: startX,
-    top: startY,
+    left: x1,
+    top: y1,
     width: arrowSize,
     height: arrowSize,
     fill: color,
-    angle: angle + 90,
+    angle: angle - 90,
     originX: 'center',
     originY: 'center',
     selectable: false,
     evented: false,
   });
 
-  // End arrowhead (tip points toward line)
+  // End arrowhead (pointing outward/right)
   const endArrow = new Triangle({
-    left: endX,
-    top: endY,
+    left: x2,
+    top: y2,
     width: arrowSize,
     height: arrowSize,
     fill: color,
-    angle: angle - 90,
+    angle: angle + 90,
     originX: 'center',
     originY: 'center',
     selectable: false,
@@ -72,7 +61,7 @@ export function createArrowLine(options: ArrowOptions): Group {
   const label = new FabricText(distanceText, {
     left: midX,
     top: midY - 20,
-    fontSize: 16,
+    fontSize: fontSize,
     fill: '#000000',
     backgroundColor: '#FFFFFF',
     textAlign: 'center',
