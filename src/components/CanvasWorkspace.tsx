@@ -7,6 +7,7 @@ import { GridOverlay } from "./GridOverlay";
 import { useCropMode } from "@/hooks/useCropMode";
 import { useMeasureMode } from "@/hooks/useMeasureMode";
 import { useMeasureAreaMode } from "@/hooks/useMeasureAreaMode";
+import { useMeasureDistanceMode } from "@/hooks/useMeasureDistanceMode";
 import { useEraseMode } from "@/hooks/useEraseMode";
 import { useSymbolPlacement } from "@/hooks/useSymbolPlacement";
 import { useSymbolCreation } from "@/hooks/useSymbolCreation";
@@ -64,7 +65,7 @@ export const CanvasWorkspace = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "erase" | "place-symbol" | "draw">("select");
+  const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "measure-distance" | "erase" | "place-symbol" | "draw">("select");
   const [showGrid, setShowGrid] = useState(false);
   const [gridSize, setGridSize] = useState("400");
   const [gridColor, setGridColor] = useState("#ff0000");
@@ -80,6 +81,10 @@ export const CanvasWorkspace = ({
   const [heightValue, setHeightValue] = useState<number | null>(null);
   const [showHeightDialog, setShowHeightDialog] = useState(false);
   const [colorHistory, setColorHistory] = useState<string[]>([]);
+  
+  // Distance measurement state
+  const [distanceColor, setDistanceColor] = useState("#ef4444");
+  const [distanceStrokeWidth, setDistanceStrokeWidth] = useState(2);
   
   // Notify parent of scale changes
   useEffect(() => {
@@ -945,6 +950,7 @@ export const CanvasWorkspace = ({
 
   const { cropRect, cancelCrop } = useCropMode(fabricCanvas, mode, () => setShowCropDialog(true));
   const { measureDistance, measureLine, cancelMeasure } = useMeasureMode(fabricCanvas, mode, () => setShowMeasureDialog(true));
+  const { isDrawing: isDrawingDistance, cancelDistance } = useMeasureDistanceMode(fabricCanvas, mode, scale, distanceColor, distanceStrokeWidth);
   useEraseMode(fabricCanvas, mode, saveCanvasState);
 
   const handleCropExtract = useCallback(() => {
@@ -1063,6 +1069,18 @@ export const CanvasWorkspace = ({
     if (!colorHistory.includes(color)) {
       setColorHistory(prev => [color, ...prev].slice(0, 5));
     }
+  };
+
+  const handleMeasureDistance = () => {
+    if (!scale) {
+      toast.error("Please set scale first using the Measure tool");
+      return;
+    }
+    setMode("measure-distance");
+  };
+
+  const handleDistanceColorChange = (color: string) => {
+    setDistanceColor(color);
   };
 
   const handleSelectMode = () => {
@@ -1193,11 +1211,14 @@ export const CanvasWorkspace = ({
           onMeasure={() => handleModeChange("measure")}
           onMeasureArea={handleMeasureArea}
           onMeasureVolume={handleMeasureVolume}
+          onMeasureDistance={handleMeasureDistance}
           onErase={() => handleModeChange("erase")}
           areaColor={areaColor}
           areaOpacity={areaOpacity}
           onAreaColorChange={handleAreaColorChange}
           onAreaOpacityChange={setAreaOpacity}
+          distanceColor={distanceColor}
+          onDistanceColorChange={handleDistanceColorChange}
           onToggleGrid={() => setShowGrid(!showGrid)}
           onToggleTitleBlock={onToggleTitleBlock}
           onLockBackground={setLockBackground}
@@ -1240,11 +1261,14 @@ export const CanvasWorkspace = ({
           onMeasure={() => handleModeChange("measure")}
           onMeasureArea={handleMeasureArea}
           onMeasureVolume={handleMeasureVolume}
+          onMeasureDistance={handleMeasureDistance}
           onErase={() => handleModeChange("erase")}
-            areaColor={areaColor}
-            areaOpacity={areaOpacity}
-            onAreaColorChange={handleAreaColorChange}
-            onAreaOpacityChange={setAreaOpacity}
+          areaColor={areaColor}
+          areaOpacity={areaOpacity}
+          onAreaColorChange={handleAreaColorChange}
+          onAreaOpacityChange={setAreaOpacity}
+          distanceColor={distanceColor}
+          onDistanceColorChange={handleDistanceColorChange}
           onToggleGrid={() => setShowGrid(!showGrid)}
           onToggleTitleBlock={onToggleTitleBlock}
           onLockBackground={setLockBackground}

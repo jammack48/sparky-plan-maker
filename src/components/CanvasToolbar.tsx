@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { SymbolIcon } from "./SymbolIcon";
 
 interface CanvasToolbarProps {
-  mode: "none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "erase" | "place-symbol" | "draw";
+  mode: "none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "measure-distance" | "erase" | "place-symbol" | "draw";
   scale: number | null;
   showGrid: boolean;
   lockBackground: boolean;
@@ -32,11 +32,14 @@ interface CanvasToolbarProps {
   onMeasure: () => void;
   onMeasureArea: () => void;
   onMeasureVolume: () => void;
+  onMeasureDistance: () => void;
   onErase: () => void;
   areaColor: string;
   areaOpacity: number;
   onAreaColorChange: (color: string) => void;
   onAreaOpacityChange: (opacity: number) => void;
+  distanceColor: string;
+  onDistanceColorChange: (color: string) => void;
   onToggleGrid: () => void;
   onToggleTitleBlock: (show: boolean) => void;
   onLockBackground: (locked: boolean) => void;
@@ -74,11 +77,14 @@ export const CanvasToolbar = ({
   onMeasure,
   onMeasureArea,
   onMeasureVolume,
+  onMeasureDistance,
   onErase,
   areaColor,
   areaOpacity,
   onAreaColorChange,
   onAreaOpacityChange,
+  distanceColor,
+  onDistanceColorChange,
   onToggleGrid,
   onToggleTitleBlock,
   onLockBackground,
@@ -149,12 +155,22 @@ export const CanvasToolbar = ({
           <Box className="w-4 h-4 mr-2" />
           Volume
         </Button>
+        <Button
+          variant={mode === "measure-distance" ? "default" : "outline"}
+          size="sm"
+          onClick={onMeasureDistance}
+          disabled={!scale}
+          title={!scale ? "Set scale first using Measure tool" : "Measure Distance"}
+        >
+          <Ruler className="w-4 h-4 mr-2" />
+          Distance
+        </Button>
         {(mode === "measure-area" || mode === "measure-volume") && (
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm">
                 <Palette className="w-4 h-4 mr-2" />
-                Color
+                Area Color
               </Button>
             </PopoverTrigger>
             <PopoverContent>
@@ -166,6 +182,17 @@ export const CanvasToolbar = ({
               />
             </PopoverContent>
           </Popover>
+        )}
+        {mode === "measure-distance" && (
+          <div className="flex items-center gap-2">
+            <Label className="text-sm whitespace-nowrap">Color:</Label>
+            <input
+              type="color"
+              value={distanceColor}
+              onChange={(e) => onDistanceColorChange(e.target.value)}
+              className="h-8 w-12 border rounded bg-background"
+            />
+          </div>
         )}
         <Button
           variant={mode === "erase" ? "default" : "outline"}

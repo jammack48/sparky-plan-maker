@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 
 interface MobileToolbarProps {
-  mode: "none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "erase" | "place-symbol" | "draw";
+  mode: "none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "measure-distance" | "erase" | "place-symbol" | "draw";
   scale: number | null;
   showGrid: boolean;
   lockBackground: boolean;
@@ -51,11 +51,14 @@ interface MobileToolbarProps {
   onMeasure: () => void;
   onMeasureArea: () => void;
   onMeasureVolume: () => void;
+  onMeasureDistance: () => void;
   onErase: () => void;
   areaColor: string;
   areaOpacity: number;
   onAreaColorChange: (color: string) => void;
   onAreaOpacityChange: (opacity: number) => void;
+  distanceColor: string;
+  onDistanceColorChange: (color: string) => void;
   onToggleGrid: () => void;
   onToggleTitleBlock: (show: boolean) => void;
   onLockBackground: (locked: boolean) => void;
@@ -96,11 +99,14 @@ export const MobileToolbar = ({
   onMeasure,
   onMeasureArea,
   onMeasureVolume,
+  onMeasureDistance,
   onErase,
   areaColor,
   areaOpacity,
   onAreaColorChange,
   onAreaOpacityChange,
+  distanceColor,
+  onDistanceColorChange,
   onToggleGrid,
   onToggleTitleBlock,
   onLockBackground,
@@ -235,7 +241,7 @@ export const MobileToolbar = ({
       {/* Mark Up Dropdown - Symbols + Area/Volume */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={mode === "place-symbol" || mode === "measure-area" || mode === "measure-volume" ? "default" : "outline"} size="sm" className="shrink-0">
+          <Button variant={mode === "place-symbol" || mode === "measure-area" || mode === "measure-volume" || mode === "measure-distance" ? "default" : "outline"} size="sm" className="shrink-0">
             Mark Up <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
@@ -276,17 +282,37 @@ export const MobileToolbar = ({
                 <Box className="mr-2 h-4 w-4" />
                 <span>Measure Volume</span>
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={onMeasureDistance} disabled={!scale}>
+                <Ruler className="mr-2 h-4 w-4" />
+                <span>Measure Distance</span>
+              </DropdownMenuItem>
             </div>
             
-            {/* Color Bar */}
-            <div className="mt-3 pt-3 border-t">
-              <AreaColorPicker 
-                color={areaColor}
-                opacity={areaOpacity}
-                onColorChange={onAreaColorChange}
-                onOpacityChange={onAreaOpacityChange}
-              />
-            </div>
+            {/* Color Bar for Area/Volume */}
+            {(mode === "measure-area" || mode === "measure-volume") && (
+              <div className="mt-3 pt-3 border-t">
+                <Label className="text-xs mb-2 block">Area/Volume Color</Label>
+                <AreaColorPicker 
+                  color={areaColor}
+                  opacity={areaOpacity}
+                  onColorChange={onAreaColorChange}
+                  onOpacityChange={onAreaOpacityChange}
+                />
+              </div>
+            )}
+            
+            {/* Color Picker for Distance */}
+            {mode === "measure-distance" && (
+              <div className="mt-3 pt-3 border-t">
+                <Label className="text-xs mb-2 block">Distance Color</Label>
+                <input
+                  type="color"
+                  value={distanceColor}
+                  onChange={(e) => onDistanceColorChange(e.target.value)}
+                  className="h-8 w-full border rounded bg-background"
+                />
+              </div>
+            )}
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
