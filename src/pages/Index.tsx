@@ -674,6 +674,7 @@ const Index = () => {
 
         <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
           <CanvasWorkspace
+            key={`page-${selectedPages[currentPageIndex]}`}
             imageUrl={pdfPages[selectedPages[currentPageIndex]]}
             pageNumber={selectedPages[currentPageIndex] + 1}
             onExport={handleExport}
