@@ -48,8 +48,8 @@ export const useMeasureDistanceMode = (
       let x = pointer.x;
       let y = pointer.y;
 
-      // Snap first point to grid if Control is pressed
-      if (e.ctrlKey && showGrid && gridSize) {
+      // Snap first point to grid if Shift is pressed
+      if (e.shiftKey && showGrid && gridSize) {
         const gridSizePx = parseFloat(gridSize);
         x = Math.round(x / gridSizePx) * gridSizePx;
         y = Math.round(y / gridSizePx) * gridSizePx;
@@ -89,8 +89,8 @@ export const useMeasureDistanceMode = (
         let x2 = pointer.x;
         let y2 = pointer.y;
 
-        // Snap second point if Control is pressed
-        if (e.ctrlKey && showGrid && gridSize) {
+        // Snap second point if Shift is pressed
+        if (e.shiftKey && showGrid && gridSize) {
           const gridSizePx = parseFloat(gridSize);
           x2 = Math.round(x2 / gridSizePx) * gridSizePx;
           y2 = Math.round(y2 / gridSizePx) * gridSizePx;
@@ -134,24 +134,23 @@ export const useMeasureDistanceMode = (
       let x2 = pointer.x;
       let y2 = pointer.y;
 
-      // Snap to grid or horizontal/vertical when Control key is pressed
-      if (opt.e.ctrlKey) {
-        if (showGrid && gridSize) {
-          // Snap to grid
-          const gridSizePx = parseFloat(gridSize);
-          x2 = Math.round(x2 / gridSizePx) * gridSizePx;
-          y2 = Math.round(y2 / gridSizePx) * gridSizePx;
-        } else {
-          // Snap to horizontal or vertical
-          const dx = Math.abs(x2 - startPoint.x);
-          const dy = Math.abs(y2 - startPoint.y);
+      // Snap to grid if Shift is pressed
+      if (opt.e.shiftKey && showGrid && gridSize) {
+        const gridSizePx = parseFloat(gridSize);
+        x2 = Math.round(x2 / gridSizePx) * gridSizePx;
+        y2 = Math.round(y2 / gridSizePx) * gridSizePx;
+      }
 
-          // Snap to whichever axis has greater distance
-          if (dx > dy) {
-            y2 = startPoint.y; // Snap to horizontal
-          } else {
-            x2 = startPoint.x; // Snap to vertical
-          }
+      // Snap to horizontal or vertical if Control key is pressed
+      if (opt.e.ctrlKey) {
+        const dx = Math.abs(x2 - startPoint.x);
+        const dy = Math.abs(y2 - startPoint.y);
+
+        // Snap to whichever axis has greater distance
+        if (dx > dy) {
+          y2 = startPoint.y; // Snap to horizontal
+        } else {
+          x2 = startPoint.x; // Snap to vertical
         }
       }
 
