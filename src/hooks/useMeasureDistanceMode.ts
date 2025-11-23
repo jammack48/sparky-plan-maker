@@ -139,10 +139,8 @@ export const useMeasureDistanceMode = (
         const gridSizePx = parseFloat(gridSize);
         x2 = Math.round(x2 / gridSizePx) * gridSizePx;
         y2 = Math.round(y2 / gridSizePx) * gridSizePx;
-      }
-
-      // Snap to horizontal or vertical if Control key is pressed
-      if (opt.e.ctrlKey) {
+      } else if (opt.e.ctrlKey) {
+        // Snap to horizontal or vertical if Control key is pressed
         const dx = Math.abs(x2 - startPoint.x);
         const dy = Math.abs(y2 - startPoint.y);
 
