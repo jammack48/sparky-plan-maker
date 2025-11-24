@@ -140,6 +140,15 @@ export const CanvasToolbar = ({
           <Redo2 className="w-4 h-4" />
         </Button>
         <Button
+          variant={lockBackground ? "outline" : "default"}
+          size="sm"
+          onClick={() => onLockBackground(!lockBackground)}
+          title={lockBackground ? "Background Locked - Click to Unlock" : "Background Unlocked - Click to Lock"}
+        >
+          {lockBackground ? <Lock className="w-4 h-4 mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
+          {lockBackground ? "Locked" : "Unlocked"}
+        </Button>
+        <Button
           variant={mode === "crop" ? "default" : "outline"}
           size="sm"
           onClick={onCrop}
@@ -289,15 +298,6 @@ export const CanvasToolbar = ({
             />
           </div>
         )}
-        <Button
-          variant={lockBackground ? "outline" : "default"}
-          size="sm"
-          onClick={() => onLockBackground(!lockBackground)}
-          title={lockBackground ? "Background Locked - Click to Unlock" : "Background Unlocked - Click to Lock"}
-        >
-          {lockBackground ? <Lock className="w-4 h-4 mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
-          {lockBackground ? "Locked" : "Unlocked"}
-        </Button>
         <Button
           variant={hasSelection ? "default" : "outline"}
           size="sm"
