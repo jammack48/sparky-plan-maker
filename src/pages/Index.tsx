@@ -715,48 +715,39 @@ const Index = () => {
             onCanvasReady={(canvas, setIsRestoring) => {
               canvasRef.current = canvas;
               
-              // Restore pending canvas data if any (only once)
-              if (pendingCanvasData && !hasRestoredRef.current) {
-                hasRestoredRef.current = true; // Set immediately to prevent re-entry
-                const dataToRestore = pendingCanvasData;
-                setPendingCanvasData(null); // Clear immediately to prevent duplicate restores
-                console.info('[Canvas Restore] Starting restoration...');
-                
-                try {
-                  setIsRestoring(true);
-                  canvas.loadFromJSON(dataToRestore, () => {
-                    // Re-tag background image after loading and lock it
-                    const objects = canvas.getObjects();
-                    // Find the first image object - it should be the background
-                    const bgImage = objects.find((obj: any) => obj.type === 'image');
-                    if (bgImage) {
-                      (bgImage as any).isBackgroundImage = true;
-                      // Lock the background on restore
-                      bgImage.set({
-                        selectable: false,
-                        evented: false,
-                        hasControls: false,
-                        lockMovementX: true,
-                        lockMovementY: true,
-                        lockRotation: true,
-                        lockScalingX: true,
-                        lockScalingY: true,
-                      });
-                      console.info('[Canvas Restore] Re-tagged and locked background image');
-                    }
-                    canvas.renderAll();
-                    setIsRestoring(false);
-                    
-                    // Show toast with stable ID to prevent duplicates
-                    toast.success("Canvas restored", { id: "canvas-restored" });
-                    console.info('[Canvas Restore] Complete');
-                  });
-                } catch (error) {
-                  console.error("Error restoring canvas:", error);
-                  toast.error("Failed to restore canvas content");
+              // Early exit if no data or already restored
+              if (!pendingCanvasData || hasRestoredRef.current) {
+                return;
+              }
+              
+              hasRestoredRef.current = true;
+              const dataToRestore = pendingCanvasData;
+              setPendingCanvasData(null);
+              
+              console.info('[Canvas Restore] Starting restoration...');
+              
+              try {
+                setIsRestoring(true);
+                canvas.loadFromJSON(dataToRestore, () => {
+                  // Re-tag objects with name='backgroundImage' as background
+                  const objects = canvas.getObjects();
+                  const bgImage = objects.find((obj: any) => obj.name === 'backgroundImage');
+                  if (bgImage) {
+                    (bgImage as any).isBackgroundImage = true;
+                    console.info('[Canvas Restore] Re-tagged background image');
+                  }
+                  
+                  canvas.renderAll();
                   setIsRestoring(false);
-                  hasRestoredRef.current = false;
-                }
+                  
+                  toast.success("Canvas restored", { id: "canvas-restored" });
+                  console.info('[Canvas Restore] Complete');
+                });
+              } catch (error) {
+                console.error("Error restoring canvas:", error);
+                toast.error("Failed to restore canvas content");
+                setIsRestoring(false);
+                hasRestoredRef.current = false;
               }
             }}
           />
