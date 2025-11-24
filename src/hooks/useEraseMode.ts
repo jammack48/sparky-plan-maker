@@ -144,17 +144,38 @@ export const useEraseMode = (
       // Allow touch and left-click; ignore right/middle clicks
       if (typeof e?.button === "number" && e.button !== 0) return;
 
+      const target = opt.target as any;
+
+      // If we clicked the background, treat it like empty space (start rectangle erase)
+      if (target && target.isBackgroundImage) {
+        const pointer = fabricCanvas.getPointer(opt.e);
+        setEraseStart({ x: pointer.x, y: pointer.y });
+        const rect = new Rect({
+          left: pointer.x,
+          top: pointer.y,
+          width: 0,
+          height: 0,
+          fill: 'rgba(100, 149, 237, 0.3)',
+          stroke: 'blue',
+          strokeWidth: 2,
+          selectable: false,
+          evented: false,
+        });
+        fabricCanvas.add(rect);
+        setEraseRect(rect);
+        return;
+      }
+
       // Check if clicking on a symbol/object (not background)
-      const target = opt.target;
-      if (target && !(target as any).isBackgroundImage) {
-        // Delete the symbol immediately (but not if it's the background)
+      if (target) {
+        // Delete the symbol immediately
         fabricCanvas.remove(target);
         fabricCanvas.renderAll();
         onSaveState();
         return; // Don't start rectangle erase
       }
 
-      // Only allow rectangle erase on background or empty space
+      // Empty space - start rectangle erase
       const pointer = fabricCanvas.getPointer(opt.e);
       setEraseStart({ x: pointer.x, y: pointer.y });
       

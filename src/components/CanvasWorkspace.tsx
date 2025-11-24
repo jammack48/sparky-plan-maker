@@ -379,7 +379,7 @@ export const CanvasWorkspace = ({
       bg.lockScalingY = locked;
       fabricCanvas.renderAll();
     }
-  }, [fabricCanvas, mode, lockBackground]);
+  }, [fabricCanvas, mode, lockBackground, isRestoringFromSave]);
 
   // Handle move mode - disable scaling and rotation
   useEffect(() => {

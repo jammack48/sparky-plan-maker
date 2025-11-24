@@ -156,44 +156,43 @@ export const CanvasToolbar = ({
           {mode === "crop" ? <X className="w-4 h-4 mr-2" /> : <Crop className="w-4 h-4 mr-2" />}
           {mode === "crop" ? "Cancel" : "Crop"}
         </Button>
-        <Button
-          variant={mode === "measure" ? "default" : "outline"}
-          size="sm"
-          onClick={onMeasure}
-        >
-          {mode === "measure" ? <X className="w-4 h-4 mr-2" /> : <Ruler className="w-4 h-4 mr-2" />}
-          {mode === "measure" ? "Cancel" : "Measure"}
-        </Button>
-        <Button
-          variant={mode === "measure-area" ? "default" : "outline"}
-          size="sm"
-          onClick={onMeasureArea}
-          disabled={!scale}
-          title={!scale ? "Set scale first using Measure tool" : "Measure Area"}
-        >
-          <Square className="w-4 h-4 mr-2" />
-          Area
-        </Button>
-        <Button
-          variant={mode === "measure-volume" ? "default" : "outline"}
-          size="sm"
-          onClick={onMeasureVolume}
-          disabled={!scale}
-          title={!scale ? "Set scale first using Measure tool" : "Measure Volume"}
-        >
-          <Box className="w-4 h-4 mr-2" />
-          Volume
-        </Button>
-        <Button
-          variant={mode === "measure-distance" ? "default" : "outline"}
-          size="sm"
-          onClick={onMeasureDistance}
-          disabled={!scale}
-          title={!scale ? "Set scale first using Measure tool" : "Measure Distance"}
-        >
-          <Ruler className="w-4 h-4 mr-2" />
-          Distance
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={
+                mode === "measure" ||
+                mode === "measure-area" ||
+                mode === "measure-volume" ||
+                mode === "measure-distance"
+                  ? "default"
+                  : "outline"
+              }
+              size="sm"
+            >
+              <Ruler className="w-4 h-4 mr-2" />
+              Measure
+              <ChevronDown className="w-4 h-4 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="z-50 w-56 bg-background">
+            <DropdownMenuItem onClick={onMeasure}>
+              <Ruler className="mr-2 h-4 w-4" />
+              {mode === "measure" ? "Cancel Set Scale" : "Set Scale"}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!scale} onClick={onMeasureArea}>
+              <Square className="mr-2 h-4 w-4" />
+              Area {!scale && "(Set scale first)"}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!scale} onClick={onMeasureVolume}>
+              <Box className="mr-2 h-4 w-4" />
+              Volume {!scale && "(Set scale first)"}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!scale} onClick={onMeasureDistance}>
+              <Ruler className="mr-2 h-4 w-4" />
+              Distance {!scale && "(Set scale first)"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {(mode === "measure-area" || mode === "measure-volume") && (
           <Popover>
             <PopoverTrigger asChild>

@@ -718,29 +718,39 @@ const Index = () => {
               // Restore pending canvas data if any (only once)
               if (pendingCanvasData && !hasRestoredRef.current) {
                 hasRestoredRef.current = true; // Set immediately to prevent re-entry
+                const dataToRestore = pendingCanvasData;
+                setPendingCanvasData(null); // Clear immediately to prevent duplicate restores
                 console.info('[Canvas Restore] Starting restoration...');
                 
                 try {
                   setIsRestoring(true);
-                  canvas.loadFromJSON(pendingCanvasData, () => {
-                    // Re-tag background image after loading
+                  canvas.loadFromJSON(dataToRestore, () => {
+                    // Re-tag background image after loading and lock it
                     const objects = canvas.getObjects();
                     // Find the first image object - it should be the background
                     const bgImage = objects.find((obj: any) => obj.type === 'image');
                     if (bgImage) {
                       (bgImage as any).isBackgroundImage = true;
-                      console.info('[Canvas Restore] Re-tagged background image');
+                      // Lock the background on restore
+                      bgImage.set({
+                        selectable: false,
+                        evented: false,
+                        hasControls: false,
+                        lockMovementX: true,
+                        lockMovementY: true,
+                        lockRotation: true,
+                        lockScalingX: true,
+                        lockScalingY: true,
+                      });
+                      console.info('[Canvas Restore] Re-tagged and locked background image');
                     }
                     canvas.renderAll();
                     setIsRestoring(false);
                     
-                    // Only show toast once
-                    if (hasRestoredRef.current) {
-                      toast.success("Canvas restored");
-                      console.info('[Canvas Restore] Complete');
-                    }
+                    // Show toast with stable ID to prevent duplicates
+                    toast.success("Canvas restored", { id: "canvas-restored" });
+                    console.info('[Canvas Restore] Complete');
                   });
-                  setPendingCanvasData(null);
                 } catch (error) {
                   console.error("Error restoring canvas:", error);
                   toast.error("Failed to restore canvas content");
