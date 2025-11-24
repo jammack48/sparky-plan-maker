@@ -136,7 +136,7 @@ const Index = () => {
 
     try {
       // Get canvas JSON
-      const canvasJson = canvasRef.current.toJSON();
+      const canvasJson = JSON.parse(JSON.stringify(canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])));
 
       const { data, error } = await saveProject(
         {
@@ -729,25 +729,56 @@ const Index = () => {
               try {
                 setIsRestoring(true);
                 canvas.loadFromJSON(dataToRestore, () => {
-                  // Re-tag objects with name='backgroundImage' as background
                   const objects = canvas.getObjects();
                   const bgImage = objects.find((obj: any) => obj.name === 'backgroundImage');
+                  
+                  console.info('[Canvas Restore] Found background?', { 
+                    found: !!bgImage,
+                    totalObjects: objects.length 
+                  });
+                  
                   if (bgImage) {
                     (bgImage as any).isBackgroundImage = true;
-                    // Explicitly apply lock properties
-                    bgImage.set({
-                      selectable: false,
-                      evented: false,
-                      hasControls: false,
-                      lockMovementX: true,
-                      lockMovementY: true,
-                      lockRotation: true,
-                      lockScalingX: true,
-                      lockScalingY: true,
-                      hoverCursor: 'default',
-                      moveCursor: 'default',
+                    
+                    // Restore backgroundLocked property, default to true if not set
+                    if ((bgImage as any).backgroundLocked === undefined) {
+                      (bgImage as any).backgroundLocked = true;
+                      console.info('[Canvas Restore] No backgroundLocked in JSON, defaulted to true');
+                    }
+                    
+                    const isLocked = (bgImage as any).backgroundLocked !== false;
+                    
+                    console.info('[Canvas Restore] Background lock state', {
+                      backgroundLockedProperty: (bgImage as any).backgroundLocked,
+                      isLocked,
+                      beforeSelectable: bgImage.selectable,
+                      beforeEvented: bgImage.evented
                     });
-                    console.info('[Canvas Restore] Background locked');
+                    
+                    // Apply the lock state from the object's own property
+                    bgImage.set({
+                      selectable: !isLocked,
+                      evented: !isLocked,
+                      hasControls: !isLocked,
+                      lockMovementX: isLocked,
+                      lockMovementY: isLocked,
+                      lockRotation: isLocked,
+                      lockScalingX: isLocked,
+                      lockScalingY: isLocked,
+                      hoverCursor: isLocked ? 'default' : 'move',
+                      moveCursor: isLocked ? 'default' : 'move',
+                    });
+                    
+                    console.info('[Canvas Restore] After applying lock', {
+                      selectable: bgImage.selectable,
+                      evented: bgImage.evented,
+                      hasControls: bgImage.hasControls,
+                      lockMovementX: bgImage.lockMovementX,
+                      lockMovementY: bgImage.lockMovementY
+                    });
+                    
+                    // Note: CanvasWorkspace will sync its lockBackground state from the object property
+                    console.info('[Canvas Restore] Background lock configured');
                   }
                   
                   canvas.renderAll();
