@@ -25,17 +25,6 @@ export const useSymbolPlacement = (
     let previewSymbol: FabricObject | null = null;
 
     const handleMouseMove = (opt: any) => {
-      // Avoid showing preview while dragging existing selections/objects
-      const isDraggingMouse = (opt.e as any)?.buttons === 1;
-      if (isDraggingMouse) {
-        if (previewSymbol) {
-          fabricCanvas.remove(previewSymbol);
-          previewSymbol = null;
-          fabricCanvas.requestRenderAll();
-        }
-        return;
-      }
-
       const vpt = fabricCanvas.viewportTransform;
       if (!vpt) return;
 

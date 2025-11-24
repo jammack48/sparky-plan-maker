@@ -9,7 +9,7 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
     const targetCanvas = canvas || fabricCanvas;
     if (!targetCanvas) return;
     
-    const json = JSON.stringify(targetCanvas.toJSON());
+    const json = JSON.stringify(targetCanvas.toJSON(['isBackgroundImage', 'backgroundLocked']));
     setUndoStack(prev => [...prev, json]);
     setRedoStack([]);
   };
@@ -42,6 +42,10 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
       const bgImage = objects.find((obj: any) => obj.name === 'backgroundImage');
       if (bgImage) {
         (bgImage as any).isBackgroundImage = true;
+        // backgroundLocked is already in JSON, just ensure default
+        if ((bgImage as any).backgroundLocked === undefined) {
+          (bgImage as any).backgroundLocked = true;
+        }
       }
       fabricCanvas.renderAll();
     });
@@ -73,6 +77,10 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
       const bgImage = objects.find((obj: any) => obj.name === 'backgroundImage');
       if (bgImage) {
         (bgImage as any).isBackgroundImage = true;
+        // backgroundLocked is already in JSON, just ensure default
+        if ((bgImage as any).backgroundLocked === undefined) {
+          (bgImage as any).backgroundLocked = true;
+        }
       }
       fabricCanvas.renderAll();
     });
