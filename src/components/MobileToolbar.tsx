@@ -242,7 +242,7 @@ export const MobileToolbar = ({
       {/* Mark Up Dropdown - Symbols + Area/Volume */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={mode === "place-symbol" || mode === "measure-area" || mode === "measure-volume" || mode === "measure-distance" ? "default" : "outline"} size="sm" className="shrink-0">
+          <Button variant={mode === "place-symbol" || mode === "measure" || mode === "measure-area" || mode === "measure-volume" || mode === "measure-distance" ? "default" : "outline"} size="sm" className="shrink-0">
             Mark Up <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
@@ -275,17 +275,21 @@ export const MobileToolbar = ({
           
           <div className="border-t mt-2 pt-2 px-2">
             <div className="space-y-2">
+              <DropdownMenuItem onClick={onMeasure}>
+                <Ruler className="mr-2 h-4 w-4" />
+                <span>{mode === "measure" ? "Cancel Set Scale" : "Set Scale"}</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onMeasureArea} disabled={!scale}>
                 <Square className="mr-2 h-4 w-4" />
-                <span>Measure Area</span>
+                <span>Measure Area {!scale && "(Set scale first)"}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onMeasureVolume} disabled={!scale}>
                 <Box className="mr-2 h-4 w-4" />
-                <span>Measure Volume</span>
+                <span>Measure Volume {!scale && "(Set scale first)"}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onMeasureDistance} disabled={!scale}>
                 <Ruler className="mr-2 h-4 w-4" />
-                <span>Measure Distance</span>
+                <span>Measure Distance {!scale && "(Set scale first)"}</span>
               </DropdownMenuItem>
             </div>
             
@@ -368,10 +372,6 @@ export const MobileToolbar = ({
           <DropdownMenuItem onClick={onCrop}>
             {mode === "crop" ? <X className="mr-2 h-4 w-4" /> : <Crop className="mr-2 h-4 w-4" />}
             <span>{mode === "crop" ? "Cancel Crop" : "Crop"}</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onMeasure}>
-            {mode === "measure" ? <X className="mr-2 h-4 w-4" /> : <Ruler className="mr-2 h-4 w-4" />}
-            <span>{mode === "measure" ? "Cancel Measure" : "Measure"}</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onErase}>
             <Eraser className="mr-2 h-4 w-4" />
