@@ -717,8 +717,10 @@ const Index = () => {
               
               // Restore pending canvas data if any (only once)
               if (pendingCanvasData && !hasRestoredRef.current) {
+                hasRestoredRef.current = true; // Set immediately to prevent re-entry
+                console.info('[Canvas Restore] Starting restoration...');
+                
                 try {
-                  hasRestoredRef.current = true;
                   setIsRestoring(true);
                   canvas.loadFromJSON(pendingCanvasData, () => {
                     // Re-tag background image after loading
@@ -731,7 +733,12 @@ const Index = () => {
                     }
                     canvas.renderAll();
                     setIsRestoring(false);
-                    toast.success("Canvas restored");
+                    
+                    // Only show toast once
+                    if (hasRestoredRef.current) {
+                      toast.success("Canvas restored");
+                      console.info('[Canvas Restore] Complete');
+                    }
                   });
                   setPendingCanvasData(null);
                 } catch (error) {

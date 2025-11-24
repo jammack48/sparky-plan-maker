@@ -212,25 +212,8 @@ export const CanvasWorkspace = ({
     // Drawing mode is managed by useDrawMode hook
   }, [fabricCanvas, mode, symbolColor, symbolThickness]);
 
-  // Track selection changes
-  useEffect(() => {
-    if (!fabricCanvas) return;
-
-    const updateSelection = () => {
-      const activeObject = fabricCanvas.getActiveObject();
-      setHasSelection(!!activeObject);
-    };
-
-    fabricCanvas.on('selection:created', updateSelection);
-    fabricCanvas.on('selection:updated', updateSelection);
-    fabricCanvas.on('selection:cleared', updateSelection);
-
-    return () => {
-      fabricCanvas.off('selection:created', updateSelection);
-      fabricCanvas.off('selection:updated', updateSelection);
-      fabricCanvas.off('selection:cleared', updateSelection);
-    };
-  }, [fabricCanvas]);
+  // hasSelection is now controlled manually by Select All button
+  // Removed automatic selection tracking to prevent unwanted highlighting
 
   // Track object modifications for undo/redo
   useEffect(() => {
@@ -1186,6 +1169,9 @@ export const CanvasWorkspace = ({
   const handleSelectAll = () => {
     if (!fabricCanvas) return;
     
+    // Highlight the Select All button
+    setHasSelection(true);
+    
     const allObjects = fabricCanvas.getObjects().filter(obj => {
       // Always exclude the title block from selection
       if (obj === titleBlockGroupRef.current) return false;
@@ -1205,6 +1191,9 @@ export const CanvasWorkspace = ({
       fabricCanvas.setActiveObject(selection);
       fabricCanvas.renderAll();
     }
+    
+    // Reset highlight after a brief moment
+    setTimeout(() => setHasSelection(false), 300);
   };
   
   // Rotation helpers
