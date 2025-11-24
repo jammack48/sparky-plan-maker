@@ -90,7 +90,10 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => onLoadProject(project.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLoadProject(project.id);
+                        }}
                       >
                         Load
                       </Button>
