@@ -267,6 +267,7 @@ export const CanvasWorkspace = ({
         hoverCursor: lockBackground ? "default" : "move",
         moveCursor: lockBackground ? "default" : "move",
         selectionBackgroundColor: 'rgba(0,0,0,0.1)',
+        name: 'backgroundImage', // Serializable marker for background
       });
       
       // Tag this as background image for special handling
@@ -338,7 +339,16 @@ export const CanvasWorkspace = ({
     if (!fabricCanvas || !mode) return;
     
     const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
-    if (!bg) return;
+    if (!bg) {
+      console.warn('[Background Lock] No background image found', { mode, lockBackground });
+      return;
+    }
+    
+    console.info('[Background Lock] Applying lock state', { 
+      mode, 
+      lockBackground, 
+      isRestoring: isRestoringFromSave 
+    });
     
     if (mode === "place-symbol" || mode === "erase") {
       // Make background completely non-interactive in placement/erase modes
