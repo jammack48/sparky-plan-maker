@@ -223,7 +223,7 @@ const Index = () => {
       // Navigate to canvas
       setAppScreen('canvas');
       
-      toast.success(`Loaded project "${data.name}"`);
+      // Toast will be shown after canvas restoration completes
     } catch (error) {
       toast.error("Failed to restore project");
       console.error(error);
@@ -734,13 +734,26 @@ const Index = () => {
                   const bgImage = objects.find((obj: any) => obj.name === 'backgroundImage');
                   if (bgImage) {
                     (bgImage as any).isBackgroundImage = true;
-                    console.info('[Canvas Restore] Re-tagged background image');
+                    // Explicitly apply lock properties
+                    bgImage.set({
+                      selectable: false,
+                      evented: false,
+                      hasControls: false,
+                      lockMovementX: true,
+                      lockMovementY: true,
+                      lockRotation: true,
+                      lockScalingX: true,
+                      lockScalingY: true,
+                      hoverCursor: 'default',
+                      moveCursor: 'default',
+                    });
+                    console.info('[Canvas Restore] Background locked');
                   }
                   
                   canvas.renderAll();
                   setIsRestoring(false);
                   
-                  toast.success("Canvas restored", { id: "canvas-restored" });
+                  toast.success(`Loaded project "${projectName}"`, { id: "project-loaded" });
                   console.info('[Canvas Restore] Complete');
                 });
               } catch (error) {

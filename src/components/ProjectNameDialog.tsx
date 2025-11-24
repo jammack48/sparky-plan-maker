@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +25,13 @@ export function ProjectNameDialog({
   onSave,
 }: ProjectNameDialogProps) {
   const [name, setName] = useState(currentName);
+
+  // Sync internal state when dialog opens or currentName changes
+  useEffect(() => {
+    if (open) {
+      setName(currentName);
+    }
+  }, [open, currentName]);
 
   const handleSave = () => {
     if (name.trim()) {
