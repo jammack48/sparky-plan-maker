@@ -37,6 +37,7 @@ const Index = () => {
   const [savedProjects, setSavedProjects] = useState<ProjectMetadata[]>([]);
   const canvasRef = useRef<FabricCanvas | null>(null);
   const [pendingCanvasData, setPendingCanvasData] = useState<any>(null);
+  const hasRestoredRef = useRef(false);
 
   const [pdfPages, setPdfPages] = useState<string[]>([]);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
@@ -194,6 +195,9 @@ const Index = () => {
     }
 
     try {
+      // Reset restoration flag for new load
+      hasRestoredRef.current = false;
+      
       // Restore project state
       setProjectName(data.name);
       setCurrentProjectId(data.id);
@@ -711,16 +715,19 @@ const Index = () => {
             onCanvasReady={(canvas, setIsRestoring) => {
               canvasRef.current = canvas;
               
-              // Restore pending canvas data if any
-              if (pendingCanvasData) {
+              // Restore pending canvas data if any (only once)
+              if (pendingCanvasData && !hasRestoredRef.current) {
                 try {
+                  hasRestoredRef.current = true;
                   setIsRestoring(true);
                   canvas.loadFromJSON(pendingCanvasData, () => {
                     // Re-tag background image after loading
                     const objects = canvas.getObjects();
-                    const bgImage = objects.find((obj: any) => obj.type === 'image' && !obj.isBackgroundImage);
-                    if (bgImage && objects.indexOf(bgImage) === 0) {
+                    // Find the first image object - it should be the background
+                    const bgImage = objects.find((obj: any) => obj.type === 'image');
+                    if (bgImage) {
                       (bgImage as any).isBackgroundImage = true;
+                      console.info('[Canvas Restore] Re-tagged background image');
                     }
                     canvas.renderAll();
                     setIsRestoring(false);
@@ -731,6 +738,7 @@ const Index = () => {
                   console.error("Error restoring canvas:", error);
                   toast.error("Failed to restore canvas content");
                   setIsRestoring(false);
+                  hasRestoredRef.current = false;
                 }
               }
             }}

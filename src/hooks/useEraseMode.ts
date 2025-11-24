@@ -19,20 +19,39 @@ export const useEraseMode = (
     
     console.info('[Erase] flattenEraseRect called');
     
-    // Find the background image object
-    let bg = (fabricCanvas.backgroundImage as FabricImage | null) ?? null;
-
+    // Find the background image object with multiple strategies
+    let bg: FabricImage | null = null;
+    
+    // Strategy 1: Check canvas backgroundImage property
+    if (fabricCanvas.backgroundImage && (fabricCanvas.backgroundImage as any).getElement) {
+      bg = fabricCanvas.backgroundImage as FabricImage;
+      console.info('[Erase] Found bg via canvas.backgroundImage');
+    }
+    
+    // Strategy 2: Find object with isBackgroundImage flag
     if (!bg) {
       const bgObj = fabricCanvas
         .getObjects()
         .find((obj: any) => (obj as any).isBackgroundImage) as FabricImage | undefined;
       if (bgObj) {
         bg = bgObj;
+        console.info('[Erase] Found bg via isBackgroundImage flag');
+      }
+    }
+    
+    // Strategy 3: Find first image object (likely the background)
+    if (!bg) {
+      const firstImage = fabricCanvas
+        .getObjects()
+        .find((obj: any) => obj.type === 'image') as FabricImage | undefined;
+      if (firstImage) {
+        bg = firstImage;
+        console.info('[Erase] Found bg via first image object');
       }
     }
 
     if (!bg) {
-      console.warn('[Erase] No background image found');
+      console.warn('[Erase] No background image found after all strategies');
       fabricCanvas.remove(rect);
       fabricCanvas.renderAll();
       return;
@@ -128,13 +147,14 @@ export const useEraseMode = (
       // Check if clicking on a symbol/object (not background)
       const target = opt.target;
       if (target && !(target as any).isBackgroundImage) {
-        // Delete the symbol immediately
+        // Delete the symbol immediately (but not if it's the background)
         fabricCanvas.remove(target);
         fabricCanvas.renderAll();
         onSaveState();
         return; // Don't start rectangle erase
       }
 
+      // Only allow rectangle erase on background or empty space
       const pointer = fabricCanvas.getPointer(opt.e);
       setEraseStart({ x: pointer.x, y: pointer.y });
       
