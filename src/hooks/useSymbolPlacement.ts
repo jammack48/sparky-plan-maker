@@ -25,17 +25,6 @@ export const useSymbolPlacement = (
     let previewSymbol: FabricObject | null = null;
 
     const handleMouseMove = (opt: any) => {
-      // Avoid showing preview while dragging existing selections/objects
-      const isDraggingMouse = (opt.e as any)?.buttons === 1;
-      if (isDraggingMouse) {
-        if (previewSymbol) {
-          fabricCanvas.remove(previewSymbol);
-          previewSymbol = null;
-          fabricCanvas.requestRenderAll();
-        }
-        return;
-      }
-
       const vpt = fabricCanvas.viewportTransform;
       if (!vpt) return;
 
@@ -57,7 +46,7 @@ export const useSymbolPlacement = (
       const xWorld = (finalX - vpt[4]) / vpt[0];
       const yWorld = (finalY - vpt[5]) / vpt[3];
       
-      // Reuse existing preview, just move it instead of recreating
+      // Always show preview - reuse or create
       if (previewSymbol) {
         previewSymbol.set({ left: xWorld, top: yWorld });
         previewSymbol.setCoords();

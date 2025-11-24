@@ -205,6 +205,21 @@ export const CanvasWorkspace = ({
     };
   }, []);
 
+  // Sync lockBackground React state from background object on canvas ready
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
+    if (bg && (bg as any).backgroundLocked !== undefined) {
+      const objectLockState = (bg as any).backgroundLocked !== false;
+      setLockBackground(objectLockState);
+      console.info('[Background Init] Synced React state from object property', {
+        backgroundLockedProperty: (bg as any).backgroundLocked,
+        reactLockBackground: objectLockState
+      });
+    }
+  }, [fabricCanvas]);
+
   // Enable freehand drawing when 'freehand' tool is selected  
   // Note: Shape drawing (line, rectangle, circle) is handled by useDrawMode hook
   useEffect(() => {
@@ -260,18 +275,24 @@ export const CanvasWorkspace = ({
       const fabricImage = new FabricImage(img, {
         left: 0,
         top: 0,
-        selectable: !lockBackground, // Based on lock state
-        evented: !lockBackground,
-        hasControls: !lockBackground,
+        selectable: false,
+        evented: false,
+        hasControls: false,
+        lockMovementX: true,
+        lockMovementY: true,
+        lockRotation: true,
+        lockScalingX: true,
+        lockScalingY: true,
         objectCaching: true,
-        hoverCursor: lockBackground ? "default" : "move",
-        moveCursor: lockBackground ? "default" : "move",
+        hoverCursor: "default",
+        moveCursor: "default",
         selectionBackgroundColor: 'rgba(0,0,0,0.1)',
-        name: 'backgroundImage', // Serializable marker for background
+        name: 'backgroundImage',
       });
       
-      // Tag this as background image for special handling
       (fabricImage as any).isBackgroundImage = true;
+      (fabricImage as any).backgroundLocked = true; // Persistent lock state
+      console.info('[Background Create] Created with backgroundLocked=true');
 
       const canvasWidth = fabricCanvas.getWidth();
       const canvasHeight = fabricCanvas.getHeight();
@@ -334,24 +355,47 @@ export const CanvasWorkspace = ({
     img.src = imageUrl;
   }, [fabricCanvas, imageUrl]); // Remove lockBackground from deps to prevent clearing canvas
 
-  // Disable background interaction in place-symbol and erase modes
+  // Sync lock button with background object property
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
+    if (!bg) return;
+    
+    // Store lock state ON the object itself
+    (bg as any).backgroundLocked = lockBackground;
+    
+    console.info('[Background Lock Toggle] Updated object property', { 
+      lockBackground,
+      objectProperty: (bg as any).backgroundLocked
+    });
+  }, [fabricCanvas, lockBackground]);
+
+  // Background lock/unlock functionality - reads from object property
   useEffect(() => {
     if (!fabricCanvas || !mode) return;
     
     const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
     if (!bg) {
-      console.warn('[Background Lock] No background image found', { mode, lockBackground });
+      console.warn('[Background Lock] No background image found');
       return;
     }
+
+    // Read lock state from the OBJECT itself, not from React state
+    const isLocked = (bg as any).backgroundLocked !== false; // Default to locked
     
-    console.info('[Background Lock] Applying lock state', { 
+    console.info('[Background Lock] Applying lock from object property', { 
       mode, 
-      lockBackground, 
-      isRestoring: isRestoringFromSave 
+      objectBackgroundLocked: (bg as any).backgroundLocked,
+      isLocked,
+      reactLockBackground: lockBackground,
+      isRestoring: isRestoringFromSave,
+      currentSelectable: bg.selectable,
+      currentEvented: bg.evented
     });
     
+    // In certain modes, always lock the background regardless of toggle
     if (mode === "place-symbol" || mode === "erase") {
-      // Make background completely non-interactive in placement/erase modes
       bg.selectable = false;
       bg.evented = false;
       bg.hasControls = false;
@@ -360,36 +404,43 @@ export const CanvasWorkspace = ({
       bg.lockRotation = true;
       bg.lockScalingX = true;
       bg.lockScalingY = true;
-
-      // Clear ANY active selection when entering erase/placement modes
+      
+      console.info('[Background Lock] Force locked for mode', { mode });
+      
+      // Clear active selection when entering these modes
       const active = fabricCanvas.getActiveObject();
       if (active) {
         fabricCanvas.discardActiveObject();
       }
-
-      // Disable selection in erase mode to prevent accidental selections
+      
       if (mode === "erase") {
         fabricCanvas.selection = false;
       }
-
+      
       fabricCanvas.renderAll();
     } else {
-      // Re-enable selection in non-erase modes
-      fabricCanvas.selection = true;
+      // For other modes, use the object's own lock property
+      bg.selectable = !isLocked;
+      bg.evented = !isLocked;
+      bg.hasControls = !isLocked;
+      bg.lockMovementX = isLocked;
+      bg.lockMovementY = isLocked;
+      bg.lockRotation = isLocked;
+      bg.lockScalingX = isLocked;
+      bg.lockScalingY = isLocked;
+      bg.hoverCursor = isLocked ? "default" : "move";
+      bg.moveCursor = isLocked ? "default" : "move";
       
-      // In other modes, respect lock state
-      const locked = lockBackground;
-      bg.selectable = !locked;
-      bg.evented = !locked;
-      bg.hasControls = !locked;
-      bg.lockMovementX = locked;
-      bg.lockMovementY = locked;
-      bg.lockRotation = locked;
-      bg.lockScalingX = locked;
-      bg.lockScalingY = locked;
+      console.info('[Background Lock] Applied from object property', {
+        isLocked,
+        selectable: bg.selectable,
+        evented: bg.evented
+      });
+      
+      fabricCanvas.selection = true;
       fabricCanvas.renderAll();
     }
-  }, [fabricCanvas, mode, lockBackground, isRestoringFromSave]);
+  }, [fabricCanvas, mode, isRestoringFromSave]);
 
   // Handle move mode - disable scaling and rotation
   useEffect(() => {
