@@ -232,6 +232,22 @@ export const CanvasWorkspace = ({
     };
   }, [fabricCanvas]);
 
+  // Track object modifications for undo/redo
+  useEffect(() => {
+    if (!fabricCanvas || isRestoringFromSave) return;
+
+    const handleObjectModified = () => {
+      // Save canvas state after objects are moved, scaled, or rotated
+      saveCanvasState();
+    };
+
+    fabricCanvas.on('object:modified', handleObjectModified);
+
+    return () => {
+      fabricCanvas.off('object:modified', handleObjectModified);
+    };
+  }, [fabricCanvas, isRestoringFromSave, saveCanvasState]);
+
   // Remove old path:created handler as it's now in useDrawMode
   useEffect(() => {
     // Removed - now handled by useDrawMode

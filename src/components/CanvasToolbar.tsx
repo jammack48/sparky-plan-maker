@@ -122,6 +122,24 @@ export const CanvasToolbar = ({
           Move
         </Button>
         <Button
+          variant="outline"
+          size="sm"
+          onClick={onUndo}
+          disabled={undoStackLength === 0}
+          title="Undo (Ctrl+Z)"
+        >
+          <Undo2 className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRedo}
+          disabled={redoStackLength === 0}
+          title="Redo (Ctrl+Shift+Z)"
+        >
+          <Redo2 className="w-4 h-4" />
+        </Button>
+        <Button
           variant={mode === "crop" ? "default" : "outline"}
           size="sm"
           onClick={onCrop}
@@ -304,22 +322,6 @@ export const CanvasToolbar = ({
           title="Rotate selection 90° CW"
         >
           <RotateCw className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onUndo}
-          disabled={undoStackLength === 0}
-        >
-          <Undo2 className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRedo}
-          disabled={redoStackLength === 0}
-        >
-          <Redo2 className="w-4 h-4" />
         </Button>
         <div className="flex items-center gap-2 ml-2">
           <Switch

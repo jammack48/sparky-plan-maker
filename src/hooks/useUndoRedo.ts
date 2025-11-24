@@ -39,9 +39,11 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
     fabricCanvas.loadFromJSON(previousState).then(() => {
       // Re-tag background image after loading from JSON
       const objects = fabricCanvas.getObjects();
-      const bgImage = objects.find((obj: any) => obj.type === 'image' && !obj.isBackgroundImage);
-      if (bgImage && objects.indexOf(bgImage) === 0) {
+      // Find the first image object - it should be the background
+      const bgImage = objects.find((obj: any) => obj.type === 'image');
+      if (bgImage) {
         (bgImage as any).isBackgroundImage = true;
+        console.info('[Undo] Re-tagged background image');
       }
       fabricCanvas.renderAll();
     });
@@ -70,9 +72,11 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
     fabricCanvas.loadFromJSON(nextState).then(() => {
       // Re-tag background image after loading from JSON
       const objects = fabricCanvas.getObjects();
-      const bgImage = objects.find((obj: any) => obj.type === 'image' && !obj.isBackgroundImage);
-      if (bgImage && objects.indexOf(bgImage) === 0) {
+      // Find the first image object - it should be the background
+      const bgImage = objects.find((obj: any) => obj.type === 'image');
+      if (bgImage) {
         (bgImage as any).isBackgroundImage = true;
+        console.info('[Redo] Re-tagged background image');
       }
       fabricCanvas.renderAll();
     });
