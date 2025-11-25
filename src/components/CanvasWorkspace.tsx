@@ -290,9 +290,16 @@ export const CanvasWorkspace = ({
         name: 'backgroundImage',
       });
       
+      // Set BOTH tags immediately - no delay
       (fabricImage as any).isBackgroundImage = true;
-      (fabricImage as any).backgroundLocked = true; // Persistent lock state
-      console.info('[Background Create] Created with backgroundLocked=true');
+      (fabricImage as any).backgroundLocked = true;
+      (fabricImage as any).name = 'backgroundImage';
+      
+      console.info('[Background Create] Created with lock tags', {
+        isBackgroundImage: true,
+        backgroundLocked: true,
+        name: 'backgroundImage'
+      });
 
       const canvasWidth = fabricCanvas.getWidth();
       const canvasHeight = fabricCanvas.getHeight();
@@ -373,11 +380,17 @@ export const CanvasWorkspace = ({
 
   // Background lock/unlock functionality - reads from object property
   useEffect(() => {
-    if (!fabricCanvas || !mode) return;
+    if (!fabricCanvas || !mode || isRestoringFromSave) {
+      console.info('[Background Lock] Skipping - restoring or no canvas', { isRestoringFromSave, mode });
+      return;
+    }
     
     const bg = fabricCanvas.getObjects().find((o: any) => o.isBackgroundImage);
     if (!bg) {
-      console.warn('[Background Lock] No background image found');
+      console.warn('[Background Lock] No background image found', {
+        totalObjects: fabricCanvas.getObjects().length,
+        objects: fabricCanvas.getObjects().map((o: any) => ({ type: o.type, name: o.name, isBackgroundImage: o.isBackgroundImage }))
+      });
       return;
     }
 

@@ -142,3 +142,29 @@ export const getFloorPlanUrl = (path: string): string => {
   const { data } = supabase.storage.from("floor-plans").getPublicUrl(path);
   return data.publicUrl;
 };
+
+export const renameProject = async (
+  projectId: string,
+  newName: string
+): Promise<{ error: any }> => {
+  try {
+    const { error } = await supabase
+      .from("projects")
+      .update({
+        name: newName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", projectId);
+
+    if (error) {
+      console.error("Error renaming project:", error);
+      return { error };
+    }
+
+    console.info("Project renamed successfully", { projectId, newName });
+    return { error: null };
+  } catch (error) {
+    console.error("Error renaming project:", error);
+    return { error };
+  }
+};
