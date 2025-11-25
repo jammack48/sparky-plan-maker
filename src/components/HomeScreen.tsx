@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
@@ -19,6 +20,7 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [projectName, setProjectName] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<{ projectId: string; projectName: string } | null>(null);
 
   const handleNewProject = () => {
     setShowNameDialog(true);
@@ -100,10 +102,9 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          if (window.confirm(`Delete project "${project.name}"?`)) {
-                            onDeleteProject(project.id);
-                          }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirm({ projectId: project.id, projectName: project.name });
                         }}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -179,9 +180,7 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
                         variant="outline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (window.confirm(`Delete project "${project.name}"?`)) {
-                            onDeleteProject(project.id);
-                          }
+                          setDeleteConfirm({ projectId: project.id, projectName: project.name });
                         }}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -199,6 +198,30 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteConfirm?.projectName}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirm) {
+                  onDeleteProject(deleteConfirm.projectId);
+                  setDeleteConfirm(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
