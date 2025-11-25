@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
 import { ProjectMetadata } from "@/lib/supabaseService";
 
@@ -14,13 +14,16 @@ interface HomeScreenProps {
   savedProjects: ProjectMetadata[];
   onLoadProject: (projectId: string) => void;
   onDeleteProject: (projectId: string) => void;
+  onRenameProject: (projectId: string, newName: string) => Promise<void>;
 }
 
-export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject, onDeleteProject }: HomeScreenProps) => {
+export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject, onDeleteProject, onRenameProject }: HomeScreenProps) => {
   const [showNameDialog, setShowNameDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ projectId: string; projectName: string } | null>(null);
+  const [renameProject, setRenameProject] = useState<{ id: string; currentName: string } | null>(null);
+  const [newProjectName, setNewProjectName] = useState("");
 
   const handleNewProject = () => {
     setShowNameDialog(true);
@@ -31,6 +34,13 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
     const name = projectName.trim() || "Untitled Project";
     setShowNameDialog(false);
     onNewProject(name);
+  };
+
+  const handleRenameProject = async () => {
+    if (!renameProject || !newProjectName.trim()) return;
+    
+    await onRenameProject(renameProject.id, newProjectName.trim());
+    setRenameProject(null);
   };
 
   return (
@@ -98,6 +108,17 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
                         }}
                       >
                         Load
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenameProject({ id: project.id, currentName: project.name });
+                          setNewProjectName(project.name);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
                       </Button>
                       <Button
                         size="sm"
@@ -175,16 +196,29 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
                           Updated {new Date(project.updated_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirm({ projectId: project.id, projectName: project.name });
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRenameProject({ id: project.id, currentName: project.name });
+                            setNewProjectName(project.name);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirm({ projectId: project.id, projectName: project.name });
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
@@ -194,6 +228,38 @@ export const HomeScreen = ({ onNewProject, onSkip, savedProjects, onLoadProject,
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLoadDialog(false)}>
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!renameProject} onOpenChange={() => setRenameProject(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+            <DialogDescription>
+              Enter a new name for "{renameProject?.currentName}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Project Name"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newProjectName.trim()) {
+                  handleRenameProject();
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameProject(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRenameProject} disabled={!newProjectName.trim()}>
+              Rename
             </Button>
           </DialogFooter>
         </DialogContent>

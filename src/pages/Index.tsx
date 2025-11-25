@@ -15,7 +15,7 @@ import { PageSetupDialog } from "@/components/PageSetupDialog";
 import { ProjectNameDialog } from "@/components/ProjectNameDialog";
 import { PageSetup, DEFAULT_PAGE_SETUP } from "@/types/pageSetup";
 import { toast } from "sonner";
-import { saveProject, loadProject, listProjects, deleteProject, ProjectMetadata } from "@/lib/supabaseService";
+import { saveProject, loadProject, listProjects, deleteProject, renameProject, ProjectMetadata } from "@/lib/supabaseService";
 import type { Canvas as FabricCanvas } from "fabric";
 
 // Set worker for PDF.js (Vite)
@@ -489,6 +489,30 @@ const Index = () => {
     }
   };
 
+  const handleRenameProject = async (projectId: string, newName: string) => {
+    try {
+      const { error } = await renameProject(projectId, newName);
+      if (error) {
+        toast.error("Failed to rename project");
+        return;
+      }
+      
+      toast.success(`Renamed to "${newName}"`);
+      
+      // Refresh the project list
+      await loadSavedProjects();
+      
+      // If renaming current project, update the name in state
+      if (currentProjectId === projectId) {
+        setProjectName(newName);
+        localStorage.setItem('tradesketch-project-name', newName);
+      }
+    } catch (error) {
+      console.error('Error renaming project:', error);
+      toast.error('Failed to rename project');
+    }
+  };
+
   // Home screen
   if (appScreen === 'home') {
     return (
@@ -514,6 +538,7 @@ const Index = () => {
             loadSavedProjects();
           }
         }}
+        onRenameProject={handleRenameProject}
       />
     );
   }
@@ -760,8 +785,11 @@ const Index = () => {
                       lockMovementY: bgImage.lockMovementY
                     });
                     
+                    // Force update the object coords after setting lock properties
+                    bgImage.setCoords();
+                    
                     // Note: CanvasWorkspace will sync its lockBackground state from the object property
-                    console.info('[Canvas Restore] Background lock configured');
+                    console.info('[Canvas Restore] Background lock configured and coords updated');
                   }
                   
                   canvas.renderAll();
