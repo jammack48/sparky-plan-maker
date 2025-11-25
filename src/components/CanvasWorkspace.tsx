@@ -453,7 +453,7 @@ export const CanvasWorkspace = ({
       fabricCanvas.selection = true;
       fabricCanvas.renderAll();
     }
-  }, [fabricCanvas, mode, isRestoringFromSave]);
+  }, [fabricCanvas, mode, isRestoringFromSave, lockBackground]);
 
   // Handle move mode - disable scaling and rotation
   useEffect(() => {
