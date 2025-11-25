@@ -24,6 +24,28 @@ export const useSymbolPlacement = (
     
     let previewSymbol: FabricObject | null = null;
 
+    // Create initial preview at canvas center when entering placement mode
+    const initializePreview = () => {
+      const vpt = fabricCanvas.viewportTransform;
+      if (!vpt) return;
+      
+      // Get canvas center in world coordinates
+      const centerX = (fabricCanvas.width! / 2 - vpt[4]) / vpt[0];
+      const centerY = (fabricCanvas.height! / 2 - vpt[5]) / vpt[3];
+      
+      previewSymbol = createSymbol(selectedSymbol, centerX, centerY, true);
+      if (previewSymbol) {
+        previewSymbol.selectable = false;
+        previewSymbol.evented = false;
+        (previewSymbol as any).isPreview = true;
+        fabricCanvas.add(previewSymbol);
+        fabricCanvas.requestRenderAll();
+      }
+    };
+
+    // Initialize preview immediately
+    initializePreview();
+
     const handleMouseMove = (opt: any) => {
       const vpt = fabricCanvas.viewportTransform;
       if (!vpt) return;
