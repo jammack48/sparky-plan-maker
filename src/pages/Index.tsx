@@ -10,6 +10,7 @@ import { SymbolToolbar, DEFAULT_SYMBOL_CATEGORIES, SymbolCategory } from "@/comp
 import { SymbolStyleControls } from "@/components/SymbolStyleControls";
 import { DistanceStyleControls } from "@/components/DistanceStyleControls";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
 import { ProjectNameDialog } from "@/components/ProjectNameDialog";
 import { PageSetup, DEFAULT_PAGE_SETUP } from "@/types/pageSetup";
@@ -84,6 +85,10 @@ const Index = () => {
   
   // Project naming dialog state
   const [isProjectNameDialogOpen, setIsProjectNameDialogOpen] = useState(false);
+  
+  // Confirmation dialog states
+  const [showHomeConfirm, setShowHomeConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Save page setup to localStorage when it changes
   useEffect(() => {
@@ -619,16 +624,7 @@ const Index = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (window.confirm("Go back to home? You'll lose any unsaved work.")) {
-                  setAppScreen('home');
-                  setSelectedPages([]);
-                  setPdfPages([]);
-                  setCurrentPageIndex(0);
-                  setSymbolCategories(DEFAULT_SYMBOL_CATEGORIES);
-                  setCurrentProjectId(null);
-                }
-              }}
+              onClick={() => setShowHomeConfirm(true)}
               className="text-xs px-2 py-1 h-7"
               title="Home"
             >
@@ -637,20 +633,7 @@ const Index = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (window.confirm("Reset current page? You'll lose all changes.")) {
-                  // Reset all symbol counts
-                  setSymbolCategories((prev) => prev.map(cat => ({
-                    ...cat,
-                    symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
-                  })));
-
-                  // Force canvas workspace to reload by toggling the page
-                  const current = currentPageIndex;
-                  setCurrentPageIndex(-1);
-                  setTimeout(() => setCurrentPageIndex(current), 10);
-                }
-              }}
+              onClick={() => setShowResetConfirm(true)}
               className="text-xs px-2 py-1 h-7"
               title="Reset"
             >
@@ -857,6 +840,64 @@ const Index = () => {
         currentName={projectName}
         onSave={handleProjectNameSave}
       />
+
+      <AlertDialog open={showHomeConfirm} onOpenChange={setShowHomeConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Return to Home?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll lose any unsaved work. Make sure to save your project first.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setAppScreen('home');
+                setSelectedPages([]);
+                setPdfPages([]);
+                setCurrentPageIndex(0);
+                setSymbolCategories(DEFAULT_SYMBOL_CATEGORIES);
+                setCurrentProjectId(null);
+                setShowHomeConfirm(false);
+              }}
+            >
+              Go to Home
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Current Page?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll lose all changes on this page. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                // Reset all symbol counts
+                setSymbolCategories((prev) => prev.map(cat => ({
+                  ...cat,
+                  symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
+                })));
+
+                // Force canvas workspace to reload by toggling the page
+                const current = currentPageIndex;
+                setCurrentPageIndex(-1);
+                setTimeout(() => setCurrentPageIndex(current), 10);
+                setShowResetConfirm(false);
+              }}
+            >
+              Reset Page
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
