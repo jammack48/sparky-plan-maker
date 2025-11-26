@@ -667,6 +667,15 @@ const Index = () => {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setAppScreen('template')}
+              className="text-xs px-2 py-1 h-7"
+              title="Add More Images"
+            >
+              <span className="text-base">+</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handlePreviousPage}
               disabled={currentPageIndex === 0}
               className="text-xs px-2 py-1 h-7"

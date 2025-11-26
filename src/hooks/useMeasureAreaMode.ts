@@ -45,21 +45,27 @@ export const useMeasureAreaMode = (
     fabricCanvas.selection = false;
     fabricCanvas.defaultCursor = "crosshair";
 
+    // Lock background to prevent movement during measurement
+    const objects = fabricCanvas.getObjects();
+    const background = objects.find((obj: any) => obj.isBackgroundImage || obj.name === 'backgroundImage');
+    if (background) {
+      background.selectable = false;
+      background.evented = false;
+    }
+
+    // Track dragging point preview
+    let dragPoint: { x: number; y: number } | null = null;
+    let dragCircle: Circle | null = null;
+
     const handleMouseDown = (opt: any) => {
       const e = opt.e;
       if (typeof e?.button === "number" && e.button !== 0) return;
 
       const pointer = fabricCanvas.getPointer(e);
-      const newPoint = { x: pointer.x, y: pointer.y };
+      dragPoint = { x: pointer.x, y: pointer.y };
 
-      // Check if clicking near first point (close polygon)
-      if (points.length >= 3 && isPointNear(newPoint, points[0], 30)) {
-        completePolygon();
-        return;
-      }
-
-      // Add new point
-      const circle = new Circle({
+      // Create preview circle at drag start
+      dragCircle = new Circle({
         left: pointer.x - 5,
         top: pointer.y - 5,
         radius: 5,
@@ -68,23 +74,55 @@ export const useMeasureAreaMode = (
         evented: false,
         excludeFromExport: true,
       });
+      fabricCanvas.add(dragCircle);
+      fabricCanvas.renderAll();
+    };
 
-      fabricCanvas.add(circle);
-      setPreviewCircles(prev => [...prev, circle]);
-      setPoints(prev => [...prev, newPoint]);
+    const handleMouseUp = (opt: any) => {
+      if (!dragPoint || !dragCircle) return;
+
+      const e = opt.e;
+      const pointer = fabricCanvas.getPointer(e);
+      const finalPoint = { x: pointer.x, y: pointer.y };
+
+      // Check if clicking near first point (close polygon)
+      if (points.length >= 3 && isPointNear(finalPoint, points[0], 30)) {
+        fabricCanvas.remove(dragCircle);
+        completePolygon();
+        dragPoint = null;
+        dragCircle = null;
+        return;
+      }
+
+      // Commit the point
+      setPreviewCircles(prev => [...prev, dragCircle!]);
+      setPoints(prev => [...prev, finalPoint]);
+      
+      dragPoint = null;
+      dragCircle = null;
     };
 
     const handleMouseMove = (opt: any) => {
-      if (points.length === 0) return;
-
       const pointer = fabricCanvas.getPointer(opt.e);
-      
-      // Update preview line
+
+      // Update dragging point position
+      if (dragPoint && dragCircle) {
+        dragCircle.set({
+          left: pointer.x - 5,
+          top: pointer.y - 5,
+        });
+      }
+
+      // Update preview line only if we have committed points
+      if (points.length === 0 && !dragPoint) return;
+
       if (previewLine) {
         fabricCanvas.remove(previewLine);
       }
 
-      const linePoints = [...points, { x: pointer.x, y: pointer.y }];
+      const linePoints = dragPoint 
+        ? [...points, { x: pointer.x, y: pointer.y }]
+        : [...points, { x: pointer.x, y: pointer.y }];
 
       const line = new Polyline(linePoints, {
         stroke: areaColor,
@@ -176,11 +214,20 @@ export const useMeasureAreaMode = (
     };
 
     fabricCanvas.on("mouse:down", handleMouseDown);
+    fabricCanvas.on("mouse:up", handleMouseUp);
     fabricCanvas.on("mouse:move", handleMouseMove);
 
     return () => {
       fabricCanvas.off("mouse:down", handleMouseDown);
+      fabricCanvas.off("mouse:up", handleMouseUp);
       fabricCanvas.off("mouse:move", handleMouseMove);
+      
+      // Restore background selectability when exiting mode
+      if (background) {
+        const shouldBeLocked = (background as any).backgroundLocked !== false;
+        background.selectable = !shouldBeLocked;
+        background.evented = !shouldBeLocked;
+      }
     };
   }, [fabricCanvas, mode, points, scale, areaColor, areaOpacity, heightValue, previewLine, previewCircles]);
 
