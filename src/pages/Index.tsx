@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
-import { Home, RotateCcw, Save, FolderOpen, Menu, Plus } from "lucide-react";
+import { Home, RotateCcw, Save, FolderOpen, Menu, Plus, X } from "lucide-react";
 import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { HomeScreen } from "@/components/HomeScreen";
@@ -586,43 +586,67 @@ const Index = () => {
   // Template selection screen
   if (appScreen === 'template') {
     return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-16 h-16" />
-              <h1 className="text-4xl font-bold text-foreground">TradeSketch Pro</h1>
-            </div>
-            <p className="text-muted-foreground">Professional floor plan and technical drawing tool</p>
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-background">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setShowHomeConfirm(true);
+              }}
+              aria-label="Home"
+            >
+              <Home className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setAppScreen('home')}
+              aria-label="Cancel"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
-          <FileUpload onFileLoad={handleFileLoad} isLoading={isLoading} />
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button
-              variant="secondary"
-              onClick={handleUseTemplate}
-              className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
-            >
-              Template 1 (Blank)
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={handleUseTemplate2}
-              className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
-            >
-              Template 2 (Floor Plan)
-            </Button>
-            <Button variant="outline" asChild>
-              <label className="cursor-pointer active:scale-95 transition-transform inline-flex items-center justify-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleCameraCapture}
-                  className="hidden"
-                />
-                Take a Photo
-              </label>
-            </Button>
+        </div>
+        <div className="flex-1 overflow-auto p-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8 text-center">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-16 h-16" />
+                <h1 className="text-4xl font-bold text-foreground">TradeSketch Pro</h1>
+              </div>
+              <p className="text-muted-foreground">Professional floor plan and technical drawing tool</p>
+            </div>
+            <FileUpload onFileLoad={handleFileLoad} isLoading={isLoading} />
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                variant="secondary"
+                onClick={handleUseTemplate}
+                className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
+              >
+                Template 1 (Blank)
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleUseTemplate2}
+                className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
+              >
+                Template 2 (Floor Plan)
+              </Button>
+              <Button variant="outline" asChild>
+                <label className="cursor-pointer active:scale-95 transition-transform inline-flex items-center justify-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleCameraCapture}
+                    className="hidden"
+                  />
+                  Take a Photo
+                </label>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -641,7 +665,14 @@ const Index = () => {
             </div>
             <p className="text-muted-foreground">Professional floor plan and technical drawing tool</p>
           </div>
-          <PageSelector pages={pdfPages} onSelect={handlePageSelection} />
+          <PageSelector 
+            pages={pdfPages} 
+            onSelect={handlePageSelection}
+            onCancel={() => setAppScreen('template')}
+            onHome={() => {
+              setShowHomeConfirm(true);
+            }}
+          />
         </div>
       </div>
     );

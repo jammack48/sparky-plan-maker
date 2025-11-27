@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, ZoomIn, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ZoomIn, ChevronLeft, ChevronRight, Home, X } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface PageSelectorProps {
   pages: string[];
   onSelect: (selectedPages: number[]) => void;
+  onCancel?: () => void;
+  onHome?: () => void;
 }
 
-export const PageSelector = ({ pages, onSelect }: PageSelectorProps) => {
+export const PageSelector = ({ pages, onSelect, onCancel, onHome }: PageSelectorProps) => {
   const [selected, setSelected] = useState<number[]>([]);
   const [previewPage, setPreviewPage] = useState<number | null>(null);
 
@@ -25,8 +27,33 @@ export const PageSelector = ({ pages, onSelect }: PageSelectorProps) => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4 text-foreground">Select Pages</h2>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-background">
+        <div className="flex items-center gap-2">
+          {onHome && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onHome}
+              aria-label="Home"
+            >
+              <Home className="w-4 h-4" />
+            </Button>
+          )}
+          {onCancel && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onCancel}
+              aria-label="Cancel"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+          <h2 className="text-xl font-semibold text-foreground">Select Pages</h2>
+        </div>
+      </div>
+      <div className="flex-1 overflow-auto p-6">
       <div className="grid grid-cols-3 gap-4 mb-6">
         {pages.map((pageUrl, index) => (
           <div
@@ -60,9 +87,12 @@ export const PageSelector = ({ pages, onSelect }: PageSelectorProps) => {
           </div>
         ))}
       </div>
-      <Button onClick={handleContinue} disabled={selected.length === 0} className="w-full">
-        Continue with {selected.length} page{selected.length !== 1 ? "s" : ""}
-      </Button>
+        <div className="p-6 border-t border-border bg-background">
+          <Button onClick={handleContinue} disabled={selected.length === 0} className="w-full">
+            Continue with {selected.length} page{selected.length !== 1 ? "s" : ""}
+          </Button>
+        </div>
+      </div>
 
       <Dialog open={previewPage !== null} onOpenChange={() => setPreviewPage(null)}>
         <DialogContent className="max-w-[90vw] max-h-[90vh] p-0">
