@@ -68,6 +68,7 @@ const Index = () => {
   const [symbolThickness, setSymbolThickness] = useState(2);
   const [symbolTransparency, setSymbolTransparency] = useState(1);
   const [symbolScale, setSymbolScale] = useState(1);
+  const [shapeFilled, setShapeFilled] = useState(false);
 
   // Distance measurement style state
   const [canvasMode, setCanvasMode] = useState<string>("select");
@@ -874,6 +875,7 @@ const Index = () => {
             onDistanceColorChange={setDistanceColor}
             onDistanceStrokeWidthChange={setDistanceStrokeWidth}
             onDistanceFontSizeChange={setDistanceFontSize}
+            shapeFilled={shapeFilled}
             onCanvasReady={(canvas, setIsRestoring) => {
               canvasRef.current = canvas;
               
@@ -1002,6 +1004,9 @@ const Index = () => {
                   onTransparencyChange={handleTransparencyChange}
                   onScaleChange={handleScaleChange}
                   colorHistory={selectedSymbol ? (symbolSettings[selectedSymbol]?.colorHistory || []) : []}
+                  shapeFilled={shapeFilled}
+                  onShapeFilledChange={setShapeFilled}
+                  showShapeFillToggle={selectedSymbol === "rectangle" || selectedSymbol === "circle"}
                 />
               )}
             </div>
