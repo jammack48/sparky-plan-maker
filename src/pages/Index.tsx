@@ -226,6 +226,12 @@ const Index = () => {
         setPendingCanvasData(data.canvas_json);
       }
       
+      // Set up a placeholder page so CanvasWorkspace can mount
+      // The actual canvas content will be restored from canvas_json
+      setPdfPages(['']); // Empty string as placeholder - canvas will restore from JSON
+      setSelectedPages([0]);
+      setCurrentPageIndex(0);
+      
       // Navigate to canvas
       setAppScreen('canvas');
       
