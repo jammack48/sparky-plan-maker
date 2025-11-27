@@ -709,6 +709,7 @@ const Index = () => {
       
       // Load saved canvas state for previous page if exists
       if (pageCanvasStates[nextIdx]) {
+        hasRestoredRef.current = false;
         setPendingCanvasData(pageCanvasStates[nextIdx]);
       }
     }
@@ -722,6 +723,7 @@ const Index = () => {
       
       // Load saved canvas state for next page if exists
       if (pageCanvasStates[nextIdx]) {
+        hasRestoredRef.current = false;
         setPendingCanvasData(pageCanvasStates[nextIdx]);
       }
     }
