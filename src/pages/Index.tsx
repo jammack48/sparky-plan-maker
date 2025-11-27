@@ -476,6 +476,17 @@ const Index = () => {
     // Keep symbol selected for multiple placements
   }, []);
 
+  const handleSymbolDeleted = useCallback((symbolId: string) => {
+    setSymbolCategories((prev) =>
+      prev.map((category) => ({
+        ...category,
+        symbols: category.symbols.map((s) =>
+          s.id === symbolId ? { ...s, count: Math.max(0, s.count - 1) } : s
+        ),
+      }))
+    );
+  }, []);
+
   const handleExport = (canvasDataUrl: string, imgWidth: number, imgHeight: number) => {
     // This will be called from CanvasWorkspace with the high-res canvas data
     import('@/lib/pdfExport').then(({ generatePDF }) => {
@@ -876,6 +887,7 @@ const Index = () => {
             onDistanceStrokeWidthChange={setDistanceStrokeWidth}
             onDistanceFontSizeChange={setDistanceFontSize}
             shapeFilled={shapeFilled}
+            onSymbolDeleted={handleSymbolDeleted}
             onCanvasReady={(canvas, setIsRestoring) => {
               canvasRef.current = canvas;
               
