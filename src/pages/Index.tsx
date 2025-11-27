@@ -626,74 +626,103 @@ const Index = () => {
   // Template selection screen
   if (appScreen === 'template') {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-border bg-background">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                setIsAddingToProject(false);
-                setShowHomeConfirm(true);
-              }}
-              aria-label="Home"
-            >
-              <Home className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                setIsAddingToProject(false);
-                setAppScreen('home');
-              }}
-              aria-label="Cancel"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+      <>
+        <div className="min-h-screen bg-background flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-border bg-background">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setIsAddingToProject(false);
+                  setShowHomeConfirm(true);
+                }}
+                aria-label="Home"
+              >
+                <Home className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  setIsAddingToProject(false);
+                  setAppScreen('home');
+                }}
+                aria-label="Cancel"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="flex-1 overflow-auto p-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8 text-center">
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-16 h-16" />
-                <h1 className="text-4xl font-bold text-foreground">TradeSketch Pro</h1>
+          <div className="flex-1 overflow-auto p-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-8 text-center">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-16 h-16" />
+                  <h1 className="text-4xl font-bold text-foreground">TradeSketch Pro</h1>
+                </div>
+                <p className="text-muted-foreground">Professional floor plan and technical drawing tool</p>
               </div>
-              <p className="text-muted-foreground">Professional floor plan and technical drawing tool</p>
-            </div>
-            <FileUpload onFileLoad={handleFileLoad} isLoading={isLoading} />
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={handleUseTemplate}
-                className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
-              >
-                Template 1 (Blank)
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={handleUseTemplate2}
-                className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
-              >
-                Template 2 (Floor Plan)
-              </Button>
-              <Button variant="outline" asChild>
-                <label className="cursor-pointer active:scale-95 transition-transform inline-flex items-center justify-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleCameraCapture}
-                    className="hidden"
-                  />
-                  Take a Photo
-                </label>
-              </Button>
+              <FileUpload onFileLoad={handleFileLoad} isLoading={isLoading} />
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button
+                  variant="secondary"
+                  onClick={handleUseTemplate}
+                  className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
+                >
+                  Template 1 (Blank)
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={handleUseTemplate2}
+                  className="active:scale-95 active:bg-primary active:text-primary-foreground transition-transform"
+                >
+                  Template 2 (Floor Plan)
+                </Button>
+                <Button variant="outline" asChild>
+                  <label className="cursor-pointer active:scale-95 transition-transform inline-flex items-center justify-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleCameraCapture}
+                      className="hidden"
+                    />
+                    Take a Photo
+                  </label>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Add More Images Dialog - shown on template screen */}
+        <AlertDialog open={showAddMoreDialog} onOpenChange={setShowAddMoreDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Image Added Successfully</AlertDialogTitle>
+              <AlertDialogDescription>
+                Would you like to add another image/file or return to the canvas?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => {
+                setShowAddMoreDialog(false);
+                setIsAddingToProject(true);
+              }}>
+                Add Another Image
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => {
+                setShowAddMoreDialog(false);
+                setIsAddingToProject(false);
+                setAppScreen('canvas');
+              }}>
+                Go to Canvas
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
     );
   }
 
