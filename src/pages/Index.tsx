@@ -347,25 +347,53 @@ const Index = () => {
       // Handle PDF files
       if (file.type === "application/pdf") {
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await getDocument({ data: arrayBuffer }).promise;
+        const pdf = await getDocument({ 
+          data: arrayBuffer,
+          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/standard_fonts/',
+        }).promise;
         const pagePromises = [];
+        let failedPages = 0;
 
         for (let i = 1; i <= pdf.numPages; i++) {
           pagePromises.push(
             pdf.getPage(i).then(async (page) => {
-              const viewport = page.getViewport({ scale: 3 });
-              const canvas = document.createElement("canvas");
-              const context = canvas.getContext("2d");
-              canvas.width = viewport.width;
-              canvas.height = viewport.height;
+              try {
+                const viewport = page.getViewport({ scale: 3 });
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
 
-              await page.render({
-                canvasContext: context!,
-                viewport: viewport,
-                canvas: canvas,
-              }).promise;
+                await page.render({
+                  canvasContext: context!,
+                  viewport: viewport,
+                  canvas: canvas,
+                }).promise;
 
-              return canvas.toDataURL();
+                return canvas.toDataURL();
+              } catch (error) {
+                console.warn(`Failed to render page ${i}:`, error);
+                failedPages++;
+                
+                // Create a placeholder canvas for failed pages
+                const canvas = document.createElement("canvas");
+                canvas.width = 800;
+                canvas.height = 1100;
+                const context = canvas.getContext("2d");
+                if (context) {
+                  context.fillStyle = "#f3f4f6";
+                  context.fillRect(0, 0, canvas.width, canvas.height);
+                  context.fillStyle = "#374151";
+                  context.font = "24px sans-serif";
+                  context.textAlign = "center";
+                  context.fillText(`Page ${i}`, canvas.width / 2, canvas.height / 2 - 20);
+                  context.font = "16px sans-serif";
+                  context.fillText("Failed to render", canvas.width / 2, canvas.height / 2 + 20);
+                }
+                return canvas.toDataURL();
+              }
             })
           );
         }
@@ -374,7 +402,12 @@ const Index = () => {
         setPdfPages(pages);
         setAppScreen('pageSelection');
         setIsLoading(false);
-        toast.success(`Loaded ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+        
+        if (failedPages > 0) {
+          toast.warning(`Loaded ${pages.length} pages (${failedPages} page${failedPages > 1 ? 's' : ''} partially rendered)`);
+        } else {
+          toast.success(`Loaded ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+        }
       }
     } catch (error) {
       setIsLoading(false);
