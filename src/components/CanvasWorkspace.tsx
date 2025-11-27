@@ -46,6 +46,7 @@ export interface CanvasWorkspaceProps {
   onDistanceStrokeWidthChange?: (width: number) => void;
   onDistanceFontSizeChange?: (size: number) => void;
   shapeFilled?: boolean;
+  fillColor?: string;
   onSymbolDeleted?: (symbolId: string) => void;
 }
 
@@ -77,6 +78,7 @@ export const CanvasWorkspace = ({
   onDistanceStrokeWidthChange,
   onDistanceFontSizeChange,
   shapeFilled = false,
+  fillColor = "#ff0000",
   onSymbolDeleted,
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -144,7 +146,7 @@ export const CanvasWorkspace = ({
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
   // Use draw mode hook for shape drawing
-  useDrawMode(fabricCanvas, mode, selectedSymbol, symbolColor, symbolThickness, symbolTransparency, shapeFilled, saveCanvasState, onSymbolPlaced);
+  useDrawMode(fabricCanvas, mode, selectedSymbol, symbolColor, symbolThickness, symbolTransparency, saveCanvasState, onSymbolPlaced, shapeFilled, fillColor);
   
   // Use area measurement hook
   useMeasureAreaMode(fabricCanvas, mode, scale, areaColor, areaOpacity, heightValue);
@@ -272,12 +274,12 @@ export const CanvasWorkspace = ({
       updates.stroke = symbolColor;
       updates.strokeWidth = symbolThickness;
       updates.opacity = symbolTransparency;
-      updates.fill = shapeFilled ? symbolColor : 'transparent';
+      updates.fill = shapeFilled ? fillColor : 'transparent';
     }
 
     activeObject.set(updates);
     fabricCanvas.requestRenderAll();
-  }, [fabricCanvas, mode, symbolColor, symbolThickness, symbolTransparency, shapeFilled]);
+  }, [fabricCanvas, mode, symbolColor, symbolThickness, symbolTransparency, shapeFilled, fillColor]);
 
   // Remove old path:created handler as it's now in useDrawMode
   useEffect(() => {

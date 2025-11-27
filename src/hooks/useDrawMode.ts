@@ -8,9 +8,10 @@ export const useDrawMode = (
   symbolColor: string,
   symbolThickness: number,
   symbolTransparency: number,
-  shapeFilled: boolean,
   onSaveState: () => void,
-  onSymbolPlaced?: (symbolId: string) => void
+  onSymbolPlaced?: (symbolId: string) => void,
+  shapeFilled?: boolean,
+  fillColor?: string
 ) => {
   useEffect(() => {
     if (!fabricCanvas || mode !== "draw" || !selectedSymbol) return;
@@ -138,7 +139,7 @@ export const useDrawMode = (
           top: localStartPoint.y,
           width: Math.abs(width),
           height: Math.abs(height),
-          fill: shapeFilled ? symbolColor : "transparent",
+          fill: shapeFilled ? (fillColor || symbolColor) : "transparent",
           stroke: symbolColor,
           strokeWidth: symbolThickness,
           opacity: symbolTransparency,
@@ -155,7 +156,7 @@ export const useDrawMode = (
           left: localStartPoint.x,
           top: localStartPoint.y,
           radius: radius,
-          fill: shapeFilled ? symbolColor : "transparent",
+          fill: shapeFilled ? (fillColor || symbolColor) : "transparent",
           stroke: symbolColor,
           strokeWidth: symbolThickness,
           opacity: symbolTransparency,
@@ -224,7 +225,7 @@ export const useDrawMode = (
           top: top,
           width: Math.abs(width),
           height: Math.abs(height),
-          fill: shapeFilled ? symbolColor : "transparent",
+          fill: shapeFilled ? (fillColor || symbolColor) : "transparent",
           stroke: symbolColor,
           strokeWidth: symbolThickness,
           opacity: symbolTransparency,
@@ -237,7 +238,7 @@ export const useDrawMode = (
           left: localStartPoint.x,
           top: localStartPoint.y,
           radius: radius,
-          fill: shapeFilled ? symbolColor : "transparent",
+          fill: shapeFilled ? (fillColor || symbolColor) : "transparent",
           stroke: symbolColor,
           strokeWidth: symbolThickness,
           opacity: symbolTransparency,
@@ -278,8 +279,9 @@ export const useDrawMode = (
     symbolColor,
     symbolThickness,
     symbolTransparency,
-    shapeFilled,
     onSaveState,
     onSymbolPlaced,
+    shapeFilled,
+    fillColor,
   ]);
 };
