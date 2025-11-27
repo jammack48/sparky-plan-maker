@@ -2,7 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Palette, Minus, Eye, Maximize } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Palette, Minus, Eye, Maximize, Square } from "lucide-react";
 
 interface SymbolStyleControlsProps {
   color: string;
@@ -14,6 +15,9 @@ interface SymbolStyleControlsProps {
   onTransparencyChange: (transparency: number) => void;
   onScaleChange: (scale: number) => void;
   colorHistory?: string[];
+  shapeFilled?: boolean;
+  onShapeFilledChange?: (filled: boolean) => void;
+  showShapeFillToggle?: boolean;
 }
 
 export const SymbolStyleControls = ({
@@ -26,6 +30,9 @@ export const SymbolStyleControls = ({
   onTransparencyChange,
   onScaleChange,
   colorHistory = [],
+  shapeFilled = false,
+  onShapeFilledChange,
+  showShapeFillToggle = false,
 }: SymbolStyleControlsProps) => {
   return (
     <Card className="p-4 space-y-4 relative z-10" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
@@ -105,6 +112,22 @@ export const SymbolStyleControls = ({
           onValueChange={(value) => onScaleChange(value[0])}
         />
       </div>
+
+      {showShapeFillToggle && onShapeFilledChange && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Square className="w-4 h-4" />
+              <Label htmlFor="shape-filled" className="text-sm">Fill Shape</Label>
+            </div>
+            <Switch
+              id="shape-filled"
+              checked={shapeFilled}
+              onCheckedChange={onShapeFilledChange}
+            />
+          </div>
+        </div>
+      )}
     </Card>
   );
 };

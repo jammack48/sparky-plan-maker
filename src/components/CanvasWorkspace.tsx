@@ -45,6 +45,7 @@ export interface CanvasWorkspaceProps {
   onDistanceColorChange?: (color: string) => void;
   onDistanceStrokeWidthChange?: (width: number) => void;
   onDistanceFontSizeChange?: (size: number) => void;
+  shapeFilled?: boolean;
 }
 
 export const CanvasWorkspace = ({
@@ -74,6 +75,7 @@ export const CanvasWorkspace = ({
   onDistanceColorChange,
   onDistanceStrokeWidthChange,
   onDistanceFontSizeChange,
+  shapeFilled = false,
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -140,7 +142,7 @@ export const CanvasWorkspace = ({
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
   // Use draw mode hook for shape drawing
-  useDrawMode(fabricCanvas, mode, selectedSymbol, symbolColor, symbolThickness, symbolTransparency, saveCanvasState, onSymbolPlaced);
+  useDrawMode(fabricCanvas, mode, selectedSymbol, symbolColor, symbolThickness, symbolTransparency, shapeFilled, saveCanvasState, onSymbolPlaced);
   
   // Use area measurement hook
   useMeasureAreaMode(fabricCanvas, mode, scale, areaColor, areaOpacity, heightValue);
