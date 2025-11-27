@@ -46,6 +46,7 @@ export interface CanvasWorkspaceProps {
   onDistanceStrokeWidthChange?: (width: number) => void;
   onDistanceFontSizeChange?: (size: number) => void;
   shapeFilled?: boolean;
+  onSymbolDeleted?: (symbolId: string) => void;
 }
 
 export const CanvasWorkspace = ({
@@ -76,6 +77,7 @@ export const CanvasWorkspace = ({
   onDistanceStrokeWidthChange,
   onDistanceFontSizeChange,
   shapeFilled = false,
+  onSymbolDeleted,
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -247,6 +249,35 @@ export const CanvasWorkspace = ({
       fabricCanvas.off('object:modified', handleObjectModified);
     };
   }, [fabricCanvas, isRestoringFromSave, saveCanvasState]);
+
+  // Update selected object properties when style controls change
+  useEffect(() => {
+    if (!fabricCanvas || mode !== "select") return;
+
+    const activeObject = fabricCanvas.getActiveObject();
+    if (!activeObject) return;
+
+    // Check if it's a drawn shape (has symbolType property for line, rectangle, circle)
+    const symbolType = (activeObject as any).symbolType;
+    if (!symbolType || !['line', 'rectangle', 'circle'].includes(symbolType)) return;
+
+    // Update the object's properties
+    const updates: any = {};
+    
+    if (symbolType === 'line') {
+      updates.stroke = symbolColor;
+      updates.strokeWidth = symbolThickness;
+      updates.opacity = symbolTransparency;
+    } else if (symbolType === 'rectangle' || symbolType === 'circle') {
+      updates.stroke = symbolColor;
+      updates.strokeWidth = symbolThickness;
+      updates.opacity = symbolTransparency;
+      updates.fill = shapeFilled ? symbolColor : 'transparent';
+    }
+
+    activeObject.set(updates);
+    fabricCanvas.requestRenderAll();
+  }, [fabricCanvas, mode, symbolColor, symbolThickness, symbolTransparency, shapeFilled]);
 
   // Remove old path:created handler as it's now in useDrawMode
   useEffect(() => {
@@ -1076,7 +1107,7 @@ export const CanvasWorkspace = ({
   const { cropRect, cancelCrop } = useCropMode(fabricCanvas, mode, () => setShowCropDialog(true));
   const { measureDistance, measureLine, cancelMeasure } = useMeasureMode(fabricCanvas, mode, () => setShowMeasureDialog(true));
   const { isDrawing: isDrawingDistance, cancelDistance } = useMeasureDistanceMode(fabricCanvas, mode, scale, distanceColor, distanceStrokeWidth, distanceFontSize, showGrid, gridSize);
-  useEraseMode(fabricCanvas, mode, saveCanvasState);
+  useEraseMode(fabricCanvas, mode, saveCanvasState, onSymbolDeleted);
 
   const handleCropExtract = useCallback(() => {
     if (!fabricCanvas || !cropRect) return;

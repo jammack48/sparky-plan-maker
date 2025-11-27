@@ -9,7 +9,8 @@ interface Position {
 export const useEraseMode = (
   fabricCanvas: FabricCanvas | null,
   mode: string,
-  onSaveState: () => void
+  onSaveState: () => void,
+  onSymbolDeleted?: (symbolId: string) => void
 ) => {
   const [eraseStart, setEraseStart] = useState<Position | null>(null);
   const [eraseRect, setEraseRect] = useState<Rect | null>(null);
@@ -168,10 +169,19 @@ export const useEraseMode = (
 
       // Check if clicking on a symbol/object (not background)
       if (target) {
+        // Check if it has a symbolType to decrement count
+        const symbolType = (target as any).symbolType;
+        
         // Delete the symbol immediately
         fabricCanvas.remove(target);
         fabricCanvas.renderAll();
         onSaveState();
+        
+        // Notify parent to decrement count
+        if (symbolType && onSymbolDeleted) {
+          onSymbolDeleted(symbolType);
+        }
+        
         return; // Don't start rectangle erase
       }
 
@@ -271,7 +281,7 @@ export const useEraseMode = (
       fabricCanvas.off("mouse:up", handleMouseUp);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [fabricCanvas, mode, eraseStart, eraseRect, onSaveState]);
+  }, [fabricCanvas, mode, eraseStart, eraseRect, onSaveState, onSymbolDeleted]);
 
   return null;
 };
