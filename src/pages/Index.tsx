@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
-import { Home, RotateCcw, Save, FolderOpen } from "lucide-react";
+import { Home, RotateCcw, Save, FolderOpen, Menu, Plus } from "lucide-react";
 import { FileUpload } from "@/components/FileUpload";
 import { PageSelector } from "@/components/PageSelector";
 import { HomeScreen } from "@/components/HomeScreen";
@@ -10,6 +10,7 @@ import { SymbolToolbar, DEFAULT_SYMBOL_CATEGORIES, SymbolCategory } from "@/comp
 import { SymbolStyleControls } from "@/components/SymbolStyleControls";
 import { DistanceStyleControls } from "@/components/DistanceStyleControls";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
 import { ProjectNameDialog } from "@/components/ProjectNameDialog";
@@ -544,7 +545,7 @@ const Index = () => {
   }
 
   // Template selection screen
-  if (appScreen === 'template' && pdfPages.length === 0) {
+  if (appScreen === 'template') {
     return (
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-4xl mx-auto">
@@ -623,56 +624,50 @@ const Index = () => {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <header className="border-b border-border bg-card px-2 sm:px-4 py-2 shrink-0">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0 sm:gap-2">
-            <div className="flex items-center gap-2">
-              <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-6 h-6 sm:w-8 sm:h-8" />
-              <h1 className="text-base sm:text-xl font-bold text-foreground">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-0 sm:gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <img src={tradeSketchLogo} alt="TradeSketch Pro" className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+              <h1 className="text-base sm:text-xl font-bold text-foreground whitespace-nowrap">
                 TradeSketch Pro
               </h1>
             </div>
             {projectName && projectName !== 'Untitled Project' && (
-              <span className="text-xs sm:text-base text-muted-foreground ml-8 sm:ml-0">
+              <span className="text-xs sm:text-base text-muted-foreground ml-8 sm:ml-0 truncate">
                 • {projectName}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveProject}
-              className="text-xs px-2 py-1 h-7"
-              title="Save Project"
-            >
-              <Save className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowHomeConfirm(true)}
-              className="text-xs px-2 py-1 h-7"
-              title="Home"
-            >
-              <Home className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowResetConfirm(true)}
-              className="text-xs px-2 py-1 h-7"
-              title="Reset"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAppScreen('template')}
-              className="text-xs px-2 py-1 h-7"
-              title="Add More Images"
-            >
-              <span className="text-base">+</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs px-2 py-1 h-7"
+                  title="Menu"
+                >
+                  <Menu className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleSaveProject}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Project
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setAppScreen('template')}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Image
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowResetConfirm(true)}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset Canvas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowHomeConfirm(true)}>
+                  <Home className="w-4 h-4 mr-2" />
+                  Home
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               size="sm"
