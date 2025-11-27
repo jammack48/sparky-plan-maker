@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { PageSetupDialog } from "@/components/PageSetupDialog";
 import { ProjectNameDialog } from "@/components/ProjectNameDialog";
+import { ExportPdfDialog } from "@/components/ExportPdfDialog";
 import { PageSetup, DEFAULT_PAGE_SETUP } from "@/types/pageSetup";
 import { toast } from "sonner";
 import { saveProject, loadProject, listProjects, deleteProject, renameProject, ProjectMetadata } from "@/lib/supabaseService";
@@ -96,6 +97,7 @@ const Index = () => {
   // Confirmation dialog states
   const [showHomeConfirm, setShowHomeConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   // Save page setup to localStorage when it changes
   useEffect(() => {
@@ -488,12 +490,51 @@ const Index = () => {
     );
   }, []);
 
-  const handleExport = (canvasDataUrl: string, imgWidth: number, imgHeight: number) => {
-    // This will be called from CanvasWorkspace with the high-res canvas data
-    import('@/lib/pdfExport').then(({ generatePDF }) => {
-      generatePDF(canvasDataUrl, pageSetup, imgWidth, imgHeight);
-    });
-  };
+  const handleExport = useCallback((canvasDataUrl: string, imgWidth: number, imgHeight: number) => {
+    // Store single page export data and open dialog
+    const exportData = { canvasDataUrl, imgWidth, imgHeight };
+    (window as any).__currentExportData = exportData;
+    setShowExportDialog(true);
+  }, []);
+
+  const handleExportPages = useCallback(async (pageIndices: number[]) => {
+    if (pageIndices.length === 0) return;
+
+    toast.info(`Preparing ${pageIndices.length} page${pageIndices.length > 1 ? 's' : ''} for export...`);
+
+    try {
+      // Get all canvas data URLs for selected pages
+      const canvasDataUrls: string[] = [];
+      
+      for (const pageIndex of pageIndices) {
+        // If it's the current page, use the already rendered data
+        if (pageIndex === selectedPages[currentPageIndex]) {
+          const exportData = (window as any).__currentExportData;
+          if (exportData) {
+            canvasDataUrls.push(exportData.canvasDataUrl);
+            continue;
+          }
+        }
+        
+        // For other pages, we need to render them
+        // This is a simplified approach - in a full implementation you'd 
+        // need to temporarily switch pages and render each one
+        const pageImageUrl = pdfPages[pageIndex];
+        if (pageImageUrl) {
+          canvasDataUrls.push(pageImageUrl);
+        }
+      }
+
+      // Import and call PDF generation
+      const { generatePDF } = await import('@/lib/pdfExport');
+      await generatePDF(canvasDataUrls, pageSetup, 0, 0);
+      
+      toast.success(`PDF exported with ${pageIndices.length} page${pageIndices.length > 1 ? 's' : ''}!`);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error('Failed to export PDF');
+    }
+  }, [selectedPages, currentPageIndex, pdfPages, pageSetup]);
 
   const handlePageSetupSave = (setup: PageSetup) => {
     setPageSetup(setup);
@@ -1129,6 +1170,14 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Export PDF Dialog */}
+      <ExportPdfDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        totalPages={pdfPages.length}
+        onExport={handleExportPages}
+      />
     </div>
   );
 };

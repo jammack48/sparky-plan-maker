@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import { PageSetup } from '@/types/pageSetup';
 
 export const generatePDF = async (
-  canvasDataUrl: string,
+  canvasDataUrls: string[],
   pageSetup: PageSetup,
   originalImageWidth: number,
   originalImageHeight: number
@@ -17,12 +17,18 @@ export const generatePDF = async (
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   
-  // Add canvas image (includes title block) at full page size with high quality
-  try {
-    // Fill entire page with canvas content - use SLOW compression for better quality
-    pdf.addImage(canvasDataUrl, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'SLOW');
-  } catch (error) {
-    console.error('Error adding canvas image to PDF:', error);
+  // Add each canvas image as a new page
+  for (let i = 0; i < canvasDataUrls.length; i++) {
+    if (i > 0) {
+      pdf.addPage();
+    }
+    
+    try {
+      // Fill entire page with canvas content - use SLOW compression for better quality
+      pdf.addImage(canvasDataUrls[i], 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'SLOW');
+    } catch (error) {
+      console.error(`Error adding canvas image ${i + 1} to PDF:`, error);
+    }
   }
 
   // Save the PDF
