@@ -1,20 +1,20 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 
 export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
 
-  const saveCanvasState = (canvas?: FabricCanvas) => {
+  const saveCanvasState = useCallback((canvas?: FabricCanvas) => {
     const targetCanvas = canvas || fabricCanvas;
     if (!targetCanvas) return;
     
     const json = JSON.stringify(targetCanvas.toObject(['isBackgroundImage', 'backgroundLocked']));
     setUndoStack(prev => [...prev, json]);
     setRedoStack([]);
-  };
+  }, [fabricCanvas]);
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     if (!fabricCanvas) return;
     if (undoStack.length <= 1) return; // nothing to undo
 
@@ -52,9 +52,9 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
       }
       fabricCanvas.renderAll();
     });
-  };
+  }, [fabricCanvas, undoStack, redoStack]);
 
-  const handleRedo = () => {
+  const handleRedo = useCallback(() => {
     if (!fabricCanvas) return;
     if (redoStack.length === 0) return;
 
@@ -90,7 +90,7 @@ export const useUndoRedo = (fabricCanvas: FabricCanvas | null) => {
       }
       fabricCanvas.renderAll();
     });
-  };
+  }, [fabricCanvas, undoStack, redoStack]);
 
   // Use refs to avoid stale closures in keyboard event handlers
   const undoStackRef = useRef(undoStack);

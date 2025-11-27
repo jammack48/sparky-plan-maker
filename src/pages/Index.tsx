@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import tradeSketchLogo from "@/assets/tradesketch-logo.png";
 import { Home, RotateCcw, Save, FolderOpen, Menu, Plus, X } from "lucide-react";
@@ -464,7 +464,7 @@ const Index = () => {
     toast.success(`Selected ${selected.length} page${selected.length !== 1 ? 's' : ''}`);
   };
 
-  const handleSymbolPlaced = (symbolId: string) => {
+  const handleSymbolPlaced = useCallback((symbolId: string) => {
     setSymbolCategories((prev) =>
       prev.map((category) => ({
         ...category,
@@ -474,7 +474,7 @@ const Index = () => {
       }))
     );
     // Keep symbol selected for multiple placements
-  };
+  }, []);
 
   const handleExport = (canvasDataUrl: string, imgWidth: number, imgHeight: number) => {
     // This will be called from CanvasWorkspace with the high-res canvas data
