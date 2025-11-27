@@ -18,6 +18,8 @@ interface SymbolStyleControlsProps {
   shapeFilled?: boolean;
   onShapeFilledChange?: (filled: boolean) => void;
   showShapeFillToggle?: boolean;
+  fillColor?: string;
+  onFillColorChange?: (color: string) => void;
 }
 
 export const SymbolStyleControls = ({
@@ -33,6 +35,8 @@ export const SymbolStyleControls = ({
   shapeFilled = false,
   onShapeFilledChange,
   showShapeFillToggle = false,
+  fillColor = "#ff0000",
+  onFillColorChange,
 }: SymbolStyleControlsProps) => {
   return (
     <Card className="p-4 space-y-4 relative z-10" onMouseDown={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
@@ -126,6 +130,22 @@ export const SymbolStyleControls = ({
               onCheckedChange={onShapeFilledChange}
             />
           </div>
+        </div>
+      )}
+
+      {showShapeFillToggle && shapeFilled && onFillColorChange && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Palette className="w-4 h-4" />
+            <Label htmlFor="fill-color" className="text-sm">Fill Color</Label>
+          </div>
+          <Input
+            id="fill-color"
+            type="color"
+            value={fillColor}
+            onChange={(e) => onFillColorChange(e.target.value)}
+            className="h-10 cursor-pointer"
+          />
         </div>
       )}
     </Card>
