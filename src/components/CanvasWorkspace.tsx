@@ -148,9 +148,7 @@ export const CanvasWorkspace = ({
   useMeasureAreaMode(fabricCanvas, mode, scale, areaColor, areaOpacity, heightValue);
 
   useEffect(() => {
-    console.info('[MODE-SWITCH] selectedSymbol changed:', selectedSymbol);
     if (selectedSymbol === "freehand" || selectedSymbol === "line" || selectedSymbol === "rectangle" || selectedSymbol === "circle") {
-      console.info('[MODE-SWITCH] Setting mode to "draw"');
       setMode("draw");
     } else if (selectedSymbol === "text-label") {
       setMode("place-symbol"); // Text uses place-symbol mode
