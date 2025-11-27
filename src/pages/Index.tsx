@@ -46,6 +46,9 @@ const Index = () => {
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
+  // Store canvas state for each page
+  const [pageCanvasStates, setPageCanvasStates] = useState<Record<number, any>>({});
+  
   // Dialog state for adding more images
   const [showAddMoreDialog, setShowAddMoreDialog] = useState(false);
   const [isAddingToProject, setIsAddingToProject] = useState(false);
@@ -149,13 +152,27 @@ const Index = () => {
     if (!canvasRef.current) return;
 
     try {
-      // Get canvas JSON
-      const canvasJson = JSON.parse(JSON.stringify(canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])));
+      // Save current page's canvas state
+      const currentCanvasJson = JSON.parse(JSON.stringify(canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])));
+      const updatedPageStates = {
+        ...pageCanvasStates,
+        [currentPageIndex]: currentCanvasJson
+      };
+
+      // Build multi-page data structure
+      const multiPageData = {
+        pages: selectedPages.map((pageIdx, idx) => ({
+          imageUrl: pdfPages[pageIdx],
+          canvasJson: updatedPageStates[idx] || null
+        })),
+        selectedPages: selectedPages,
+        currentPageIndex: currentPageIndex
+      };
 
       const { data, error } = await saveProject(
         {
           name: projectName,
-          canvas_json: canvasJson,
+          canvas_json: multiPageData,
           current_page_index: currentPageIndex,
           scale: canvasScale,
           grid_size: null,
@@ -166,8 +183,8 @@ const Index = () => {
           page_setup: pageSetup,
           show_title_block: showTitleBlock,
           symbol_settings: symbolSettings,
-          symbol_categories: null, // Don't save React elements
-          background_image_url: pdfPages[selectedPages[currentPageIndex]],
+          symbol_categories: null,
+          background_image_url: null, // Not used anymore, data is in canvas_json
           original_file_name: null,
           original_file_type: 'image',
         },
@@ -224,26 +241,52 @@ const Index = () => {
       if (data.symbol_settings) {
         setSymbolSettings(data.symbol_settings);
       }
-      // Don't load symbol_categories - use default categories and update counts from symbol_settings
       
-      // Don't load background image from background_image_url when restoring
-      // The canvas_json already contains the complete canvas state including background
-      
-      // Store canvas data to restore after canvas is ready
-      if (data.canvas_json) {
-        setPendingCanvasData(data.canvas_json);
+      // Check if data is multi-page format
+      const canvasData = data.canvas_json;
+      if (canvasData && typeof canvasData === 'object' && 'pages' in canvasData) {
+        // New multi-page format
+        const multiPageData = canvasData as {
+          pages: Array<{ imageUrl: string; canvasJson: any }>;
+          selectedPages: number[];
+          currentPageIndex: number;
+        };
+        
+        // Restore all pages
+        const imageUrls = multiPageData.pages.map(p => p.imageUrl);
+        setPdfPages(imageUrls);
+        setSelectedPages(multiPageData.selectedPages || multiPageData.pages.map((_, i) => i));
+        setCurrentPageIndex(multiPageData.currentPageIndex || 0);
+        
+        // Restore canvas states for all pages
+        const states: Record<number, any> = {};
+        multiPageData.pages.forEach((page, idx) => {
+          if (page.canvasJson) {
+            states[idx] = page.canvasJson;
+          }
+        });
+        setPageCanvasStates(states);
+        
+        // Set pending canvas data for current page
+        const currentPageCanvas = states[multiPageData.currentPageIndex || 0];
+        if (currentPageCanvas) {
+          setPendingCanvasData(currentPageCanvas);
+        }
+      } else {
+        // Old single-page format - backward compatibility
+        if (canvasData) {
+          setPendingCanvasData(canvasData);
+        }
+        setPdfPages(['']);
+        setSelectedPages([0]);
+        setCurrentPageIndex(0);
+        setPageCanvasStates({});
       }
-      
-      // Set up a placeholder page so CanvasWorkspace can mount
-      // The actual canvas content will be restored from canvas_json
-      setPdfPages(['']); // Empty string as placeholder - canvas will restore from JSON
-      setSelectedPages([0]);
-      setCurrentPageIndex(0);
       
       // Navigate to canvas
       setAppScreen('canvas');
       
-      // Toast will be shown after canvas restoration completes
+      toast.success(`Loaded project "${data.name}"`);
     } catch (error) {
       toast.error("Failed to restore project");
       console.error(error);
@@ -809,15 +852,40 @@ const Index = () => {
     );
   }
 
+  // Save current canvas state before switching pages
+  const saveCurrentPageState = useCallback(() => {
+    if (canvasRef.current) {
+      const canvasJson = JSON.parse(JSON.stringify(canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])));
+      setPageCanvasStates(prev => ({
+        ...prev,
+        [currentPageIndex]: canvasJson
+      }));
+    }
+  }, [currentPageIndex]);
+
   const handlePreviousPage = () => {
     if (currentPageIndex > 0) {
-      setCurrentPageIndex(currentPageIndex - 1);
+      saveCurrentPageState();
+      const nextIdx = currentPageIndex - 1;
+      setCurrentPageIndex(nextIdx);
+      
+      // Load saved canvas state for previous page if exists
+      if (pageCanvasStates[nextIdx]) {
+        setPendingCanvasData(pageCanvasStates[nextIdx]);
+      }
     }
   };
 
   const handleNextPage = () => {
     if (currentPageIndex < selectedPages.length - 1) {
-      setCurrentPageIndex(currentPageIndex + 1);
+      saveCurrentPageState();
+      const nextIdx = currentPageIndex + 1;
+      setCurrentPageIndex(nextIdx);
+      
+      // Load saved canvas state for next page if exists
+      if (pageCanvasStates[nextIdx]) {
+        setPendingCanvasData(pageCanvasStates[nextIdx]);
+      }
     }
   };
 
