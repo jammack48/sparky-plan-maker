@@ -690,6 +690,43 @@ const Index = () => {
     }
   };
 
+  // Save current canvas state before switching pages
+  const saveCurrentPageState = useCallback(() => {
+    if (canvasRef.current) {
+      const canvasJson = JSON.parse(JSON.stringify(canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])));
+      setPageCanvasStates(prev => ({
+        ...prev,
+        [currentPageIndex]: canvasJson
+      }));
+    }
+  }, [currentPageIndex]);
+
+  const handlePreviousPage = () => {
+    if (currentPageIndex > 0) {
+      saveCurrentPageState();
+      const nextIdx = currentPageIndex - 1;
+      setCurrentPageIndex(nextIdx);
+      
+      // Load saved canvas state for previous page if exists
+      if (pageCanvasStates[nextIdx]) {
+        setPendingCanvasData(pageCanvasStates[nextIdx]);
+      }
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPageIndex < selectedPages.length - 1) {
+      saveCurrentPageState();
+      const nextIdx = currentPageIndex + 1;
+      setCurrentPageIndex(nextIdx);
+      
+      // Load saved canvas state for next page if exists
+      if (pageCanvasStates[nextIdx]) {
+        setPendingCanvasData(pageCanvasStates[nextIdx]);
+      }
+    }
+  };
+
   // Home screen
   if (appScreen === 'home') {
     return (
@@ -851,43 +888,6 @@ const Index = () => {
       </div>
     );
   }
-
-  // Save current canvas state before switching pages
-  const saveCurrentPageState = useCallback(() => {
-    if (canvasRef.current) {
-      const canvasJson = JSON.parse(JSON.stringify(canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])));
-      setPageCanvasStates(prev => ({
-        ...prev,
-        [currentPageIndex]: canvasJson
-      }));
-    }
-  }, [currentPageIndex]);
-
-  const handlePreviousPage = () => {
-    if (currentPageIndex > 0) {
-      saveCurrentPageState();
-      const nextIdx = currentPageIndex - 1;
-      setCurrentPageIndex(nextIdx);
-      
-      // Load saved canvas state for previous page if exists
-      if (pageCanvasStates[nextIdx]) {
-        setPendingCanvasData(pageCanvasStates[nextIdx]);
-      }
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPageIndex < selectedPages.length - 1) {
-      saveCurrentPageState();
-      const nextIdx = currentPageIndex + 1;
-      setCurrentPageIndex(nextIdx);
-      
-      // Load saved canvas state for next page if exists
-      if (pageCanvasStates[nextIdx]) {
-        setPendingCanvasData(pageCanvasStates[nextIdx]);
-      }
-    }
-  };
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
