@@ -390,20 +390,16 @@ const Index = () => {
           const dataUrl = e.target?.result as string;
           
           if (addingToExisting) {
-            // Save current page state before adding new page
-            if (canvasRef.current) {
-              const canvasJson = JSON.parse(JSON.stringify(canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])));
-              setPageCanvasStates(prev => ({
-                ...prev,
-                [currentPageIndex]: canvasJson
-              }));
-            }
-            
-            // Add to existing pages
-            setPdfPages((prev) => [...prev, dataUrl]);
-            const newPageIndex = pdfPages.length;
-            setSelectedPages((prev) => [...prev, newPageIndex]);
-            setCurrentPageIndex(selectedPages.length);
+            // Add to existing pages - use functional updates to avoid stale closure
+            setPdfPages((prev) => {
+              const newPdfPages = [...prev, dataUrl];
+              const newPageIndex = newPdfPages.length - 1;
+              
+              setSelectedPages((prevSelected) => [...prevSelected, newPageIndex]);
+              setCurrentPageIndex(newPageIndex);
+              
+              return newPdfPages;
+            });
             setIsLoading(false);
             setShowAddMoreDialog(true);
             toast.success("Image added successfully");
@@ -935,6 +931,16 @@ const Index = () => {
                   Save Project
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
+                  // Save current canvas state BEFORE navigating away
+                  if (canvasRef.current) {
+                    const canvasJson = JSON.parse(JSON.stringify(
+                      canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])
+                    ));
+                    setPageCanvasStates(prev => ({
+                      ...prev,
+                      [currentPageIndex]: canvasJson
+                    }));
+                  }
                   setIsAddingToProject(true);
                   setAppScreen('template');
                 }}>
