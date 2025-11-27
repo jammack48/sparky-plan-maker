@@ -390,6 +390,15 @@ const Index = () => {
           const dataUrl = e.target?.result as string;
           
           if (addingToExisting) {
+            // Save current page state before adding new page
+            if (canvasRef.current) {
+              const canvasJson = JSON.parse(JSON.stringify(canvasRef.current.toObject(['isBackgroundImage', 'backgroundLocked'])));
+              setPageCanvasStates(prev => ({
+                ...prev,
+                [currentPageIndex]: canvasJson
+              }));
+            }
+            
             // Add to existing pages
             setPdfPages((prev) => [...prev, dataUrl]);
             const newPageIndex = pdfPages.length;
@@ -1076,7 +1085,6 @@ const Index = () => {
                   canvas.renderAll();
                   setIsRestoring(false);
                   
-                  toast.success(`Loaded project "${projectName}"`, { id: "project-loaded" });
                   console.info('[Canvas Restore] Complete');
                 });
               } catch (error) {
