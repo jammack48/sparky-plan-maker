@@ -44,6 +44,10 @@ const Index = () => {
   const [pdfPages, setPdfPages] = useState<string[]>([]);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  
+  // Dialog state for adding more images
+  const [showAddMoreDialog, setShowAddMoreDialog] = useState(false);
+  const [isAddingToProject, setIsAddingToProject] = useState(false);
   const [symbolCategories, setSymbolCategories] = useState<SymbolCategory[]>(DEFAULT_SYMBOL_CATEGORIES);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -319,26 +323,43 @@ const Index = () => {
   const handleFileLoad = async (file: File) => {
     setIsLoading(true);
     try {
-      // Reset counts when loading a new file
-      setSymbolCategories((prev) => prev.map(cat => ({
-        ...cat,
-        symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
-      })));
+      // Check if we're adding to an existing project (Plus button was clicked)
+      const addingToExisting = isAddingToProject && pdfPages.length > 0;
 
-      // Turn off title block by default when loading files
-      setShowTitleBlock(false);
+      if (!addingToExisting) {
+        // Reset counts when starting a new project
+        setSymbolCategories((prev) => prev.map(cat => ({
+          ...cat,
+          symbols: cat.symbols.map(s => ({ ...s, count: 0 }))
+        })));
+        // Turn off title block by default when loading files
+        setShowTitleBlock(false);
+      }
 
       // Handle image files
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onload = (e) => {
           const dataUrl = e.target?.result as string;
-          setPdfPages([dataUrl]);
-          setSelectedPages([0]);
-          setCurrentPageIndex(0);
-          setAppScreen('canvas');
-          setIsLoading(false);
-          toast.success("Image loaded successfully");
+          
+          if (addingToExisting) {
+            // Add to existing pages
+            setPdfPages((prev) => [...prev, dataUrl]);
+            const newPageIndex = pdfPages.length;
+            setSelectedPages((prev) => [...prev, newPageIndex]);
+            setCurrentPageIndex(selectedPages.length);
+            setIsLoading(false);
+            setShowAddMoreDialog(true);
+            toast.success("Image added successfully");
+          } else {
+            // Start new project
+            setPdfPages([dataUrl]);
+            setSelectedPages([0]);
+            setCurrentPageIndex(0);
+            setAppScreen('canvas');
+            setIsLoading(false);
+            toast.success("Image loaded successfully");
+          }
         };
         reader.readAsDataURL(file);
         return;
@@ -399,14 +420,33 @@ const Index = () => {
         }
 
         const pages = await Promise.all(pagePromises);
-        setPdfPages(pages);
-        setAppScreen('pageSelection');
-        setIsLoading(false);
         
-        if (failedPages > 0) {
-          toast.warning(`Loaded ${pages.length} pages (${failedPages} page${failedPages > 1 ? 's' : ''} partially rendered)`);
+        if (addingToExisting) {
+          // Add PDF pages to existing project
+          setPdfPages((prev) => [...prev, ...pages]);
+          const startIndex = pdfPages.length;
+          const newIndices = pages.map((_, i) => startIndex + i);
+          setSelectedPages((prev) => [...prev, ...newIndices]);
+          setCurrentPageIndex(selectedPages.length);
+          setIsLoading(false);
+          setShowAddMoreDialog(true);
+          
+          if (failedPages > 0) {
+            toast.warning(`Added ${pages.length} pages (${failedPages} partially rendered)`);
+          } else {
+            toast.success(`Added ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+          }
         } else {
-          toast.success(`Loaded ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+          // Start new project with PDF pages
+          setPdfPages(pages);
+          setAppScreen('pageSelection');
+          setIsLoading(false);
+          
+          if (failedPages > 0) {
+            toast.warning(`Loaded ${pages.length} pages (${failedPages} page${failedPages > 1 ? 's' : ''} partially rendered)`);
+          } else {
+            toast.success(`Loaded ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+          }
         }
       }
     } catch (error) {
@@ -593,6 +633,7 @@ const Index = () => {
               variant="outline"
               size="icon"
               onClick={() => {
+                setIsAddingToProject(false);
                 setShowHomeConfirm(true);
               }}
               aria-label="Home"
@@ -602,7 +643,10 @@ const Index = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setAppScreen('home')}
+              onClick={() => {
+                setIsAddingToProject(false);
+                setAppScreen('home');
+              }}
               aria-label="Cancel"
             >
               <X className="w-4 h-4" />
@@ -668,8 +712,12 @@ const Index = () => {
           <PageSelector 
             pages={pdfPages} 
             onSelect={handlePageSelection}
-            onCancel={() => setAppScreen('template')}
+            onCancel={() => {
+              setIsAddingToProject(false);
+              setAppScreen('template');
+            }}
             onHome={() => {
+              setIsAddingToProject(false);
               setShowHomeConfirm(true);
             }}
           />
@@ -724,7 +772,10 @@ const Index = () => {
                   <Save className="w-4 h-4 mr-2" />
                   Save Project
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setAppScreen('template')}>
+                <DropdownMenuItem onClick={() => {
+                  setIsAddingToProject(true);
+                  setAppScreen('template');
+                }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Image
                 </DropdownMenuItem>
@@ -996,6 +1047,34 @@ const Index = () => {
               }}
             >
               Reset Page
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add More Images Dialog */}
+      <AlertDialog open={showAddMoreDialog} onOpenChange={setShowAddMoreDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Image Added</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like to add another image or return to the canvas?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowAddMoreDialog(false);
+              setIsAddingToProject(true);
+              setAppScreen('template');
+            }}>
+              Add Another Image
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowAddMoreDialog(false);
+              setIsAddingToProject(false);
+              setAppScreen('canvas');
+            }}>
+              Go to Canvas
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
