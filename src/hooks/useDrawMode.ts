@@ -13,7 +13,23 @@ export const useDrawMode = (
   onSymbolPlaced?: (symbolId: string) => void
 ) => {
   useEffect(() => {
-    if (!fabricCanvas || mode !== "draw" || !selectedSymbol) return;
+    console.info("[DRAW] Hook called", { 
+      hasCanvas: !!fabricCanvas, 
+      mode, 
+      selectedSymbol,
+      symbolColor,
+      symbolThickness,
+      shapeFilled
+    });
+    
+    if (!fabricCanvas || mode !== "draw" || !selectedSymbol) {
+      console.info("[DRAW] Exiting - conditions not met", {
+        hasCanvas: !!fabricCanvas,
+        isDrawMode: mode === "draw",
+        hasSymbol: !!selectedSymbol
+      });
+      return;
+    }
 
     console.info("[DRAW] activate", { selectedSymbol });
 
@@ -91,7 +107,11 @@ export const useDrawMode = (
 
     const handleMouseDown = (opt: any) => {
       const e = opt.e as MouseEvent;
-      if (e.button !== 0) return;
+      console.info("[DRAW] handleMouseDown called", { button: e.button, type: selectedSymbol });
+      if (e.button !== 0) {
+        console.info("[DRAW] Ignoring non-left button");
+        return;
+      }
       const pointer = getPointer(e);
       console.info("[DRAW] shape mousedown", { pointer, tool: selectedSymbol });
       localIsDrawing = true;
@@ -99,7 +119,10 @@ export const useDrawMode = (
     };
 
     const handleMouseMove = (opt: any) => {
-      if (!localIsDrawing || !localStartPoint) return;
+      if (!localIsDrawing || !localStartPoint) {
+        if (!localIsDrawing) console.info("[DRAW] handleMouseMove - not drawing");
+        return;
+      }
       const e = opt.e as MouseEvent;
       let pointer = getPointer(e);
       
@@ -258,6 +281,7 @@ export const useDrawMode = (
       localStartPoint = null;
     };
 
+    console.info("[DRAW] Attaching mouse event listeners for shape drawing");
     fabricCanvas.on("mouse:down", handleMouseDown);
     fabricCanvas.on("mouse:move", handleMouseMove);
     fabricCanvas.on("mouse:up", handleMouseUp);
