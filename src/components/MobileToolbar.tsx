@@ -129,7 +129,7 @@ export const MobileToolbar = ({
   // Draggable toolbar state (landscape mode only)
   const [toolbarPosition, setToolbarPosition] = useState(() => {
     const saved = localStorage.getItem('toolbar-position');
-    return saved ? JSON.parse(saved) : { x: window.innerWidth - 80, y: 100 };
+    return saved ? JSON.parse(saved) : { x: Math.max(20, window.innerWidth / 2 - 120), y: 20 };
   });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -153,8 +153,8 @@ export const MobileToolbar = ({
     const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
     const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
     
-    const newX = Math.max(0, Math.min(window.innerWidth - 60, clientX - dragOffset.x));
-    const newY = Math.max(0, Math.min(window.innerHeight - 400, clientY - dragOffset.y));
+    const newX = Math.max(0, Math.min(window.innerWidth - 260, clientX - dragOffset.x));
+    const newY = Math.max(0, Math.min(window.innerHeight - 200, clientY - dragOffset.y));
     
     setToolbarPosition({ x: newX, y: newY });
   };
@@ -213,7 +213,7 @@ export const MobileToolbar = ({
 
   return (
     <div 
-      className="portrait:flex portrait:items-center portrait:gap-1 portrait:p-2 portrait:bg-background portrait:border-b portrait:overflow-x-auto portrait:relative portrait:right-auto portrait:top-auto portrait:translate-y-0 landscape:fixed landscape:z-50 landscape:flex-col landscape:gap-1 landscape:p-2 landscape:bg-background landscape:border landscape:rounded-lg landscape:shadow-lg landscape:max-h-[80vh] landscape:overflow-y-auto flex"
+      className="w-full min-w-0 flex portrait:items-center portrait:gap-1 portrait:p-2 portrait:px-3 portrait:bg-background portrait:border-b portrait:overflow-x-auto portrait:relative landscape:fixed landscape:z-50 landscape:flex-col landscape:gap-1 landscape:p-3 landscape:bg-background landscape:border landscape:rounded-lg landscape:shadow-lg landscape:max-h-[85vh] landscape:min-w-[240px] landscape:w-auto landscape:overflow-y-auto"
       style={
         isLandscape
           ? {
@@ -231,7 +231,7 @@ export const MobileToolbar = ({
       {/* Drag handle in landscape mode */}
       {isLandscape && (
         <div 
-          className="flex justify-center py-2 cursor-move touch-none bg-muted/50 rounded-t-lg"
+          className="flex justify-center py-1.5 -mx-3 -mt-3 mb-2 cursor-move touch-none bg-muted/50 rounded-t-lg border-b"
           onMouseDown={handleDragStart}
           onTouchStart={handleDragStart}
         >
@@ -242,11 +242,13 @@ export const MobileToolbar = ({
       {/* Mark Up Dropdown - Symbols + Area/Volume */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={mode === "place-symbol" || mode === "measure" || mode === "measure-area" || mode === "measure-volume" || mode === "measure-distance" ? "default" : "outline"} size="sm" className="shrink-0">
-            Mark Up <ChevronDown className="ml-1 h-3 w-3" />
+          <Button variant={mode === "place-symbol" || mode === "measure" || mode === "measure-area" || mode === "measure-volume" || mode === "measure-distance" ? "default" : "outline"} size="sm" className="shrink-0 min-w-fit">
+            <span className="portrait:hidden landscape:inline">Mark Up</span>
+            <span className="portrait:inline landscape:hidden">Symbols & Tools</span>
+            <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="z-50 w-64 max-h-[60vh] overflow-y-auto bg-background">
+        <DropdownMenuContent align="start" className="z-[100] w-64 max-h-[60vh] overflow-y-auto bg-background border shadow-lg">
           <Accordion type="single" collapsible className="w-full">
             {symbolCategories.map((category) => (
               <AccordionItem key={category.name} value={category.name}>
@@ -356,11 +358,13 @@ export const MobileToolbar = ({
       {/* Selections Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="shrink-0">
-            Selections <ChevronDown className="ml-1 h-3 w-3" />
+          <Button variant="outline" size="sm" className="shrink-0 min-w-fit">
+            <span className="portrait:hidden landscape:inline">Selections</span>
+            <span className="portrait:inline landscape:hidden">Tools</span>
+            <ChevronDown className="ml-1 h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="z-50 w-48 bg-background">
+        <DropdownMenuContent align="end" className="z-[100] w-48 bg-background border shadow-lg">
           <DropdownMenuItem onClick={onSelect}>
             <MousePointer2 className="mr-2 h-4 w-4" />
             <span>Select</span>
@@ -487,11 +491,15 @@ export const MobileToolbar = ({
       </DropdownMenu>
 
       {/* Scale and Zoom */}
-      <div className="portrait:flex portrait:items-center portrait:gap-2 portrait:ml-auto portrait:flex-row portrait:pt-0 portrait:border-t-0 landscape:flex landscape:flex-col landscape:items-center landscape:gap-1 landscape:pt-2 landscape:border-t text-xs text-muted-foreground whitespace-nowrap">
-        {scale && (
-          <span>1:{(1 / scale).toFixed(1)}</span>
-        )}
-        <span>{(zoomLevel * 100).toFixed(0)}%</span>
+      <div className="text-xs text-muted-foreground whitespace-nowrap shrink-0 min-w-fit portrait:ml-auto landscape:w-full landscape:text-center landscape:pt-2 landscape:border-t">
+        <div className="landscape:flex landscape:flex-col landscape:gap-0.5 portrait:flex portrait:items-center portrait:gap-2">
+          {scale ? (
+            <span className="portrait:inline landscape:block">Scale: 1:{(1 / scale).toFixed(1)}</span>
+          ) : (
+            <span className="portrait:inline landscape:block">No scale</span>
+          )}
+          <span className="portrait:inline landscape:block">Zoom: {(zoomLevel * 100).toFixed(0)}%</span>
+        </div>
       </div>
     </div>
   );
