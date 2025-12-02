@@ -55,11 +55,12 @@ export const PageSelector = ({ pages, onSelect, onCancel, onHome, onAddMore }: P
           {onAddMore && (
             <Button
               variant="outline"
-              size="icon"
+              size="sm"
               onClick={onAddMore}
-              aria-label="Add more files"
+              className="gap-1"
             >
               <Plus className="w-4 h-4" />
+              Add more files
             </Button>
           )}
         </div>
