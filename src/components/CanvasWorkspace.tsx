@@ -48,6 +48,17 @@ export interface CanvasWorkspaceProps {
   shapeFilled?: boolean;
   fillColor?: string;
   onSymbolDeleted?: (symbolId: string) => void;
+  // Grid settings props
+  showGrid?: boolean;
+  gridSize?: string;
+  gridColor?: string;
+  gridThickness?: number;
+  gridOpacity?: number;
+  onShowGridChange?: (show: boolean) => void;
+  onGridSizeChange?: (size: string) => void;
+  onGridColorChange?: (color: string) => void;
+  onGridThicknessChange?: (thickness: number) => void;
+  onGridOpacityChange?: (opacity: number) => void;
 }
 
 export const CanvasWorkspace = ({
@@ -80,17 +91,60 @@ export const CanvasWorkspace = ({
   shapeFilled = false,
   fillColor = "#ff0000",
   onSymbolDeleted,
+  // Grid settings with defaults
+  showGrid: propShowGrid = false,
+  gridSize: propGridSize = "400",
+  gridColor: propGridColor = "#ff0000",
+  gridThickness: propGridThickness = 1,
+  gridOpacity: propGridOpacity = 0.5,
+  onShowGridChange,
+  onGridSizeChange,
+  onGridColorChange,
+  onGridThicknessChange,
+  onGridOpacityChange,
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const panRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [mode, setMode] = useState<"none" | "select" | "move" | "crop" | "measure" | "measure-area" | "measure-volume" | "measure-distance" | "erase" | "place-symbol" | "draw">("select");
-  const [showGrid, setShowGrid] = useState(false);
-  const [gridSize, setGridSize] = useState("400");
-  const [gridColor, setGridColor] = useState("#ff0000");
-  const [gridThickness, setGridThickness] = useState(1);
-  const [gridOpacity, setGridOpacity] = useState(0.5);
+  
+  // Use grid props from parent (controlled) or fallback to internal state (uncontrolled)
+  const [internalShowGrid, setInternalShowGrid] = useState(propShowGrid);
+  const [internalGridSize, setInternalGridSize] = useState(propGridSize);
+  const [internalGridColor, setInternalGridColor] = useState(propGridColor);
+  const [internalGridThickness, setInternalGridThickness] = useState(propGridThickness);
+  const [internalGridOpacity, setInternalGridOpacity] = useState(propGridOpacity);
+  
+  // Determine if controlled or uncontrolled
+  const showGrid = onShowGridChange ? propShowGrid : internalShowGrid;
+  const gridSize = onGridSizeChange ? propGridSize : internalGridSize;
+  const gridColor = onGridColorChange ? propGridColor : internalGridColor;
+  const gridThickness = onGridThicknessChange ? propGridThickness : internalGridThickness;
+  const gridOpacity = onGridOpacityChange ? propGridOpacity : internalGridOpacity;
+  
+  // Handlers that work in both controlled and uncontrolled modes
+  const setShowGrid = (val: boolean) => {
+    if (onShowGridChange) onShowGridChange(val);
+    else setInternalShowGrid(val);
+  };
+  const setGridSize = (val: string) => {
+    if (onGridSizeChange) onGridSizeChange(val);
+    else setInternalGridSize(val);
+  };
+  const setGridColor = (val: string) => {
+    if (onGridColorChange) onGridColorChange(val);
+    else setInternalGridColor(val);
+  };
+  const setGridThickness = (val: number) => {
+    if (onGridThicknessChange) onGridThicknessChange(val);
+    else setInternalGridThickness(val);
+  };
+  const setGridOpacity = (val: number) => {
+    if (onGridOpacityChange) onGridOpacityChange(val);
+    else setInternalGridOpacity(val);
+  };
+  
   const [scale, setScale] = useState<number | null>(null);
   const [bgScale, setBgScale] = useState(1);
   const [zoom, setZoom] = useState(1);
