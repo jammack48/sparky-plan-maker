@@ -544,7 +544,7 @@ export const CanvasWorkspace = ({
     }
   }, [fabricCanvas, mode, isRestoringFromSave, lockBackground]);
 
-  // Handle move mode - disable scaling and rotation
+  // Handle move mode and draw mode - control object interactivity
   useEffect(() => {
     if (!fabricCanvas) return;
     
@@ -563,19 +563,35 @@ export const CanvasWorkspace = ({
           });
         }
       });
-    } else if (mode === "select") {
-      // Restore normal controls when exiting move mode
+    } else if (mode === "draw") {
+      // In draw mode, disable ALL interactivity on existing objects
+      // so they don't capture mouse events meant for drawing
       objects.forEach((obj: any) => {
-        if (!obj.isBackgroundImage) {
+        if (!obj.isBackgroundImage && obj !== titleBlockGroupRef.current) {
+          obj.set({
+            selectable: false,
+            evented: false,
+          });
+        }
+      });
+      fabricCanvas.selection = false;
+      fabricCanvas.defaultCursor = 'crosshair';
+    } else if (mode === "select") {
+      // Restore normal controls when exiting move/draw mode
+      objects.forEach((obj: any) => {
+        if (!obj.isBackgroundImage && obj !== titleBlockGroupRef.current) {
           obj.set({
             hasControls: true,
             lockScalingX: false,
             lockScalingY: false,
             lockRotation: false,
             hasBorders: true,
+            selectable: true,
+            evented: true,
           });
         }
       });
+      fabricCanvas.selection = true;
     }
     
     fabricCanvas.renderAll();
