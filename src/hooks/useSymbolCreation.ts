@@ -503,6 +503,147 @@ export const useSymbolCreation = (
 
         return group;
       }
+
+      case "indoor-unit": {
+        // Indoor unit rectangle 800x1200mm, blue
+        const hvacBlue = "#2563eb";
+        const widthMm = 800;
+        const heightMm = 1200;
+        const width = widthMm * (pxPerMm || 1);
+        const height = heightMm * (pxPerMm || 1);
+        
+        const rect = new Path(
+          `M ${-width/2},${-height/2} L ${width/2},${-height/2} L ${width/2},${height/2} L ${-width/2},${height/2} Z`,
+          {
+            fill: "transparent",
+            stroke: hvacBlue,
+            strokeWidth: thickness,
+            opacity: transparency,
+          }
+        );
+        const label = new IText("", {
+          left: 0,
+          top: height/2 + 8,
+          originX: "center",
+          originY: "top",
+          fill: hvacBlue,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([rect, label], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
+        });
+        (group as any).symbolType = type;
+        (group as any).labelIndex = 1;
+        return group;
+      }
+
+      case "supply-grill": {
+        // Round supply grill/diffuser 200mm diameter, blue
+        const hvacBlue = "#2563eb";
+        const diameterMm = 200;
+        const radius = (diameterMm * (pxPerMm || 1)) / 2;
+        
+        const outerCircle = new Circle({
+          radius: radius,
+          left: 0,
+          top: 0,
+          originX: "center",
+          originY: "center",
+          fill: "transparent",
+          stroke: hvacBlue,
+          strokeWidth: thickness,
+          opacity: transparency,
+        });
+        const innerCircle = new Circle({
+          radius: radius * 0.6,
+          left: 0,
+          top: 0,
+          originX: "center",
+          originY: "center",
+          fill: "transparent",
+          stroke: hvacBlue,
+          strokeWidth: thickness * 0.5,
+          opacity: transparency,
+        });
+        const label = new IText("", {
+          left: 0,
+          top: radius + 8,
+          originX: "center",
+          originY: "top",
+          fill: hvacBlue,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([outerCircle, innerCircle, label], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
+        });
+        (group as any).symbolType = type;
+        (group as any).labelIndex = 2;
+        return group;
+      }
+
+      case "return-grill": {
+        // Square return grill 400mm, blue
+        const hvacBlue = "#2563eb";
+        const sizeMm = 400;
+        const size = sizeMm * (pxPerMm || 1);
+        const halfSize = size / 2;
+        
+        const rect = new Path(
+          `M ${-halfSize},${-halfSize} L ${halfSize},${-halfSize} L ${halfSize},${halfSize} L ${-halfSize},${halfSize} Z`,
+          {
+            fill: "transparent",
+            stroke: hvacBlue,
+            strokeWidth: thickness,
+            opacity: transparency,
+          }
+        );
+        // Cross lines for grill pattern
+        const hLine = new Line([-halfSize * 0.8, 0, halfSize * 0.8, 0], {
+          stroke: hvacBlue,
+          strokeWidth: thickness * 0.5,
+          opacity: transparency,
+        });
+        const vLine = new Line([0, -halfSize * 0.8, 0, halfSize * 0.8], {
+          stroke: hvacBlue,
+          strokeWidth: thickness * 0.5,
+          opacity: transparency,
+        });
+        const label = new IText("", {
+          left: 0,
+          top: halfSize + 8,
+          originX: "center",
+          originY: "top",
+          fill: hvacBlue,
+          opacity: transparency,
+          fontSize: 10 * scale,
+          fontFamily: "Arial",
+        });
+        const group = new Group([rect, hLine, vLine, label], {
+          left: x,
+          top: y,
+          originX: "center",
+          originY: "center",
+          hoverCursor: "default",
+          moveCursor: "default",
+        });
+        (group as any).symbolType = type;
+        (group as any).labelIndex = 3;
+        return group;
+      }
       
       default: {
         // Generic placeholder: circle with a question mark for unimplemented symbols

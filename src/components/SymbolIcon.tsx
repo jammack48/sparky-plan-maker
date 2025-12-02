@@ -188,6 +188,63 @@ export const SymbolIcon = ({ type, size = 16 }: SymbolIconProps) => {
         />
       );
 
+    case "indoor-unit":
+      // Rectangle 800x1200mm ratio (2:3), blue
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <rect
+            x={3}
+            y={1}
+            width={size - 6}
+            height={size - 2}
+            stroke="#2563eb"
+            strokeWidth="1.5"
+            fill="none"
+          />
+        </svg>
+      );
+
+    case "supply-grill":
+      // Round diffuser 200mm, blue
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle
+            cx={half}
+            cy={half}
+            r={half - 2}
+            stroke="#2563eb"
+            strokeWidth="1.5"
+            fill="none"
+          />
+          <circle
+            cx={half}
+            cy={half}
+            r={half - 5}
+            stroke="#2563eb"
+            strokeWidth="0.5"
+            fill="none"
+          />
+        </svg>
+      );
+
+    case "return-grill":
+      // Square 400mm, blue
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <rect
+            x={2}
+            y={2}
+            width={size - 4}
+            height={size - 4}
+            stroke="#2563eb"
+            strokeWidth="1.5"
+            fill="none"
+          />
+          <line x1={4} y1={half} x2={size - 4} y2={half} stroke="#2563eb" strokeWidth="0.5" />
+          <line x1={half} y1={4} x2={half} y2={size - 4} stroke="#2563eb" strokeWidth="0.5" />
+        </svg>
+      );
+
     default:
       return null;
   }
