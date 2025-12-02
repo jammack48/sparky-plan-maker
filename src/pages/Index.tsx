@@ -52,6 +52,7 @@ const Index = () => {
   // Dialog state for adding more images
   const [showAddMoreDialog, setShowAddMoreDialog] = useState(false);
   const [isAddingToProject, setIsAddingToProject] = useState(false);
+  const [addingFromScreen, setAddingFromScreen] = useState<'canvas' | 'pageSelection' | null>(null);
   const [symbolCategories, setSymbolCategories] = useState<SymbolCategory[]>(DEFAULT_SYMBOL_CATEGORIES);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -391,18 +392,24 @@ const Index = () => {
           
           if (addingToExisting) {
             // Add to existing pages - use functional updates to avoid stale closure
-            setPdfPages((prev) => {
-              const newPdfPages = [...prev, dataUrl];
-              const newPageIndex = newPdfPages.length - 1;
-              
-              setSelectedPages((prevSelected) => [...prevSelected, newPageIndex]);
-              setCurrentPageIndex(newPageIndex);
-              
-              return newPdfPages;
-            });
+            setPdfPages((prev) => [...prev, dataUrl]);
             setIsLoading(false);
-            setShowAddMoreDialog(true);
-            toast.success("Image added successfully");
+            
+            // If coming from PageSelector, go back to let user manage selections
+            if (addingFromScreen === 'pageSelection') {
+              setAppScreen('pageSelection');
+              toast.success("Image added - select pages to continue");
+            } else {
+              // Coming from canvas - add to selected pages and show dialog
+              setPdfPages((prev) => {
+                const newPageIndex = prev.length - 1;
+                setSelectedPages((prevSelected) => [...prevSelected, newPageIndex]);
+                setCurrentPageIndex(newPageIndex);
+                return prev;
+              });
+              setShowAddMoreDialog(true);
+              toast.success("Image added successfully");
+            }
           } else {
             // Start new project
             setPdfPages([dataUrl]);
@@ -474,19 +481,37 @@ const Index = () => {
         const pages = await Promise.all(pagePromises);
         
         if (addingToExisting) {
-          // Add PDF pages to existing project
-          setPdfPages((prev) => [...prev, ...pages]);
-          const startIndex = pdfPages.length;
-          const newIndices = pages.map((_, i) => startIndex + i);
-          setSelectedPages((prev) => [...prev, ...newIndices]);
-          setCurrentPageIndex(selectedPages.length);
+          // Add PDF pages to existing project - use functional update to avoid stale closure
+          setPdfPages((prev) => {
+            const newPdfPages = [...prev, ...pages];
+            
+            // If coming from canvas, add to selected pages
+            if (addingFromScreen !== 'pageSelection') {
+              const startIndex = prev.length;
+              const newIndices = pages.map((_, i) => startIndex + i);
+              setSelectedPages((prevSelected) => [...prevSelected, ...newIndices]);
+              setCurrentPageIndex(startIndex);
+            }
+            
+            return newPdfPages;
+          });
           setIsLoading(false);
-          setShowAddMoreDialog(true);
           
-          if (failedPages > 0) {
-            toast.warning(`Added ${pages.length} pages (${failedPages} partially rendered)`);
+          // If coming from PageSelector, go back to let user manage selections
+          if (addingFromScreen === 'pageSelection') {
+            setAppScreen('pageSelection');
+            if (failedPages > 0) {
+              toast.warning(`Added ${pages.length} pages (${failedPages} partially rendered) - select pages to continue`);
+            } else {
+              toast.success(`Added ${pages.length} page${pages.length > 1 ? "s" : ""} - select pages to continue`);
+            }
           } else {
-            toast.success(`Added ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+            setShowAddMoreDialog(true);
+            if (failedPages > 0) {
+              toast.warning(`Added ${pages.length} pages (${failedPages} partially rendered)`);
+            } else {
+              toast.success(`Added ${pages.length} page${pages.length > 1 ? "s" : ""}`);
+            }
           }
         } else {
           // Start new project with PDF pages
@@ -786,8 +811,14 @@ const Index = () => {
                 variant="outline"
                 size="icon"
                 onClick={() => {
+                  // Go back to where user came from
+                  if (isAddingToProject && addingFromScreen) {
+                    setAppScreen(addingFromScreen);
+                  } else {
+                    setAppScreen('home');
+                  }
                   setIsAddingToProject(false);
-                  setAppScreen('home');
+                  setAddingFromScreen(null);
                 }}
                 aria-label="Cancel"
               >
@@ -850,6 +881,7 @@ const Index = () => {
               <AlertDialogCancel onClick={() => {
                 setShowAddMoreDialog(false);
                 setIsAddingToProject(true);
+                setAddingFromScreen('canvas');
               }}>
                 Add Another Image
               </AlertDialogCancel>
@@ -892,6 +924,7 @@ const Index = () => {
             }}
             onAddMore={() => {
               setIsAddingToProject(true);
+              setAddingFromScreen('pageSelection');
               setAppScreen('template');
             }}
           />
@@ -946,6 +979,7 @@ const Index = () => {
                     }));
                   }
                   setIsAddingToProject(true);
+                  setAddingFromScreen('canvas');
                   setAppScreen('template');
                 }}>
                   <Plus className="w-4 h-4 mr-2" />
@@ -1244,6 +1278,7 @@ const Index = () => {
             <AlertDialogCancel onClick={() => {
               setShowAddMoreDialog(false);
               setIsAddingToProject(true);
+              setAddingFromScreen('canvas');
               setAppScreen('template');
             }}>
               Add Another Image
