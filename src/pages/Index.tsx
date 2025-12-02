@@ -82,6 +82,13 @@ const Index = () => {
   const [distanceStrokeWidth, setDistanceStrokeWidth] = useState(2);
   const [distanceFontSize, setDistanceFontSize] = useState(16);
 
+  // Grid settings state (for save/load persistence)
+  const [showGrid, setShowGrid] = useState(false);
+  const [gridSize, setGridSize] = useState("400");
+  const [gridColor, setGridColor] = useState("#ff0000");
+  const [gridThickness, setGridThickness] = useState(1);
+  const [gridOpacity, setGridOpacity] = useState(0.5);
+
   // Page setup state
   const [pageSetup, setPageSetup] = useState<PageSetup>(() => {
     const saved = localStorage.getItem('tradesketch-page-setup');
@@ -176,11 +183,11 @@ const Index = () => {
           canvas_json: multiPageData,
           current_page_index: currentPageIndex,
           scale: canvasScale,
-          grid_size: null,
-          grid_color: null,
-          grid_thickness: null,
-          grid_opacity: null,
-          show_grid: false,
+          grid_size: gridSize,
+          grid_color: gridColor,
+          grid_thickness: gridThickness,
+          grid_opacity: gridOpacity,
+          show_grid: showGrid,
           page_setup: pageSetup,
           show_title_block: showTitleBlock,
           symbol_settings: symbolSettings,
@@ -241,6 +248,23 @@ const Index = () => {
       
       if (data.symbol_settings) {
         setSymbolSettings(data.symbol_settings);
+      }
+      
+      // Restore grid settings
+      if (data.show_grid !== null && data.show_grid !== undefined) {
+        setShowGrid(data.show_grid);
+      }
+      if (data.grid_size) {
+        setGridSize(data.grid_size);
+      }
+      if (data.grid_color) {
+        setGridColor(data.grid_color);
+      }
+      if (data.grid_thickness !== null && data.grid_thickness !== undefined) {
+        setGridThickness(data.grid_thickness);
+      }
+      if (data.grid_opacity !== null && data.grid_opacity !== undefined) {
+        setGridOpacity(data.grid_opacity);
       }
       
       // Check if data is multi-page format
@@ -1054,6 +1078,16 @@ const Index = () => {
             shapeFilled={shapeFilled}
             fillColor={fillColor}
             onSymbolDeleted={handleSymbolDeleted}
+            showGrid={showGrid}
+            gridSize={gridSize}
+            gridColor={gridColor}
+            gridThickness={gridThickness}
+            gridOpacity={gridOpacity}
+            onShowGridChange={setShowGrid}
+            onGridSizeChange={setGridSize}
+            onGridColorChange={setGridColor}
+            onGridThicknessChange={setGridThickness}
+            onGridOpacityChange={setGridOpacity}
             onCanvasReady={(canvas, setIsRestoring) => {
               canvasRef.current = canvas;
               
