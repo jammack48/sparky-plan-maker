@@ -1071,6 +1071,7 @@ const Index = () => {
             symbolTransparency={symbolTransparency}
             symbolScale={symbolScale}
             symbolCategories={symbolCategories}
+            scale={canvasScale}
             onScaleChange={setCanvasScale}
             onZoomChange={setCanvasZoom}
             onModeChange={setCanvasMode}
