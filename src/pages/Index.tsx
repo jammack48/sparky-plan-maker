@@ -891,6 +891,7 @@ const Index = () => {
               setShowHomeConfirm(true);
             }}
             onAddMore={() => {
+              setIsAddingToProject(true);
               setAppScreen('template');
             }}
           />
