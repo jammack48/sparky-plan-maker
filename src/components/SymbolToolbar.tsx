@@ -396,9 +396,9 @@ export const DEFAULT_SYMBOL_CATEGORIES: SymbolCategory[] = [
     name: "HVAC",
     icon: <Wind className="h-4 w-4" />,
     symbols: [
-      { id: "ac-unit", name: "AC Unit", icon: <SymbolIcon type="downlight" />, count: 0, category: "hvac" },
-      { id: "vent", name: "Vent", icon: <SymbolIcon type="power-point" />, count: 0, category: "hvac" },
-      { id: "thermostat", name: "Thermostat", icon: <SymbolIcon type="single-switch" />, count: 0, category: "hvac" },
+      { id: "indoor-unit", name: "Indoor Unit", icon: <SymbolIcon type="indoor-unit" />, count: 0, category: "hvac" },
+      { id: "supply-grill", name: "Supply Grill", icon: <SymbolIcon type="supply-grill" />, count: 0, category: "hvac" },
+      { id: "return-grill", name: "Return Grill", icon: <SymbolIcon type="return-grill" />, count: 0, category: "hvac" },
     ]
   },
   {
