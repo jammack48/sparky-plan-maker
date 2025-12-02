@@ -59,6 +59,8 @@ export interface CanvasWorkspaceProps {
   onGridColorChange?: (color: string) => void;
   onGridThicknessChange?: (thickness: number) => void;
   onGridOpacityChange?: (opacity: number) => void;
+  // Scale prop for grid calculations
+  scale?: number | null;
 }
 
 export const CanvasWorkspace = ({
@@ -102,6 +104,7 @@ export const CanvasWorkspace = ({
   onGridColorChange,
   onGridThicknessChange,
   onGridOpacityChange,
+  scale: propScale,
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -145,9 +148,16 @@ export const CanvasWorkspace = ({
     else setInternalGridOpacity(val);
   };
   
-  const [scale, setScale] = useState<number | null>(null);
+  const [scale, setScale] = useState<number | null>(propScale ?? null);
   const [bgScale, setBgScale] = useState(1);
   const [zoom, setZoom] = useState(1);
+  
+  // Sync scale from prop when it changes (for project load)
+  useEffect(() => {
+    if (propScale !== undefined && propScale !== null) {
+      setScale(propScale);
+    }
+  }, [propScale]);
   
   // Area/Volume measurement state
   const [areaColor, setAreaColor] = useState("#3b82f6");
