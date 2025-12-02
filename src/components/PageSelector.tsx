@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, ZoomIn, ChevronLeft, ChevronRight, Home, X } from "lucide-react";
+import { Check, ZoomIn, ChevronLeft, ChevronRight, Home, X, Plus } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface PageSelectorProps {
@@ -8,9 +8,10 @@ interface PageSelectorProps {
   onSelect: (selectedPages: number[]) => void;
   onCancel?: () => void;
   onHome?: () => void;
+  onAddMore?: () => void;
 }
 
-export const PageSelector = ({ pages, onSelect, onCancel, onHome }: PageSelectorProps) => {
+export const PageSelector = ({ pages, onSelect, onCancel, onHome, onAddMore }: PageSelectorProps) => {
   const [selected, setSelected] = useState<number[]>([]);
   const [previewPage, setPreviewPage] = useState<number | null>(null);
 
@@ -51,6 +52,16 @@ export const PageSelector = ({ pages, onSelect, onCancel, onHome }: PageSelector
             </Button>
           )}
           <h2 className="text-xl font-semibold text-foreground">Select Pages</h2>
+          {onAddMore && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onAddMore}
+              aria-label="Add more files"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
       <div className="flex-1 overflow-auto p-6">
