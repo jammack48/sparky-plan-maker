@@ -267,6 +267,11 @@ const Index = () => {
         setGridOpacity(data.grid_opacity);
       }
       
+      // Restore measurement scale
+      if (data.scale !== null && data.scale !== undefined) {
+        setCanvasScale(data.scale);
+      }
+      
       // Check if data is multi-page format
       const canvasData = data.canvas_json;
       if (canvasData && typeof canvasData === 'object' && 'pages' in canvasData) {
