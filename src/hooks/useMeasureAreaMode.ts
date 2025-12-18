@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Canvas as FabricCanvas, Polygon, FabricText, Circle, Polyline } from "fabric";
 import { calculatePolygonArea, pixelAreaToMeters, calculateVolume, getPolygonCenter, isPointNear } from "@/lib/areaCalculations";
 import { toast } from "sonner";
@@ -29,6 +29,9 @@ export const useMeasureAreaMode = (
   const [previewLine, setPreviewLine] = useState<Polyline | null>(null);
   const [previewCircles, setPreviewCircles] = useState<Circle[]>([]);
   const [measurements, setMeasurements] = useState<AreaMeasurement[]>([]);
+  
+  const dragPointRef = useRef<{ x: number; y: number } | null>(null);
+  const dragCircleRef = useRef<Circle | null>(null);
 
   useEffect(() => {
     if (!fabricCanvas || (mode !== "measure-area" && mode !== "measure-volume")) {
@@ -54,19 +57,15 @@ export const useMeasureAreaMode = (
       background.evented = false;
     }
 
-    // Track dragging point preview
-    let dragPoint: { x: number; y: number } | null = null;
-    let dragCircle: Circle | null = null;
-
     const handleMouseDown = (opt: any) => {
       const e = opt.e;
       if (typeof e?.button === "number" && e.button !== 0) return;
 
       const pointer = fabricCanvas.getPointer(e);
-      dragPoint = { x: pointer.x, y: pointer.y };
+      dragPointRef.current = { x: pointer.x, y: pointer.y };
 
       // Create preview circle at drag start
-      dragCircle = new Circle({
+      const circle = new Circle({
         left: pointer.x - 5,
         top: pointer.y - 5,
         radius: 5,
@@ -75,12 +74,13 @@ export const useMeasureAreaMode = (
         evented: false,
         excludeFromExport: true,
       });
-      fabricCanvas.add(dragCircle);
+      dragCircleRef.current = circle;
+      fabricCanvas.add(circle);
       fabricCanvas.renderAll();
     };
 
     const handleMouseUp = (opt: any) => {
-      if (!dragPoint || !dragCircle) return;
+      if (!dragPointRef.current || !dragCircleRef.current) return;
 
       const e = opt.e;
       const pointer = fabricCanvas.getPointer(e);
@@ -88,42 +88,40 @@ export const useMeasureAreaMode = (
 
       // Check if clicking near first point (close polygon)
       if (points.length >= 3 && isPointNear(finalPoint, points[0], 30)) {
-        fabricCanvas.remove(dragCircle);
+        fabricCanvas.remove(dragCircleRef.current);
+        dragPointRef.current = null;
+        dragCircleRef.current = null;
         completePolygon();
-        dragPoint = null;
-        dragCircle = null;
         return;
       }
 
       // Commit the point
-      setPreviewCircles(prev => [...prev, dragCircle!]);
+      setPreviewCircles(prev => [...prev, dragCircleRef.current!]);
       setPoints(prev => [...prev, finalPoint]);
       
-      dragPoint = null;
-      dragCircle = null;
+      dragPointRef.current = null;
+      dragCircleRef.current = null;
     };
 
     const handleMouseMove = (opt: any) => {
       const pointer = fabricCanvas.getPointer(opt.e);
 
       // Update dragging point position
-      if (dragPoint && dragCircle) {
-        dragCircle.set({
+      if (dragPointRef.current && dragCircleRef.current) {
+        dragCircleRef.current.set({
           left: pointer.x - 5,
           top: pointer.y - 5,
         });
       }
 
       // Update preview line only if we have committed points
-      if (points.length === 0 && !dragPoint) return;
+      if (points.length === 0 && !dragPointRef.current) return;
 
       if (previewLine) {
         fabricCanvas.remove(previewLine);
       }
 
-      const linePoints = dragPoint 
-        ? [...points, { x: pointer.x, y: pointer.y }]
-        : [...points, { x: pointer.x, y: pointer.y }];
+      const linePoints = [...points, { x: pointer.x, y: pointer.y }];
 
       const line = new Polyline(linePoints, {
         stroke: areaColor,
@@ -234,6 +232,10 @@ export const useMeasureAreaMode = (
         background.selectable = !shouldBeLocked;
         background.evented = !shouldBeLocked;
       }
+      
+      // Clean up refs
+      dragPointRef.current = null;
+      dragCircleRef.current = null;
     };
   }, [fabricCanvas, mode, points, scale, areaColor, areaOpacity, heightValue, previewLine, previewCircles]);
 
