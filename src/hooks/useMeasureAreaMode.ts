@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Canvas as FabricCanvas, Polygon, FabricText, Circle, Polyline } from "fabric";
 import { calculatePolygonArea, pixelAreaToMeters, calculateVolume, getPolygonCenter, isPointNear } from "@/lib/areaCalculations";
+import { toast } from "sonner";
 
 interface Point {
   x: number;
@@ -140,7 +141,12 @@ export const useMeasureAreaMode = (
     };
 
     const completePolygon = () => {
-      if (points.length < 3 || !scale) return;
+      if (points.length < 3) return;
+      
+      if (!scale) {
+        toast.error("Please set a scale first using 'Set Scale' in the Measure menu");
+        return;
+      }
 
       // Calculate area
       const pixelArea = calculatePolygonArea(points);
