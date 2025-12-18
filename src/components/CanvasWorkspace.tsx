@@ -209,11 +209,21 @@ export const CanvasWorkspace = ({
   const { createSymbol } = useSymbolCreation(symbolColor, symbolThickness, symbolTransparency, symbolScale, scale ?? 1);
   const { undoStack, redoStack, saveCanvasState, handleUndo, handleRedo } = useUndoRedo(fabricCanvas);
 
+  // Dialog state for modes - must be declared before hooks that use them
+  const [showCropDialog, setShowCropDialog] = useState(false);
+  const [showMeasureDialog, setShowMeasureDialog] = useState(false);
+
   // Use draw mode hook for shape drawing
   useDrawMode(fabricCanvas, mode, selectedSymbol, symbolColor, symbolThickness, symbolTransparency, saveCanvasState, onSymbolPlaced, shapeFilled, fillColor);
   
   // Use area measurement hook
   useMeasureAreaMode(fabricCanvas, mode, scale, areaColor, areaOpacity, heightValue);
+  
+  // Use crop and measure mode hooks
+  const { cropRect, cancelCrop } = useCropMode(fabricCanvas, mode, () => setShowCropDialog(true));
+  const { measureDistance, measureLine, cancelMeasure } = useMeasureMode(fabricCanvas, mode, () => setShowMeasureDialog(true));
+  const { isDrawing: isDrawingDistance, cancelDistance } = useMeasureDistanceMode(fabricCanvas, mode, scale, distanceColor, distanceStrokeWidth, distanceFontSize, showGrid, gridSize);
+  useEraseMode(fabricCanvas, mode, saveCanvasState, onSymbolDeleted);
 
   useEffect(() => {
     if (selectedSymbol === "freehand" || selectedSymbol === "line" || selectedSymbol === "rectangle" || selectedSymbol === "circle") {
@@ -1183,13 +1193,6 @@ export const CanvasWorkspace = ({
     };
   }, [fabricCanvas, scale, showGrid, gridSize, zoom]);
 
-  const [showCropDialog, setShowCropDialog] = useState(false);
-  const [showMeasureDialog, setShowMeasureDialog] = useState(false);
-
-  const { cropRect, cancelCrop } = useCropMode(fabricCanvas, mode, () => setShowCropDialog(true));
-  const { measureDistance, measureLine, cancelMeasure } = useMeasureMode(fabricCanvas, mode, () => setShowMeasureDialog(true));
-  const { isDrawing: isDrawingDistance, cancelDistance } = useMeasureDistanceMode(fabricCanvas, mode, scale, distanceColor, distanceStrokeWidth, distanceFontSize, showGrid, gridSize);
-  useEraseMode(fabricCanvas, mode, saveCanvasState, onSymbolDeleted);
 
   const handleCropExtract = useCallback(() => {
     if (!fabricCanvas || !cropRect) return;
