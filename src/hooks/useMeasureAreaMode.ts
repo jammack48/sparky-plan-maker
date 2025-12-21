@@ -26,22 +26,29 @@ export const useMeasureAreaMode = (
   heightValue: number | null
 ) => {
   const [points, setPoints] = useState<Point[]>([]);
-  const [previewLine, setPreviewLine] = useState<Polyline | null>(null);
-  const [previewCircles, setPreviewCircles] = useState<Circle[]>([]);
   const [measurements, setMeasurements] = useState<AreaMeasurement[]>([]);
   
+  // Use refs for values that event handlers need immediate access to
+  const pointsRef = useRef<Point[]>([]);
+  const previewLineRef = useRef<Polyline | null>(null);
+  const previewCirclesRef = useRef<Circle[]>([]);
   const dragPointRef = useRef<{ x: number; y: number } | null>(null);
   const dragCircleRef = useRef<Circle | null>(null);
+
+  // Sync points ref with state
+  useEffect(() => {
+    pointsRef.current = points;
+  }, [points]);
 
   useEffect(() => {
     if (!fabricCanvas || (mode !== "measure-area" && mode !== "measure-volume")) {
       // Clean up preview elements when not in area mode
-      if (previewLine && fabricCanvas) {
-        fabricCanvas.remove(previewLine);
-        setPreviewLine(null);
+      if (previewLineRef.current && fabricCanvas) {
+        fabricCanvas.remove(previewLineRef.current);
+        previewLineRef.current = null;
       }
-      previewCircles.forEach(circle => fabricCanvas?.remove(circle));
-      setPreviewCircles([]);
+      previewCirclesRef.current.forEach(circle => fabricCanvas?.remove(circle));
+      previewCirclesRef.current = [];
       setPoints([]);
       return;
     }
@@ -86,8 +93,10 @@ export const useMeasureAreaMode = (
       const pointer = fabricCanvas.getPointer(e);
       const finalPoint = { x: pointer.x, y: pointer.y };
 
+      const currentPoints = pointsRef.current;
+      
       // Check if clicking near first point (close polygon)
-      if (points.length >= 3 && isPointNear(finalPoint, points[0], 30)) {
+      if (currentPoints.length >= 3 && isPointNear(finalPoint, currentPoints[0], 30)) {
         fabricCanvas.remove(dragCircleRef.current);
         dragPointRef.current = null;
         dragCircleRef.current = null;
@@ -95,8 +104,8 @@ export const useMeasureAreaMode = (
         return;
       }
 
-      // Commit the point
-      setPreviewCircles(prev => [...prev, dragCircleRef.current!]);
+      // Commit the point - add circle to preview circles ref
+      previewCirclesRef.current = [...previewCirclesRef.current, dragCircleRef.current!];
       setPoints(prev => [...prev, finalPoint]);
       
       dragPointRef.current = null;
@@ -114,14 +123,17 @@ export const useMeasureAreaMode = (
         });
       }
 
+      const currentPoints = pointsRef.current;
+      
       // Update preview line only if we have committed points
-      if (points.length === 0 && !dragPointRef.current) return;
+      if (currentPoints.length === 0 && !dragPointRef.current) return;
 
-      if (previewLine) {
-        fabricCanvas.remove(previewLine);
+      // Remove old preview line
+      if (previewLineRef.current) {
+        fabricCanvas.remove(previewLineRef.current);
       }
 
-      const linePoints = [...points, { x: pointer.x, y: pointer.y }];
+      const linePoints = [...currentPoints, { x: pointer.x, y: pointer.y }];
 
       const line = new Polyline(linePoints, {
         stroke: areaColor,
@@ -134,12 +146,13 @@ export const useMeasureAreaMode = (
       });
 
       fabricCanvas.add(line);
-      setPreviewLine(line);
+      previewLineRef.current = line;
       fabricCanvas.renderAll();
     };
 
     const completePolygon = () => {
-      if (points.length < 3) return;
+      const currentPoints = pointsRef.current;
+      if (currentPoints.length < 3) return;
       
       if (!scale) {
         toast.error("Please set a scale first using 'Set Scale' in the Measure menu");
@@ -147,7 +160,7 @@ export const useMeasureAreaMode = (
       }
 
       // Calculate area
-      const pixelArea = calculatePolygonArea(points);
+      const pixelArea = calculatePolygonArea(currentPoints);
       const areaM2 = pixelAreaToMeters(pixelArea, scale);
       const volume = heightValue ? calculateVolume(areaM2, heightValue) : null;
 
@@ -162,7 +175,7 @@ export const useMeasureAreaMode = (
       const fillColor = hexToRgba(areaColor, areaOpacity);
       const strokeColor = areaColor;
 
-      const polygon = new Polygon(points, {
+      const polygon = new Polygon(currentPoints, {
         fill: fillColor,
         stroke: strokeColor,
         strokeWidth: 2,
@@ -173,7 +186,7 @@ export const useMeasureAreaMode = (
       });
 
       // Create label
-      const center = getPolygonCenter(points);
+      const center = getPolygonCenter(currentPoints);
       const labelText = volume 
         ? `${areaM2.toFixed(1)} m²\n${volume.toFixed(1)} m³`
         : `${areaM2.toFixed(1)} m²`;
@@ -208,12 +221,12 @@ export const useMeasureAreaMode = (
       setMeasurements(prev => [...prev, measurement]);
 
       // Clean up preview
-      previewCircles.forEach(circle => fabricCanvas.remove(circle));
-      if (previewLine) fabricCanvas.remove(previewLine);
+      previewCirclesRef.current.forEach(circle => fabricCanvas.remove(circle));
+      if (previewLineRef.current) fabricCanvas.remove(previewLineRef.current);
       
       setPoints([]);
-      setPreviewCircles([]);
-      setPreviewLine(null);
+      previewCirclesRef.current = [];
+      previewLineRef.current = null;
       fabricCanvas.renderAll();
     };
 
@@ -237,7 +250,7 @@ export const useMeasureAreaMode = (
       dragPointRef.current = null;
       dragCircleRef.current = null;
     };
-  }, [fabricCanvas, mode, points, scale, areaColor, areaOpacity, heightValue, previewLine, previewCircles]);
+  }, [fabricCanvas, mode, scale, areaColor, areaOpacity, heightValue]);
 
   const deleteMeasurement = (id: string) => {
     const measurement = measurements.find(m => m.id === id);
