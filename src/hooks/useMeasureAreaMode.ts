@@ -196,7 +196,6 @@ export const useMeasureAreaMode = (
         top: center.y,
         fontSize: 16,
         fill: '#000000',
-        backgroundColor: '#FFFFFF',
         textAlign: 'center',
         originX: 'center',
         originY: 'center',
